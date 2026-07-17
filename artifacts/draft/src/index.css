@@ -2,92 +2,39 @@
 
 /* ─── Raw design tokens (light mode defaults) ───────────────────────── */
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
-  --d-background:        #FFFFFF;
-  --d-background-subtle: #FAFAFA;
+  --d-background:        #0f172a;
+  --d-background-subtle: #1e293b;
 
-  --d-surface:           #FFFFFF;
-  --d-surface-raised:    #F5F5F5;
+  --d-surface:           #1e293b;
+  --d-surface-raised:    #334155;
 
-  --d-foreground:        #171717;
-  --d-foreground-muted:  #5A5A5A;
-  --d-foreground-subtle: #7B7B7B;
+  --d-foreground:        #f8fafc;
+  --d-foreground-muted:  #94a3b8;
+  --d-foreground-subtle: #64748b;
 
-  --d-accent:            #FF5E1F;
-  --d-accent-hover:      #E65012;
-  --d-accent-soft:       #FFE9DD;
-  --d-accent-foreground: #FFFFFF;
+  --d-accent:            #3b82f6;
+  --d-accent-hover:      #2563eb;
+  --d-accent-soft:       #1e3a5f;
+  --d-accent-foreground: #ffffff;
 
-  --d-border:            #ECECEC;
-  --d-border-subtle:     #F5F5F5;
+  --d-border:            #1e293b;
+  --d-border-subtle:     #334155;
 
-  --d-signal:            #C8FF5B;
+  --d-signal:            #22d3ee;
 
-  --d-overlay:            #161413;
-  --d-overlay-raised:     #1B1918;
-  --d-overlay-elevated:   #262220;
-  --d-overlay-foreground: #F5F2F0;
-  --d-overlay-muted:      #7B7B7B;
-
-  --d-shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.04);
-  --d-shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
-  --d-shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
-  --d-shadow-card: 0 0 0 1px var(--d-border), 0 2px 4px rgb(0 0 0 / 0.04);
+  --d-shadow-card: 0 0 0 1px #1e293b, 0 8px 32px rgb(0 0 0 / 0.4);
 
   --d-radius-sm:   4px;
   --d-radius-md:   8px;
   --d-radius-lg:   12px;
   --d-radius-xl:   16px;
   --d-radius-full: 9999px;
-
-  --d-grid-line-color: rgba(0, 0, 0, 0.055);
-  --d-grid-dot-color:  rgba(0, 0, 0, 0.12);
-  --d-grid-size:       28px;
-}
-
-/* ─── Dark mode (system-driven) ─────────────────────────────────────── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --d-background:        #161413;
-    --d-background-subtle: #1B1918;
-
-    --d-surface:           #1B1918;
-    --d-surface-raised:    #262220;
-
-    --d-foreground:        #F5F2F0;
-    --d-foreground-muted:  #7B7B7B;
-    --d-foreground-subtle: #5A5A5A;
-
-    --d-accent:            #ff5e1f;
-    --d-accent-hover:      #E65012;
-    --d-accent-soft:       #262220;
-    --d-accent-foreground: #FFFFFF;
-
-    --d-border:            #2F2B29;
-    --d-border-subtle:     #262220;
-
-    --d-signal:            #C8FF5B;
-
-    --d-overlay:            #161413;
-    --d-overlay-raised:     #1B1918;
-    --d-overlay-elevated:   #262220;
-    --d-overlay-foreground: #F5F2F0;
-    --d-overlay-muted:      #7B7B7B;
-
-    --d-shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.30);
-    --d-shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.40), 0 1px 2px -1px rgb(0 0 0 / 0.32);
-    --d-shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.48), 0 2px 4px -2px rgb(0 0 0 / 0.36);
-    --d-shadow-card: 0 0 0 1px var(--d-border), 0 2px 8px rgb(0 0 0 / 0.40);
-
-    --d-grid-line-color: rgba(255, 255, 255, 0.04);
-    --d-grid-dot-color:  rgba(255, 255, 255, 0.08);
-  }
 }
 
 /* ─── Tailwind v4 theme ─────────────────────────────────────────────── */
 @theme inline {
-  /* Colors */
   --color-background:        var(--d-background);
   --color-background-subtle: var(--d-background-subtle);
   --color-surface:           var(--d-surface);
@@ -107,24 +54,12 @@
 
   --color-signal:            var(--d-signal);
 
-  --color-overlay:            var(--d-overlay);
-  --color-overlay-raised:     var(--d-overlay-raised);
-  --color-overlay-elevated:   var(--d-overlay-elevated);
-  --color-overlay-foreground: var(--d-overlay-foreground);
-  --color-overlay-muted:      var(--d-overlay-muted);
-
-  /* Typography */
   --font-display: 'Space Grotesk', sans-serif;
   --font-body:    'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
 
-  /* Shadows */
-  --shadow-xs:   var(--d-shadow-xs);
-  --shadow-sm:   var(--d-shadow-sm);
-  --shadow-md:   var(--d-shadow-md);
   --shadow-card: var(--d-shadow-card);
 
-  /* Radius */
   --radius-sm:   var(--d-radius-sm);
   --radius-md:   var(--d-radius-md);
   --radius-lg:   var(--d-radius-lg);
@@ -144,39 +79,5 @@
     color: var(--d-foreground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.001ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.001ms !important;
-    }
-  }
-}
-
-/* ─── Grid pattern utilities ─────────────────────────────────────────── */
-@layer utilities {
-  .grid-dots {
-    background-image: radial-gradient(
-      circle,
-      var(--d-grid-dot-color) 1px,
-      transparent 1px
-    );
-    background-size: var(--d-grid-size) var(--d-grid-size);
-  }
-
-  .grid-lines {
-    background-image:
-      linear-gradient(var(--d-grid-line-color) 1px, transparent 1px),
-      linear-gradient(90deg, var(--d-grid-line-color) 1px, transparent 1px);
-    background-size: var(--d-grid-size) var(--d-grid-size);
-  }
-
-  .grid-cross {
-    background-image:
-      linear-gradient(var(--d-grid-line-color) 1px, transparent 1px),
-      linear-gradient(90deg, var(--d-grid-line-color) 1px, transparent 1px);
-    background-size: 14px 14px;
   }
 }
