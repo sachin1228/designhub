@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, Heart } from "lucide-react";
 import { APP_NAME } from "@draft/shared";
 import { ApplicationModal } from "@/components/apply/ApplicationModal";
+import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
 import { Spinner } from "@/components/ui/Spinner";
 
 function CornerBrackets({
@@ -47,6 +48,7 @@ interface Me {
 export default function LoginPage() {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   // Login form state
   const [email, setEmail] = useState("");
@@ -285,12 +287,13 @@ export default function LoginPage() {
                     <span className="font-body text-xs font-medium text-overlay-foreground">
                       Password
                     </span>
-                    <a
-                      href="#"
+                    <button
+                      type="button"
+                      onClick={() => setForgotOpen(true)}
                       className="font-body text-xs text-accent transition-colors hover:text-accent-hover"
                     >
                       Forgot password?
-                    </a>
+                    </button>
                   </div>
                   <input
                     type="password"
@@ -350,6 +353,7 @@ export default function LoginPage() {
       </section>
 
       <ApplicationModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
     </main>
   );
 }

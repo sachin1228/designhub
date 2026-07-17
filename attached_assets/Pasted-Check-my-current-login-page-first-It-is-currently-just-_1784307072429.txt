@@ -1,0 +1,562 @@
+Check my current login page first. It is currently just a static UI.
+
+Do NOT rebuild the page.
+Do NOT redesign anything.
+Keep the existing layout, components, styling, animations, spacing, typography, colors, and UX exactly as they are.
+
+Before making any changes, inspect the existing project structure and use whatever technologies, libraries, authentication approach, coding standards, and patterns already exist in the repository.
+
+Do not introduce unnecessary dependencies or restructure the project unless absolutely necessary.
+
+We are building this authentication system in phases. Complete each phase before moving to the next.
+
+---
+
+# Database
+
+We will use **Supabase PostgreSQL** as the database.
+
+Supabase has NOT been set up yet.
+
+As part of this implementation:
+
+- Configure Supabase for this project.
+- Create all required database tables.
+- Create all relationships.
+- Create all indexes.
+- Create all constraints.
+- Create all migrations/schema files.
+- Add all required environment variables.
+- Add a `.env.example` containing every required environment variable.
+- Document any manual setup steps if required.
+
+Design the database to be production-ready and scalable from the beginning.
+
+Integrate Supabase into the existing project architecture without redesigning the application.
+
+---
+
+# Database Design
+
+Use proper relational database design.
+
+Do NOT store Company, City, or Design Sector as plain text.
+
+Create separate tables for:
+
+- Applications
+- Users
+- Invitations
+- Designer Profiles
+- Companies
+- Cities
+- Design Sectors
+
+Designer Profiles should store:
+
+- company_id
+- city_id
+- sector_id
+
+instead of text values.
+
+Example structure:
+
+applications
+-------------
+id
+name
+email
+linkedin_url
+portfolio_url
+status
+review_notes
+created_at
+updated_at
+
+users
+-----
+id
+application_id
+name
+email
+password_hash
+created_at
+updated_at
+
+invitations
+-----------
+id
+application_id
+token
+expires_at
+used_at
+created_at
+
+designer_profiles
+-----------------
+id
+user_id
+company_id
+city_id
+sector_id
+experience_level
+created_at
+updated_at
+
+companies
+---------
+id
+name
+is_active
+created_at
+updated_at
+
+cities
+------
+id
+name
+is_active
+created_at
+updated_at
+
+design_sectors
+--------------
+id
+name
+is_active
+created_at
+updated_at
+
+Use proper foreign keys everywhere appropriate.
+
+Create indexes for:
+
+- email
+- application status
+- invitation token
+- company_id
+- city_id
+- sector_id
+
+Enforce referential integrity.
+
+If a Company, City, or Design Sector is already being used by designer profiles, prevent deletion or require reassignment before deletion.
+
+If I rename a Company, City, or Sector in the Admin Dashboard, every designer profile should automatically reflect the updated value because only IDs are stored.
+
+---
+
+# Soft Delete
+
+Do not permanently delete master data.
+
+Use Active/Inactive status (or soft delete) for:
+
+- Companies
+- Cities
+- Design Sectors
+
+Applications, invitations and users should remain fully auditable.
+
+Dropdowns shown to users should only display active records.
+
+The Admin Dashboard should allow me to view both active and inactive records.
+
+Design the schema so future features like:
+
+- Communities
+- Posts
+- Comments
+- Likes
+- Followers
+- Direct Messages
+- Jobs
+- Events
+
+can be added without major schema redesign.
+
+---
+
+# Phase 1 — Designer Application
+
+When the user clicks **Create Account**, open the application flow.
+
+Collect:
+
+- Full Name
+- Email Address
+- LinkedIn Profile URL
+- Portfolio URL
+
+Validate every field properly.
+
+When submitted:
+
+- Save the application.
+- Status = Pending.
+
+Show:
+
+"Thanks for applying. We'll review your portfolio and send you an invitation if you're approved."
+
+IMPORTANT
+
+Do NOT:
+
+- Create a user account.
+- Create login credentials.
+- Allow login.
+
+This is only an application.
+
+---
+
+## Prevent Duplicate Applications
+
+If another Pending application already exists for the same email:
+
+Do not allow another submission.
+
+Show:
+
+"Your application is already under review."
+
+If the previous application was Rejected:
+
+Allow them to submit a completely new application.
+
+If they already have an Approved account:
+
+Redirect them to the Login page.
+
+---
+
+# Phase 2 — Admin Dashboard
+
+Create an Admin Dashboard.
+
+Dummy admin authentication is fine for now.
+
+Dashboard should contain:
+
+## Applications
+
+Columns:
+
+- Name
+- Email
+- LinkedIn
+- Portfolio
+- Applied Date
+- Status
+
+Actions:
+
+- View Details
+- Approve
+- Reject
+
+Allow filtering by:
+
+- Status
+- Date
+- Search
+
+---
+
+# Internal Admin Review
+
+Applications should support internal review notes.
+
+Admins can write private notes such as:
+
+- Strong portfolio.
+- Needs stronger UX case studies.
+- Excellent Product Designer.
+- Invite after portfolio update.
+
+These notes must NEVER be visible to applicants.
+
+They should appear:
+
+- Application Details
+- Admin Dashboard
+- Future reapplications
+
+When someone reapplies after rejection:
+
+Create a brand new application.
+
+However, keep the applicant history linked together.
+
+The admin should always be able to see:
+
+- Total applications
+- Previous applications
+- Previous approval/rejection history
+- Previous review notes
+- Previous LinkedIn URLs
+- Previous portfolio URLs
+
+Every application should be reviewed independently while preserving complete history.
+
+---
+
+# Applicant Tags
+
+Admins should be able to assign multiple internal tags.
+
+Examples:
+
+- Top Talent
+- Strong Portfolio
+- UI Expert
+- UX Expert
+- Product Designer
+- Design Systems
+- Motion
+- Junior
+- Mid-Level
+- Senior
+- Needs Review
+- High Priority
+- Referral
+
+Tags are only visible to admins.
+
+Applications should be searchable and filterable using these tags.
+
+---
+
+# Approve Flow
+
+When I approve an applicant:
+
+- Change status to Approved.
+- Generate a secure invitation token.
+- Save the invitation.
+- Send a REAL invitation email.
+
+The email should contain a unique link such as:
+
+/signup?token=xxxxxxxx
+
+Only users with a valid invitation should be able to create an account.
+
+Do NOT use dummy email sending.
+
+Integrate a real email solution.
+
+If any credentials are missing, clearly document the required environment variables.
+
+Invitation links must:
+
+- Expire after a configurable period.
+- Work only once.
+
+---
+
+# Reject Flow
+
+When I reject an applicant:
+
+- Change status to Rejected.
+- Send a REAL rejection email.
+
+The rejection email should be friendly and encouraging.
+
+Explain that they weren't approved this time but are welcome to improve their portfolio and apply again later.
+
+Include a button linking back to the application page.
+
+Applicants should always be able to submit another application later using:
+
+- Same email
+- Same LinkedIn
+- Same portfolio
+
+Every reapplication should create a new application record.
+
+---
+
+# Admin Management
+
+Create separate management pages.
+
+## Companies
+
+- View
+- Add
+- Edit
+- Activate
+- Deactivate
+
+These populate the Company dropdown.
+
+---
+
+## Cities
+
+- View
+- Add
+- Edit
+- Activate
+- Deactivate
+
+These populate the City dropdown.
+
+---
+
+## Design Sectors
+
+- View
+- Add
+- Edit
+- Activate
+- Deactivate
+
+These populate the Design Sector dropdown.
+
+Example sectors:
+
+- Product Design
+- UI Design
+- UX Design
+- UX Research
+- Interaction Design
+- Visual Design
+- Brand Design
+- Graphic Design
+- Motion Design
+- Design Systems
+- Service Design
+- Industrial Design
+- Accessibility
+- Design Operations
+- AI Design
+- Other
+
+All dropdown values throughout the application must come from these admin-managed tables.
+
+---
+
+# Phase 3 — Invitation Signup
+
+Only approved applicants can create an account.
+
+When they visit:
+
+/signup?token=xxxxxxxx
+
+Validate the invitation token.
+
+If valid:
+
+## Step 1 — Create Account
+
+Fields:
+
+- Name
+- Email
+- Password
+- Confirm Password
+
+Do NOT prefill any fields.
+
+After submission:
+
+- Create the user account.
+- Mark invitation as used.
+- Prevent reuse.
+- Automatically continue to Step 2.
+
+---
+
+## Step 2 — Complete Designer Profile
+
+Collect:
+
+- Company
+- City
+- Design Sector
+- Experience Level
+
+Company, City and Design Sector must be dropdowns populated from the Admin Dashboard.
+
+Experience Levels:
+
+- Student
+- Fresher (0–1 Years)
+- Junior Designer (1–3 Years)
+- Mid-Level Designer (3–5 Years)
+- Senior Designer (5–8 Years)
+- Lead Designer (8–12 Years)
+- Principal Designer
+- Staff Designer
+- Design Manager
+- Head of Design
+- Director of Design
+- VP of Design
+- Design Consultant
+- Freelancer
+
+Save the profile.
+
+Redirect the user into the application.
+
+---
+
+# Phase 4 — Login
+
+Approved users can log in using:
+
+- Email
+- Password
+
+If someone attempts to log in while their application is Pending:
+
+Show:
+
+"Your application is still under review."
+
+If their application was Rejected:
+
+Show:
+
+"Your application wasn't approved this time. You're welcome to improve your portfolio and apply again."
+
+Include a button linking back to the application page.
+
+---
+
+# General Requirements
+
+Work ONLY on this authentication system.
+
+Do NOT modify unrelated pages.
+
+Do NOT redesign the existing UI.
+
+Keep the current design exactly as it is.
+
+Inspect the repository first and follow the existing architecture and coding conventions.
+
+Implement one phase completely before moving to the next.
+
+Write production-quality code.
+
+Include:
+
+- Proper validation
+- Error handling
+- Clean reusable components
+- Scalable architecture
+- Secure authentication
+- Secure password hashing
+- CSRF protection where applicable
+- Rate limiting for application submissions and login attempts
+- Email verification where appropriate
+- Proper logging for authentication events
+
+Everything should be production-ready, scalable, maintainable, and easy to extend in the future.
