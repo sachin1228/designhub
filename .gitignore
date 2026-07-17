@@ -1,41 +1,49 @@
-# dependencies
-node_modules/
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# next.js build output
-.next/
-out/
-
-# production builds
-dist/
-build/
-
-# environment variables (never commit secrets)
-.env
-.env.local
-.env*.local
-
-# typescript
+# compiled output
+dist
+tmp
+out-tsc
 *.tsbuildinfo
-next-env.d.ts
+.expo
+.expo-shared
 
-# supabase CLI (local dev stack artifacts)
-supabase/.branches
-supabase/.temp
+# dependencies
+node_modules
 
-# logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
 
-# os / editor
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
 .DS_Store
-*.pem
-.idea/
+Thumbs.db
 
-# deployment
-.vercel
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
 
-# test coverage
-coverage/
+# Replit
+.cache/
+.local/
