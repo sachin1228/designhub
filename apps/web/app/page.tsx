@@ -97,10 +97,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Refresh session state
-      const meRes = await fetch("/api/auth/me");
-      const meData = await meRes.json();
-      setMe(meData.user ?? null);
+      // Regular user — go to dashboard
+      router.push("/dashboard");
     } catch {
       setError("Network error. Please check your connection.");
     } finally {
