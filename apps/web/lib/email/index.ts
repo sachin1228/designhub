@@ -1,19 +1,25 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const from = process.env.RESEND_FROM_EMAIL ?? "noreply@drafthub.com";
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const APP_NAME = "drafthub";
+
+/** Lazily instantiated so the module can be imported at build time without env vars. */
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error("RESEND_API_KEY is not set");
+  return new Resend(key);
+}
+const getFrom = () => process.env.RESEND_FROM_EMAIL ?? "noreply@drafthub.com";
+const getAppUrl = () => process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export async function sendPasswordResetEmail(
   to: string,
   name: string,
   token: string
 ): Promise<void> {
-  const link = `${appUrl}/reset-password?token=${token}`;
+  const link = `${getAppUrl()}/reset-password?token=${token}`;
 
-  await resend.emails.send({
-    from,
+  await getResend().emails.send({
+    from: getFrom(),
     to,
     subject: `Reset your ${APP_NAME} password`,
     html: `
@@ -72,10 +78,10 @@ export async function sendInvitationEmail(
   name: string,
   token: string
 ): Promise<void> {
-  const link = `${appUrl}/signup?token=${token}`;
+  const link = `${getAppUrl()}/signup?token=${token}`;
 
-  await resend.emails.send({
-    from,
+  await getResend().emails.send({
+    from: getFrom(),
     to,
     subject: `You're invited to join ${APP_NAME} 🎉`,
     html: `
@@ -86,7 +92,6 @@ export async function sendInvitationEmail(
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#161413;padding:48px 16px;">
     <tr><td align="center">
       <table width="560" cellpadding="0" cellspacing="0" style="background:#1B1918;border:1px solid #262220;border-radius:12px;overflow:hidden;">
-        <!-- Header -->
         <tr>
           <td style="padding:32px 40px 0;background:#1B1918;">
             <p style="margin:0;font-size:20px;font-weight:600;color:#F5F2F0;">
@@ -94,7 +99,6 @@ export async function sendInvitationEmail(
             </p>
           </td>
         </tr>
-        <!-- Body -->
         <tr>
           <td style="padding:32px 40px;">
             <h1 style="margin:0 0 8px;font-size:26px;font-weight:600;color:#F5F2F0;">
@@ -113,7 +117,6 @@ export async function sendInvitationEmail(
             </p>
           </td>
         </tr>
-        <!-- Footer -->
         <tr>
           <td style="padding:20px 40px;border-top:1px solid #262220;">
             <p style="margin:0;font-size:12px;color:#5A5A5A;">
@@ -134,10 +137,10 @@ export async function sendRejectionEmail(
   to: string,
   name: string
 ): Promise<void> {
-  const applyLink = `${appUrl}/`;
+  const applyLink = `${getAppUrl()}/`;
 
-  await resend.emails.send({
-    from,
+  await getResend().emails.send({
+    from: getFrom(),
     to,
     subject: `An update on your ${APP_NAME} application`,
     html: `
@@ -148,7 +151,6 @@ export async function sendRejectionEmail(
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#161413;padding:48px 16px;">
     <tr><td align="center">
       <table width="560" cellpadding="0" cellspacing="0" style="background:#1B1918;border:1px solid #262220;border-radius:12px;overflow:hidden;">
-        <!-- Header -->
         <tr>
           <td style="padding:32px 40px 0;background:#1B1918;">
             <p style="margin:0;font-size:20px;font-weight:600;color:#F5F2F0;">
@@ -156,7 +158,6 @@ export async function sendRejectionEmail(
             </p>
           </td>
         </tr>
-        <!-- Body -->
         <tr>
           <td style="padding:32px 40px;">
             <h1 style="margin:0 0 8px;font-size:26px;font-weight:600;color:#F5F2F0;">
@@ -177,7 +178,6 @@ export async function sendRejectionEmail(
             </p>
           </td>
         </tr>
-        <!-- Footer -->
         <tr>
           <td style="padding:20px 40px;border-top:1px solid #262220;">
             <p style="margin:0;font-size:12px;color:#5A5A5A;">
