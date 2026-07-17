@@ -28,24 +28,28 @@ export default async function AdminProtectedLayout({
           <div className="hidden md:flex items-center gap-1">
             <Link
               href="/admin"
+              prefetch={false}
               className="rounded-md px-3 py-1.5 font-body text-sm text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated transition-colors"
             >
               Applications
             </Link>
             <Link
               href="/admin/companies"
+              prefetch={false}
               className="rounded-md px-3 py-1.5 font-body text-sm text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated transition-colors"
             >
               Companies
             </Link>
             <Link
               href="/admin/cities"
+              prefetch={false}
               className="rounded-md px-3 py-1.5 font-body text-sm text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated transition-colors"
             >
               Cities
             </Link>
             <Link
               href="/admin/sectors"
+              prefetch={false}
               className="rounded-md px-3 py-1.5 font-body text-sm text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated transition-colors"
             >
               Design Sectors
