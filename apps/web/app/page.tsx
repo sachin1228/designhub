@@ -91,6 +91,12 @@ export default function LoginPage() {
         return;
       }
 
+      // Admin login — redirect to dashboard
+      if (data.redirect) {
+        router.push(data.redirect);
+        return;
+      }
+
       // Refresh session state
       const meRes = await fetch("/api/auth/me");
       const meData = await meRes.json();

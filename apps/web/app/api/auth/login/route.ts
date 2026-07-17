@@ -31,6 +31,21 @@ export async function POST(request: NextRequest) {
   }
 
   const { email, password } = parsed.data;
+
+  // ── Admin short-circuit ──────────────────────────────────────────────
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (
+    adminEmail && adminPassword &&
+    email.toLowerCase() === adminEmail.toLowerCase() &&
+    password === adminPassword
+  ) {
+    const token = await createSession({ email: adminEmail, role: "admin" });
+    const response = NextResponse.json({ success: true, redirect: "/admin" });
+    setSessionCookie(response, token);
+    return response;
+  }
+
   const db = createServiceClient();
 
   // Look up user
