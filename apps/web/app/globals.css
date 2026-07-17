@@ -1,35 +1,32 @@
-/* ─── Design tokens — dark-first blue theme ─────────────────────────── */
+/* ─── Design tokens — neutral dark theme, blue brand accents ────────── */
 :root {
   color-scheme: dark;
 
-  /* Backgrounds */
-  --color-background:        #0f172a;
-  --color-background-subtle: #1e293b;
+  /* Backgrounds — neutral dark grays, no blue tint */
+  --color-background:        #0e0e10;
+  --color-background-subtle: #18181b;
 
   /* Surfaces */
-  --color-surface:           #1e293b;
-  --color-surface-raised:    #334155;
+  --color-surface:           #18181b;
+  --color-surface-raised:    #27272a;
 
   /* Foreground / text */
-  --color-foreground:        #f8fafc;
-  --color-foreground-muted:  #94a3b8;
-  --color-foreground-subtle: #64748b;
+  --color-foreground:        #fafafa;
+  --color-foreground-muted:  #a1a1aa;
+  --color-foreground-subtle: #71717a;
 
-  /* Accent — blue brand */
+  /* Accent — blue, used only for buttons and links */
   --color-accent:            #3b82f6;
   --color-accent-hover:      #2563eb;
   --color-accent-soft:       #1e3a5f;
   --color-accent-foreground: #ffffff;
 
   /* Borders */
-  --color-border:            #1e293b;
-  --color-border-subtle:     #334155;
+  --color-border:            #27272a;
+  --color-border-subtle:     #3f3f46;
 
-  /* Signal */
-  --color-signal:            #22d3ee;
-
-  /* Shadows */
-  --shadow-card: 0 0 0 1px #1e293b, 0 8px 32px rgb(0 0 0 / 0.4);
+  /* Shadow */
+  --shadow-card: 0 0 0 1px #27272a, 0 8px 32px rgb(0 0 0 / 0.5);
 
   /* Radius */
   --radius-sm:   4px;
@@ -43,10 +40,7 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
 body {
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
