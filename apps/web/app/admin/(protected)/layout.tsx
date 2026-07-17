@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
 import { APP_NAME } from "@draft/shared";
 import { LogoutButton } from "@/app/admin/(protected)/LogoutButton";
+import { AdminSidebar } from "@/app/admin/(protected)/AdminSidebar";
 
 export default async function AdminProtectedLayout({
   children,
@@ -15,52 +16,36 @@ export default async function AdminProtectedLayout({
   }
 
   return (
-    <div className="min-h-screen bg-overlay text-overlay-foreground">
-      {/* Top nav */}
-      <nav className="border-b border-overlay-elevated bg-overlay-raised px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <span className="font-display text-base font-semibold text-overlay-foreground">
-            {APP_NAME}
-            <span className="text-accent mx-1">/</span>
-            <span className="text-overlay-muted font-body text-sm font-normal">admin</span>
-          </span>
-
-          <div className="hidden md:flex items-center gap-1">
-            <Link
-              href="/admin"
-              prefetch={false}
-              className="rounded-md px-3 py-1.5 font-body text-sm text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated transition-colors"
-            >
-              Applications
-            </Link>
-            <Link
-              href="/admin/companies"
-              prefetch={false}
-              className="rounded-md px-3 py-1.5 font-body text-sm text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated transition-colors"
-            >
-              Companies
-            </Link>
-            <Link
-              href="/admin/cities"
-              prefetch={false}
-              className="rounded-md px-3 py-1.5 font-body text-sm text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated transition-colors"
-            >
-              Cities
-            </Link>
-            <Link
-              href="/admin/sectors"
-              prefetch={false}
-              className="rounded-md px-3 py-1.5 font-body text-sm text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated transition-colors"
-            >
-              Design Sectors
-            </Link>
-          </div>
+    <div className="flex min-h-screen bg-overlay text-overlay-foreground">
+      {/* Sidebar */}
+      <aside className="fixed inset-y-0 left-0 flex w-56 flex-col border-r border-overlay-elevated bg-overlay-raised">
+        {/* Brand */}
+        <div className="px-4 py-5 border-b border-overlay-elevated">
+          <Link href="/admin" prefetch={false} className="block">
+            <span className="font-display text-base font-semibold text-overlay-foreground">
+              {APP_NAME}
+            </span>
+            <span className="block font-body text-xs text-overlay-muted mt-0.5">
+              Admin Dashboard
+            </span>
+          </Link>
         </div>
 
-        <LogoutButton />
-      </nav>
+        {/* Nav links */}
+        <div className="flex-1 overflow-y-auto px-3 py-4">
+          <AdminSidebar />
+        </div>
 
-      <main className="px-6 py-8 max-w-7xl mx-auto">{children}</main>
+        {/* Logout */}
+        <div className="px-4 py-4 border-t border-overlay-elevated">
+          <LogoutButton />
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="ml-56 flex-1 px-8 py-8">
+        {children}
+      </main>
     </div>
   );
 }
