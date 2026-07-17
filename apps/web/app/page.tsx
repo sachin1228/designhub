@@ -1,6 +1,11 @@
-import Link from "next/link";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, Heart } from "lucide-react";
 import { APP_NAME } from "@draft/shared";
+import { ApplicationModal } from "@/components/apply/ApplicationModal";
+import { Spinner } from "@/components/ui/Spinner";
 
 function CornerBrackets({
   variant = "accent",
@@ -31,7 +36,80 @@ function CornerBrackets({
   );
 }
 
+interface Me {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  profileComplete: boolean;
+}
+
 export default function LoginPage() {
+  const router = useRouter();
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // Login form state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showApplyLink, setShowApplyLink] = useState(false);
+
+  // Session state
+  const [me, setMe] = useState<Me | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setMe(d.user ?? null))
+      .catch(() => setMe(null))
+      .finally(() => setSessionLoading(false));
+  }, []);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setShowApplyLink(false);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Login failed. Please try again.");
+        if (data.showApplyLink) setShowApplyLink(true);
+        return;
+      }
+
+      // Refresh session state
+      const meRes = await fetch("/api/auth/me");
+      const meData = await meRes.json();
+      setMe(meData.user ?? null);
+    } catch {
+      setError("Network error. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setMe(null);
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
   return (
     <main className="flex min-h-screen bg-background">
 
@@ -122,9 +200,6 @@ export default function LoginPage() {
         {/* Line grid texture */}
         <div className="pointer-events-none absolute inset-0" aria-hidden="true" />
 
-        {/* Subtle centre glow so the form lifts off the grid */}
-
-
         {/* Mobile logo */}
         <div className="relative z-10 mb-8 flex flex-col items-center gap-2 lg:hidden">
           <span className="font-display text-xl font-semibold text-overlay-foreground">
@@ -138,88 +213,143 @@ export default function LoginPage() {
 
         <div className="relative z-10 w-full max-w-sm">
 
-          {/* Card — dark surface */}
-          <div className="relative overflow-hidden rounded-xl border border-overlay-elevated bg-overlay-raised p-8 shadow-xl">
-            <CornerBrackets />
+          {sessionLoading ? (
+            <div className="flex justify-center py-12">
+              <Spinner className="h-6 w-6 text-overlay-muted" />
+            </div>
+          ) : me ? (
+            /* ── Signed-in state ── */
+            <div className="relative overflow-hidden rounded-xl border border-overlay-elevated bg-overlay-raised p-8 shadow-xl">
+              <CornerBrackets />
+              <h2 className="relative font-display text-2xl font-semibold text-overlay-foreground">
+                Welcome back
+              </h2>
+              <p className="relative mt-1 font-body text-sm text-overlay-muted">
+                Signed in as{" "}
+                <span className="text-overlay-foreground">{me.email}</span>
+              </p>
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="relative mt-6 flex w-full items-center justify-center gap-2 rounded-md border border-overlay-elevated bg-overlay py-2.5 font-body text-sm text-overlay-foreground transition-colors hover:bg-overlay-elevated disabled:opacity-60"
+              >
+                {loggingOut && <Spinner className="h-4 w-4" />}
+                {loggingOut ? "Signing out…" : "Sign out"}
+              </button>
+            </div>
+          ) : (
+            /* ── Login form ── */
+            <div className="relative overflow-hidden rounded-xl border border-overlay-elevated bg-overlay-raised p-8 shadow-xl">
+              <CornerBrackets />
 
+              <h2 className="relative font-display text-2xl font-semibold text-overlay-foreground">
+                Welcome back
+              </h2>
+              <p className="relative mt-1 font-body text-sm text-overlay-muted">
+                Log in to keep working on your portfolio.
+              </p>
 
-            <h2 className="relative font-display text-2xl font-semibold text-overlay-foreground">
-              Welcome back
-            </h2>
-            <p className="relative mt-1 font-body text-sm text-overlay-muted">
-              Log in to keep working on your portfolio.
-            </p>
+              <form className="relative mt-7 flex flex-col gap-5" onSubmit={handleLogin}>
+                {error && (
+                  <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3">
+                    <p className="font-body text-sm text-red-400">{error}</p>
+                    {showApplyLink && (
+                      <button
+                        type="button"
+                        onClick={() => setModalOpen(true)}
+                        className="mt-1 font-body text-xs text-accent underline hover:text-accent-hover"
+                      >
+                        Apply for access →
+                      </button>
+                    )}
+                  </div>
+                )}
 
-            <form className="relative mt-7 flex flex-col gap-5">
-              <label className="flex flex-col gap-1.5">
-                <span className="font-body text-xs font-medium text-overlay-foreground">
-                  Email address
-                </span>
-                <input
-                  type="email"
-                  placeholder="you@studio.com"
-                  className="rounded-md border border-overlay-elevated bg-overlay px-3.5 py-2.5 font-body text-sm text-overlay-foreground outline-none transition-colors placeholder:text-overlay-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-                />
-              </label>
-
-              <label className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
+                <label className="flex flex-col gap-1.5">
                   <span className="font-body text-xs font-medium text-overlay-foreground">
-                    Password
+                    Email address
                   </span>
-                  <Link
-                    href="#"
-                    className="font-body text-xs text-accent transition-colors hover:text-accent-hover"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="rounded-md border border-overlay-elevated bg-overlay px-3.5 py-2.5 font-body text-sm text-overlay-foreground outline-none transition-colors placeholder:text-overlay-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-                />
-              </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                    placeholder="you@studio.com"
+                    className="rounded-md border border-overlay-elevated bg-overlay px-3.5 py-2.5 font-body text-sm text-overlay-foreground outline-none transition-colors placeholder:text-overlay-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    autoComplete="email"
+                    required
+                  />
+                </label>
 
+                <label className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-body text-xs font-medium text-overlay-foreground">
+                      Password
+                    </span>
+                    <a
+                      href="#"
+                      className="font-body text-xs text-accent transition-colors hover:text-accent-hover"
+                    >
+                      Forgot password?
+                    </a>
+                  </div>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                    placeholder="••••••••"
+                    className="rounded-md border border-overlay-elevated bg-overlay px-3.5 py-2.5 font-body text-sm text-overlay-foreground outline-none transition-colors placeholder:text-overlay-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    autoComplete="current-password"
+                    required
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-1 flex items-center justify-center gap-2 rounded-md bg-accent py-2.5 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loading && <Spinner className="h-4 w-4 text-white" />}
+                  {loading ? "Logging in…" : "Log in"}
+                </button>
+              </form>
+
+              {/* Divider */}
+              <div className="relative my-6 flex items-center gap-3">
+                <span className="h-px flex-1 bg-overlay-elevated" />
+                <span className="font-mono text-[10px] uppercase tracking-wider text-overlay-muted">
+                  or continue with
+                </span>
+                <span className="h-px flex-1 bg-overlay-elevated" />
+              </div>
+
+              {/* Social auth */}
+              <div className="relative flex">
+                <button
+                  type="button"
+                  className="flex-1 rounded-md border border-overlay-elevated bg-overlay py-2.5 font-body text-sm text-overlay-foreground transition-colors hover:bg-overlay-elevated"
+                >
+                  Google
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!me && !sessionLoading && (
+            <p className="mt-6 text-center font-body text-sm text-overlay-muted">
+              New to {APP_NAME}?{" "}
               <button
                 type="button"
-                className="mt-1 rounded-md bg-accent py-2.5 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+                onClick={() => setModalOpen(true)}
+                className="font-medium text-accent transition-colors hover:text-accent-hover"
               >
-                Log in
+                Create an account
               </button>
-            </form>
-
-            {/* Divider */}
-            <div className="relative my-6 flex items-center gap-3">
-              <span className="h-px flex-1 bg-overlay-elevated" />
-              <span className="font-mono text-[10px] uppercase tracking-wider text-overlay-muted">
-                or continue with
-              </span>
-              <span className="h-px flex-1 bg-overlay-elevated" />
-            </div>
-
-            {/* Social auth */}
-            <div className="relative flex">
-              <button
-                type="button"
-                className="flex-1 rounded-md border border-overlay-elevated bg-overlay py-2.5 font-body text-sm text-overlay-foreground transition-colors hover:bg-overlay-elevated"
-              >
-                Google
-              </button>
-            </div>
-          </div>
-
-          <p className="mt-6 text-center font-body text-sm text-overlay-muted">
-            New to {APP_NAME}?{" "}
-            <Link
-              href="#"
-              className="font-medium text-accent transition-colors hover:text-accent-hover"
-            >
-              Create an account
-            </Link>
-          </p>
+            </p>
+          )}
         </div>
       </section>
+
+      <ApplicationModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </main>
   );
 }
