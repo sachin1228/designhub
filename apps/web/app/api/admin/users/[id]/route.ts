@@ -49,6 +49,13 @@ export async function DELETE(
   const { id } = await params;
   const db = createServiceClient();
 
+  // Fetch the user's application_id before deleting so we can reset it afterwards.
+  const { data: user } = await db
+    .from("users")
+    .select("application_id")
+    .eq("id", id)
+    .maybeSingle();
+
   // Delete profile first (cascade would handle it, but being explicit)
   await db.from("designer_profiles").delete().eq("user_id", id);
 
@@ -57,6 +64,16 @@ export async function DELETE(
   if (error) {
     console.error("[admin/users] DELETE error:", error);
     return NextResponse.json({ error: "Failed to delete user." }, { status: 500 });
+  }
+
+  // Reset the linked application so this email can reapply.
+  // Without this, the "approved" application record permanently blocks the
+  // email from submitting a new application.
+  if (user?.application_id) {
+    await db
+      .from("applications")
+      .update({ status: "rejected", review_notes: "Account deleted by admin." })
+      .eq("id", user.application_id);
   }
 
   return NextResponse.json({ success: true });
