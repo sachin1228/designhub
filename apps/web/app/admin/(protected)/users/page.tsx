@@ -21,8 +21,6 @@ interface User {
   designer_profiles: Profile | null;
 }
 
-export const metadata = { title: "Users — Admin" };
-
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
