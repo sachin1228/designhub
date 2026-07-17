@@ -1,0 +1,46 @@
+/**
+ * @draft/design-system — CSS custom properties
+ *
+ * Replit dark workspace palette (@replit/uikit).
+ * Font: Geist. Brand accent: blue (#3B82F6).
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Backgrounds — 4-step elevation */
+  --background-root:    #0D0D0D;
+  --background-default: #1C1C1C;
+  --background-higher:  #252525;
+  --background-highest: #2E2E2E;
+
+  /* Foreground */
+  --foreground-default: #FFFFFF;
+  --foreground-dimmer:  #AFAFAF;
+  --foreground-dimmest: #6C6C6C;
+
+  /* Outline / borders — transparent white */
+  --outline-default:  rgba(255, 255, 255, 0.10);
+  --outline-dimmer:   rgba(255, 255, 255, 0.05);
+  --outline-stronger: rgba(255, 255, 255, 0.15);
+
+  /* Shadows */
+  --shadow-1: 0px 4px 16px rgba(0, 0, 0, 0.32);
+  --shadow-2: 0px 8px 32px rgba(0, 0, 0, 0.40),
+              0px 1px 0px  rgba(255, 255, 255, 0.04) inset;
+  --shadow-3: 0px 16px 64px rgba(0, 0, 0, 0.48),
+              0px 1px 0px  rgba(255, 255, 255, 0.04) inset;
+
+  /* Brand accent — blue only */
+  --accent-primary-default:    #3B82F6;
+  --accent-primary-stronger:   #2563EB;
+  --accent-primary-dimmest:    rgba(59, 130, 246, 0.12);
+  --accent-primary-foreground: #FFFFFF;
+
+  /* Radius — sharp Replit scale */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-full: 9999px;
+}
