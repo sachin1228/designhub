@@ -19,8 +19,8 @@ export const darkTheme = {
   foregroundSubtle:  neutral[500],  // #7B7B7B — tertiary
 
   /** Accent — slightly brighter for dark-mode legibility */
-  accent:            orange[400],   // #FF874F
-  accentHover:       orange[500],   // #FF5E1F
+  accent:            orange[400],   // #ff5e1f
+  accentHover:       orange[500],   // #E65012
   accentSoft:        warm[700],     // #262220
   accentForeground:  neutral[0],    // white text on accent bg
 

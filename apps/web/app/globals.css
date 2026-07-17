@@ -29,7 +29,7 @@
 
   /* Accent — draft/ orange brand */
   --color-accent:            #FF5E1F;
-  --color-accent-hover:      #E54E12;
+  --color-accent-hover:      #E65012;
   --color-accent-soft:       #FFE9DD;
   --color-accent-foreground: #FFFFFF;
 
@@ -83,7 +83,7 @@
     --color-foreground-subtle: #5A5A5A;
 
     /* Accent — slightly brighter for dark-mode legibility */
-    --color-accent:            #FF874F;
+    --color-accent:            #ff5e1f;
     --color-accent-hover:      #FF5E1F;
     --color-accent-soft:       #262220;
     --color-accent-foreground: #FFFFFF;

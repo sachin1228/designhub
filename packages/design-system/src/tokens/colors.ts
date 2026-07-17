@@ -13,7 +13,7 @@ export const orange = {
   200: "#FFD0BA",
   300: "#FFB089",
   400: "#FF874F",
-  500: "#FF5E1F", // primary brand accent (light mode)
+  500: "#E65012", // primary brand accent (light mode)
   600: "#E54E12",
   700: "#C53F0D",
   800: "#9B320C",
