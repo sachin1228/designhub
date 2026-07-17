@@ -1,47 +1,67 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* ─── Design tokens — Light mode (default) ─────────────────────────── */
+/* ─── Design tokens — Light mode ────────────────────────────────────── */
 :root {
   color-scheme: light dark;
 
+  /* Brand / Primary — Orange */
+  --color-primary:            #FF5E1F;
+  --color-primary-hover:      #E54E12;
+  --color-primary-soft:       #FFE9DD;
+  --color-primary-foreground: #FFFFFF;
+
   /* Backgrounds */
-  --color-background:        #FFFFFF;
-  --color-background-subtle: #F5F5F7;
+  --color-background:         #FFFFFF;
+  --color-background-subtle:  #FAFAFA;
 
   /* Surfaces */
-  --color-surface:           #FFFFFF;
-  --color-surface-raised:    #FAFAFA;
+  --color-surface:            #FFFFFF;
+  --color-surface-raised:     #F5F5F5;
 
   /* Foreground / text */
-  --color-foreground:        #0F0F16;
-  --color-foreground-muted:  #6B6B7B;
-  --color-foreground-subtle: #9A9AAD;
+  --color-foreground:         #1D1D1B;
+  --color-foreground-muted:   #5A5A5A;
+  --color-foreground-subtle:  #7B7B7B;
 
-  /* Accent — draft/ purple brand */
-  --color-accent:            #5B4FE8;
-  --color-accent-hover:      #4B3FD6;
-  --color-accent-soft:       #F0EFFE;
-  --color-accent-foreground: #FFFFFF;
+  /* Borders / inputs */
+  --color-border:             #E6EAF0;
+  --color-border-subtle:      #ECECEC;
+  --color-input:              #E6E1DE;
 
-  /* Borders */
-  --color-border:            #E8E8ED;
-  --color-border-subtle:     #F5F5F7;
+  /* Semantic — reuse primary as accent */
+  --color-accent:             #FF5E1F;
+  --color-accent-hover:       #E54E12;
+  --color-accent-soft:        #FFE9DD;
+  --color-accent-foreground:  #FFFFFF;
 
-  /* Brand signal */
-  --color-signal:            #C8FF5B;
+  /* Secondary / muted surfaces */
+  --color-secondary:          #F6F2F0;
+  --color-muted:              #F5F2F1;
 
-  /* Always-dark overlay panel (brand canvas side) */
-  --color-overlay:           #0F0F16;
-  --color-overlay-raised:    #1A1A24;
-  --color-overlay-foreground:#F5F5F7;
-  --color-overlay-muted:     #9A9AAD;
+  /* Ring */
+  --color-ring:               #FF5E1F;
+
+  /* Always-dark panel */
+  --color-overlay:            #161413;
+  --color-overlay-raised:     #1B1918;
+  --color-overlay-elevated:   #262220;
+  --color-overlay-foreground: #F5F2F0;
+  --color-overlay-muted:      #7B7B7B;
+
+  /* Signal — orange-600 as secondary highlight */
+  --color-signal:             #E54E12;
+
+  /* Grid pattern */
+  --grid-line-color:          rgba(0,0,0,0.055);
+  --grid-dot-color:           rgba(0,0,0,0.12);
+  --grid-size:                28px;
 
   /* Shadows */
   --shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.04);
-  --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
-  --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
-  --shadow-card: 0 0 0 1px var(--color-border), 0 2px 4px rgb(0 0 0 / 0.04);
+  --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+  --shadow-card: 0 0 0 1px var(--color-border), 0 2px 8px rgb(0 0 0 / 0.05);
 
   /* Radius */
   --radius-sm:   4px;
@@ -51,77 +71,141 @@
   --radius-full: 9999px;
 }
 
-/* ─── Dark mode (system-driven, no toggle) ──────────────────────────── */
+/* ─── Dark mode ─────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Brand */
+    --color-primary:            #FF6F33;
+    --color-primary-hover:      #FF5E1F;
+    --color-primary-soft:       #3A1F0F;
+    --color-primary-foreground: #FFFFFF;
+
     /* Backgrounds */
-    --color-background:        #07070C;
-    --color-background-subtle: #0F0F16;
+    --color-background:         #161413;
+    --color-background-subtle:  #1B1918;
 
     /* Surfaces */
-    --color-surface:           #0F0F16;
-    --color-surface-raised:    #1A1A24;
+    --color-surface:            #1B1918;
+    --color-surface-raised:     #262220;
 
-    /* Foreground / text */
-    --color-foreground:        #F5F5F7;
-    --color-foreground-muted:  #9A9AAD;
-    --color-foreground-subtle: #6B6B7B;
-
-    /* Accent — brighter for dark-mode legibility */
-    --color-accent:            #9B90F3;
-    --color-accent-hover:      #C4BCF8;
-    --color-accent-soft:       #1C1768;
-    --color-accent-foreground: #FFFFFF;
+    /* Foreground */
+    --color-foreground:         #F5F2F0;
+    --color-foreground-muted:   #B5B5B5;
+    --color-foreground-subtle:  #7B7B7B;
 
     /* Borders */
-    --color-border:            #1A1A24;
-    --color-border-subtle:     #0F0F16;
+    --color-border:             #2F2B29;
+    --color-border-subtle:      #262220;
+    --color-input:              #2F2B29;
 
-    /* Signal stays vivid */
-    --color-signal:            #C8FF5B;
+    /* Accent */
+    --color-accent:             #FF6F33;
+    --color-accent-hover:       #FF5E1F;
+    --color-accent-soft:        #3A1F0F;
+    --color-accent-foreground:  #FFFFFF;
 
-    /* Overlay panel — same in both modes (always dark) */
-    --color-overlay:           #0F0F16;
-    --color-overlay-raised:    #1A1A24;
-    --color-overlay-foreground:#F5F5F7;
-    --color-overlay-muted:     #9A9AAD;
+    /* Secondary / muted */
+    --color-secondary:          #262220;
+    --color-muted:              #262220;
 
-    /* Shadows — rely on border contrast on dark bg */
-    --shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.24);
-    --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.32), 0 1px 2px -1px rgb(0 0 0 / 0.32);
-    --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.40), 0 2px 4px -2px rgb(0 0 0 / 0.40);
-    --shadow-card: 0 0 0 1px var(--color-border), 0 2px 8px rgb(0 0 0 / 0.32);
+    /* Ring */
+    --color-ring:               #FF6F33;
+
+    /* Overlay panel (same in both modes) */
+    --color-overlay:            #161413;
+    --color-overlay-raised:     #1B1918;
+    --color-overlay-elevated:   #262220;
+    --color-overlay-foreground: #F5F2F0;
+    --color-overlay-muted:      #7B7B7B;
+
+    --color-signal:             #FF874F;
+
+    /* Grid */
+    --grid-line-color:          rgba(255,255,255,0.04);
+    --grid-dot-color:           rgba(255,255,255,0.09);
+
+    /* Shadows */
+    --shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.30);
+    --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.40), 0 1px 2px -1px rgb(0 0 0 / 0.32);
+    --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.48), 0 2px 4px -2px rgb(0 0 0 / 0.36);
+    --shadow-card: 0 0 0 1px var(--color-border), 0 2px 8px rgb(0 0 0 / 0.40);
   }
 }
 
 /* ─── Tailwind v4 theme mapping ─────────────────────────────────────── */
 @theme inline {
-  /* Colors */
-  --color-background:           var(--color-background);
-  --color-background-subtle:    var(--color-background-subtle);
-  --color-surface:              var(--color-surface);
-  --color-surface-raised:       var(--color-surface-raised);
-  --color-foreground:           var(--color-foreground);
-  --color-foreground-muted:     var(--color-foreground-muted);
-  --color-foreground-subtle:    var(--color-foreground-subtle);
-  --color-accent:               var(--color-accent);
-  --color-accent-hover:         var(--color-accent-hover);
-  --color-accent-soft:          var(--color-accent-soft);
-  --color-accent-foreground:    var(--color-accent-foreground);
-  --color-border:               var(--color-border);
-  --color-border-subtle:        var(--color-border-subtle);
-  --color-signal:               var(--color-signal);
-  --color-overlay:              var(--color-overlay);
-  --color-overlay-raised:       var(--color-overlay-raised);
-  --color-overlay-foreground:   var(--color-overlay-foreground);
-  --color-overlay-muted:        var(--color-overlay-muted);
+  /* Brand */
+  --color-primary:            var(--color-primary);
+  --color-primary-hover:      var(--color-primary-hover);
+  --color-primary-soft:       var(--color-primary-soft);
+  --color-primary-foreground: var(--color-primary-foreground);
+
+  /* Page */
+  --color-background:         var(--color-background);
+  --color-background-subtle:  var(--color-background-subtle);
+  --color-surface:            var(--color-surface);
+  --color-surface-raised:     var(--color-surface-raised);
+
+  /* Text */
+  --color-foreground:         var(--color-foreground);
+  --color-foreground-muted:   var(--color-foreground-muted);
+  --color-foreground-subtle:  var(--color-foreground-subtle);
+
+  /* Borders */
+  --color-border:             var(--color-border);
+  --color-border-subtle:      var(--color-border-subtle);
+  --color-input:              var(--color-input);
+  --color-ring:               var(--color-ring);
+
+  /* Accent (maps to primary) */
+  --color-accent:             var(--color-accent);
+  --color-accent-hover:       var(--color-accent-hover);
+  --color-accent-soft:        var(--color-accent-soft);
+  --color-accent-foreground:  var(--color-accent-foreground);
+
+  /* Secondary / muted */
+  --color-secondary:          var(--color-secondary);
+  --color-muted:              var(--color-muted);
+
+  /* Overlay panel */
+  --color-overlay:            var(--color-overlay);
+  --color-overlay-raised:     var(--color-overlay-raised);
+  --color-overlay-elevated:   var(--color-overlay-elevated);
+  --color-overlay-foreground: var(--color-overlay-foreground);
+  --color-overlay-muted:      var(--color-overlay-muted);
+
+  --color-signal:             var(--color-signal);
+
+  /* Orange palette */
+  --color-orange-50:  #FFF7F2;
+  --color-orange-100: #FFE9DD;
+  --color-orange-200: #FFD0BA;
+  --color-orange-300: #FFB089;
+  --color-orange-400: #FF874F;
+  --color-orange-500: #FF5E1F;
+  --color-orange-600: #E54E12;
+  --color-orange-700: #C53F0D;
+  --color-orange-800: #9B320C;
+  --color-orange-900: #6F2408;
+
+  /* Neutral palette */
+  --color-gray-50:  #FAFAFA;
+  --color-gray-100: #F5F5F5;
+  --color-gray-200: #ECECEC;
+  --color-gray-300: #E2E2E2;
+  --color-gray-400: #B5B5B5;
+  --color-gray-500: #7B7B7B;
+  --color-gray-600: #5A5A5A;
+  --color-gray-700: #3D3D3D;
+  --color-gray-800: #252525;
+  --color-gray-900: #171717;
 
   /* Typography */
   --font-display: 'Space Grotesk', sans-serif;
   --font-body:    'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
 
-  /* Border radius */
+  /* Radius */
   --radius-sm:   var(--radius-sm);
   --radius-md:   var(--radius-md);
   --radius-lg:   var(--radius-lg);
@@ -136,9 +220,7 @@
 }
 
 @layer base {
-  html, body {
-    height: 100%;
-  }
+  html, body { height: 100%; }
 
   body {
     font-family: var(--font-body);
@@ -146,6 +228,55 @@
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ─── Grid theme utilities ───────────────────────────────────────────── */
+@layer utilities {
+  /* Fine dot grid — subtle on any surface */
+  .grid-dots {
+    background-image: radial-gradient(
+      circle,
+      var(--grid-dot-color) 1px,
+      transparent 1px
+    );
+    background-size: var(--grid-size) var(--grid-size);
+  }
+
+  /* Line grid — engineering / blueprint feel */
+  .grid-lines {
+    background-image:
+      linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+  }
+
+  /* Cross / hash grid — tighter, more technical */
+  .grid-cross {
+    background-image:
+      linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px);
+    background-size: 14px 14px;
+  }
+
+  /* Grid overlay — use on a relative container for a layered effect */
+  .grid-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(
+      circle,
+      var(--grid-dot-color) 1px,
+      transparent 1px
+    );
+    background-size: var(--grid-size) var(--grid-size);
+    z-index: 0;
+  }
+
+  /* Orange glow ring — for primary CTAs and focused states */
+  .ring-primary {
+    box-shadow: 0 0 0 3px rgb(255 94 31 / 0.25);
   }
 }
 
