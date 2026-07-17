@@ -1,96 +1,96 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* ─── Atlassian Design System tokens — Light mode ──────────────────── */
+/* ─── Design tokens — Light mode (default) ─────────────────────────── */
 :root {
   color-scheme: light dark;
 
   /* Backgrounds */
   --color-background:        #FFFFFF;
-  --color-background-subtle: #F7F8F9;
+  --color-background-subtle: #F5F5F7;
 
   /* Surfaces */
   --color-surface:           #FFFFFF;
-  --color-surface-raised:    #FAFBFC;
+  --color-surface-raised:    #FAFAFA;
 
-  /* Foreground / text (Atlassian Ink) */
-  --color-foreground:        #172B4D;
-  --color-foreground-muted:  #5E6C84;
-  --color-foreground-subtle: #97A0AF;
+  /* Foreground / text */
+  --color-foreground:        #0F0F16;
+  --color-foreground-muted:  #6B6B7B;
+  --color-foreground-subtle: #9A9AAD;
 
-  /* Brand — Atlassian Blue */
-  --color-accent:            #0052CC;
-  --color-accent-hover:      #0747A6;
-  --color-accent-soft:       #DEEBFF;
+  /* Accent — draft/ purple brand */
+  --color-accent:            #5B4FE8;
+  --color-accent-hover:      #4B3FD6;
+  --color-accent-soft:       #F0EFFE;
   --color-accent-foreground: #FFFFFF;
 
   /* Borders */
-  --color-border:            #DFE1E6;
-  --color-border-subtle:     #F1F2F4;
+  --color-border:            #E8E8ED;
+  --color-border-subtle:     #F5F5F7;
 
-  /* Signal — Atlassian Green (success / live) */
-  --color-signal:            #36B37E;
+  /* Brand signal */
+  --color-signal:            #C8FF5B;
 
-  /* Overlay panel — Atlassian Navy (brand dark side) */
-  --color-overlay:           #172B4D;
-  --color-overlay-raised:    #253858;
-  --color-overlay-foreground:#FFFFFF;
-  --color-overlay-muted:     #7A869A;
+  /* Always-dark overlay panel (brand canvas side) */
+  --color-overlay:           #0F0F16;
+  --color-overlay-raised:    #1A1A24;
+  --color-overlay-foreground:#F5F5F7;
+  --color-overlay-muted:     #9A9AAD;
 
-  /* Shadows (Atlassian elevation) */
-  --shadow-xs:   0 1px 1px 0 rgb(23 43 77 / 0.08);
-  --shadow-sm:   0 1px 2px 0 rgb(23 43 77 / 0.12), 0 0 1px 0 rgb(23 43 77 / 0.12);
-  --shadow-md:   0 3px 5px 0 rgb(23 43 77 / 0.12), 0 0 1px 0 rgb(23 43 77 / 0.12);
-  --shadow-card: 0 0 0 1px var(--color-border), 0 2px 4px 0 rgb(23 43 77 / 0.08);
+  /* Shadows */
+  --shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+  --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+  --shadow-card: 0 0 0 1px var(--color-border), 0 2px 4px rgb(0 0 0 / 0.04);
 
-  /* Radius (Atlassian uses 3 px base, 8 px for cards) */
-  --radius-sm:   3px;
+  /* Radius */
+  --radius-sm:   4px;
   --radius-md:   8px;
   --radius-lg:   12px;
   --radius-xl:   16px;
   --radius-full: 9999px;
 }
 
-/* ─── Dark mode ─────────────────────────────────────────────────────── */
+/* ─── Dark mode (system-driven, no toggle) ──────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
     /* Backgrounds */
-    --color-background:        #1D2125;
-    --color-background-subtle: #22272B;
+    --color-background:        #07070C;
+    --color-background-subtle: #0F0F16;
 
     /* Surfaces */
-    --color-surface:           #22272B;
-    --color-surface-raised:    #282E33;
+    --color-surface:           #0F0F16;
+    --color-surface-raised:    #1A1A24;
 
     /* Foreground / text */
-    --color-foreground:        #B6C2CF;
-    --color-foreground-muted:  #8C9BAB;
-    --color-foreground-subtle: #596773;
+    --color-foreground:        #F5F5F7;
+    --color-foreground-muted:  #9A9AAD;
+    --color-foreground-subtle: #6B6B7B;
 
-    /* Brand — Atlassian Blue (brightened for dark) */
-    --color-accent:            #579DFF;
-    --color-accent-hover:      #85B8FF;
-    --color-accent-soft:       #1C2B41;
-    --color-accent-foreground: #1D2125;
+    /* Accent — brighter for dark-mode legibility */
+    --color-accent:            #9B90F3;
+    --color-accent-hover:      #C4BCF8;
+    --color-accent-soft:       #1C1768;
+    --color-accent-foreground: #FFFFFF;
 
     /* Borders */
-    --color-border:            #2C333A;
-    --color-border-subtle:     #22272B;
+    --color-border:            #1A1A24;
+    --color-border-subtle:     #0F0F16;
 
     /* Signal stays vivid */
-    --color-signal:            #4BCE97;
+    --color-signal:            #C8FF5B;
 
-    /* Overlay panel */
-    --color-overlay:           #1D2125;
-    --color-overlay-raised:    #282E33;
-    --color-overlay-foreground:#B6C2CF;
-    --color-overlay-muted:     #8C9BAB;
+    /* Overlay panel — same in both modes (always dark) */
+    --color-overlay:           #0F0F16;
+    --color-overlay-raised:    #1A1A24;
+    --color-overlay-foreground:#F5F5F7;
+    --color-overlay-muted:     #9A9AAD;
 
-    /* Shadows */
-    --shadow-xs:   0 1px 1px 0 rgb(0 0 0 / 0.32);
-    --shadow-sm:   0 1px 2px 0 rgb(0 0 0 / 0.36), 0 0 1px 0 rgb(0 0 0 / 0.36);
-    --shadow-md:   0 3px 5px 0 rgb(0 0 0 / 0.36), 0 0 1px 0 rgb(0 0 0 / 0.36);
-    --shadow-card: 0 0 0 1px var(--color-border), 0 2px 8px 0 rgb(0 0 0 / 0.32);
+    /* Shadows — rely on border contrast on dark bg */
+    --shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.24);
+    --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.32), 0 1px 2px -1px rgb(0 0 0 / 0.32);
+    --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.40), 0 2px 4px -2px rgb(0 0 0 / 0.40);
+    --shadow-card: 0 0 0 1px var(--color-border), 0 2px 8px rgb(0 0 0 / 0.32);
   }
 }
 
@@ -116,8 +116,8 @@
   --color-overlay-foreground:   var(--color-overlay-foreground);
   --color-overlay-muted:        var(--color-overlay-muted);
 
-  /* Typography — Figtree for display headings */
-  --font-display: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
   --font-body:    'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
 
