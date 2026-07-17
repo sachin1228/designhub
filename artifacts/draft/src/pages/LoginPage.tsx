@@ -116,72 +116,81 @@ export default function LoginPage() {
         </div>
       </section>
 
-      {/* ── Login panel ──────────────────────────────────────────────── */}
-      <section className="relative flex w-full flex-col items-center justify-center px-6 py-12 lg:w-[45%]">
+      {/* ── Login panel (always dark) ────────────────────────────────── */}
+      <section className="relative flex w-full flex-col items-center justify-center overflow-hidden bg-overlay px-6 py-12 lg:w-[45%]">
 
-        {/* Subtle grid background on login side */}
-        <div className="pointer-events-none absolute inset-0 grid-lines opacity-60" aria-hidden="true" />
-        {/* Fade edges */}
+        {/* Grid line texture — dark variant */}
+        <div
+          className="pointer-events-none absolute inset-0 grid-lines"
+          style={{ "--grid-line-color": "rgba(255,255,255,0.04)" } as React.CSSProperties}
+          aria-hidden="true"
+        />
+
+        {/* Subtle centre glow so the form lifts off the grid */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 80% 80% at 50% 50%, rgba(255,255,255,0.92) 40%, rgba(255,255,255,1) 80%)",
+              "radial-gradient(ellipse 75% 70% at 50% 50%, rgba(30,27,25,0.55) 0%, transparent 100%)",
           }}
           aria-hidden="true"
         />
 
         {/* Mobile logo */}
         <div className="relative z-10 mb-8 flex flex-col items-center gap-2 lg:hidden">
-          <span className="font-display text-xl font-semibold text-foreground">
+          <span className="font-display text-xl font-semibold text-overlay-foreground">
             {APP_NAME}
             <span className="text-primary">/</span>
           </span>
-          <p className="font-body text-sm text-foreground-muted">
+          <p className="font-body text-sm text-overlay-muted">
             For UI/UX, product &amp; social designers
           </p>
         </div>
 
         <div className="relative z-10 w-full max-w-sm">
-          <p className="mb-3 font-mono text-[11px] uppercase tracking-wider text-foreground-subtle">
+          <p className="mb-3 font-mono text-[11px] uppercase tracking-wider text-overlay-muted">
             auth / login
           </p>
 
-          {/* Card */}
-          <div className="relative overflow-hidden rounded-xl border border-border bg-surface p-8 shadow-card">
+          {/* Card — dark surface */}
+          <div className="relative overflow-hidden rounded-xl border border-overlay-elevated bg-overlay-raised p-8 shadow-xl">
             <CornerBrackets />
 
-            {/* Very faint grid inside card */}
-            <div className="pointer-events-none absolute inset-0 grid-dots opacity-50" aria-hidden="true" />
+            {/* Very faint dot grid inside card */}
+            <div
+              className="pointer-events-none absolute inset-0 grid-dots opacity-40"
+              style={{ "--grid-dot-color": "rgba(255,255,255,0.06)" } as React.CSSProperties}
+              aria-hidden="true"
+            />
 
             {/* Status badge */}
-            <span className="absolute -top-3 right-6 z-10 flex items-center gap-1.5 rounded-full bg-overlay px-3 py-1 font-mono text-[10px] text-primary">
+            <span className="absolute -top-3 right-6 z-10 flex items-center gap-1.5 rounded-full bg-overlay-elevated border border-overlay-elevated px-3 py-1 font-mono text-[10px] text-primary">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" />
               editing
             </span>
 
-            <h2 className="relative font-display text-2xl font-semibold text-foreground">
+            <h2 className="relative font-display text-2xl font-semibold text-overlay-foreground">
               Welcome back
             </h2>
-            <p className="relative mt-1 font-body text-sm text-foreground-muted">
+            <p className="relative mt-1 font-body text-sm text-overlay-muted">
               Log in to keep working on your portfolio.
             </p>
 
             <form className="relative mt-7 flex flex-col gap-5">
               <label className="flex flex-col gap-1.5">
-                <span className="font-body text-xs font-medium text-foreground">
+                <span className="font-body text-xs font-medium text-overlay-foreground">
                   Email address
                 </span>
                 <input
                   type="email"
                   placeholder="you@studio.com"
-                  className="rounded-md border border-input bg-background-subtle px-3.5 py-2.5 font-body text-sm text-foreground outline-none transition-colors placeholder:text-foreground-subtle focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="rounded-md border border-overlay-elevated bg-overlay px-3.5 py-2.5 font-body text-sm text-overlay-foreground outline-none transition-colors placeholder:text-overlay-muted focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </label>
 
               <label className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-body text-xs font-medium text-foreground">
+                  <span className="font-body text-xs font-medium text-overlay-foreground">
                     Password
                   </span>
                   <a
@@ -194,7 +203,7 @@ export default function LoginPage() {
                 <input
                   type="password"
                   placeholder="••••••••"
-                  className="rounded-md border border-input bg-background-subtle px-3.5 py-2.5 font-body text-sm text-foreground outline-none transition-colors placeholder:text-foreground-subtle focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="rounded-md border border-overlay-elevated bg-overlay px-3.5 py-2.5 font-body text-sm text-overlay-foreground outline-none transition-colors placeholder:text-overlay-muted focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </label>
 
@@ -208,31 +217,31 @@ export default function LoginPage() {
 
             {/* Divider */}
             <div className="relative my-6 flex items-center gap-3">
-              <span className="h-px flex-1 bg-border" />
-              <span className="font-mono text-[10px] uppercase tracking-wider text-foreground-subtle">
+              <span className="h-px flex-1 bg-overlay-elevated" />
+              <span className="font-mono text-[10px] uppercase tracking-wider text-overlay-muted">
                 or continue with
               </span>
-              <span className="h-px flex-1 bg-border" />
+              <span className="h-px flex-1 bg-overlay-elevated" />
             </div>
 
             {/* Social auth */}
             <div className="relative flex gap-3">
               <button
                 type="button"
-                className="flex-1 rounded-md border border-border bg-surface py-2.5 font-body text-sm text-foreground transition-colors hover:bg-secondary"
+                className="flex-1 rounded-md border border-overlay-elevated bg-overlay py-2.5 font-body text-sm text-overlay-foreground transition-colors hover:bg-overlay-elevated"
               >
                 Google
               </button>
               <button
                 type="button"
-                className="flex-1 rounded-md border border-border bg-surface py-2.5 font-body text-sm text-foreground transition-colors hover:bg-secondary"
+                className="flex-1 rounded-md border border-overlay-elevated bg-overlay py-2.5 font-body text-sm text-overlay-foreground transition-colors hover:bg-overlay-elevated"
               >
                 Apple
               </button>
             </div>
           </div>
 
-          <p className="mt-6 text-center font-body text-sm text-foreground-muted">
+          <p className="mt-6 text-center font-body text-sm text-overlay-muted">
             New to {APP_NAME}?{" "}
             <a
               href="#"
