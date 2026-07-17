@@ -8,7 +8,7 @@ import { LayoutList, Building2, MapPin, Layers, Database, ChevronDown } from "lu
 const MASTER_DATA = [
   { href: "/admin/companies", label: "Companies",     icon: Building2 },
   { href: "/admin/cities",    label: "Cities",        icon: MapPin    },
-  { href: "/admin/sectors",   label: "Design Sectors",icon: Layers    },
+  { href: "/admin/sectors",   label: "Industry Sectors", icon: Layers   },
 ];
 
 export function AdminSidebar() {

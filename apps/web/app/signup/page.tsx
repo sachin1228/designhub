@@ -270,7 +270,7 @@ function SignupInner() {
               </label>
 
               <label className="flex flex-col gap-1.5">
-                <span className="font-body text-xs font-medium text-overlay-foreground">Design Sector <span className="text-red-400">*</span></span>
+                <span className="font-body text-xs font-medium text-overlay-foreground">Industry Sector <span className="text-red-400">*</span></span>
                 <select value={step2.sector_id} onChange={(e) => setStep2((p) => ({ ...p, sector_id: e.target.value }))} className={inputClass} required>
                   <option value="">Select a sector</option>
                   {sectors.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}

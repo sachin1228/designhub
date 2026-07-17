@@ -165,7 +165,7 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
               {items.map((item, idx) => (
                 <tr
                   key={item.id}
-                  className={`${idx < items.length - 1 ? "border-b border-overlay-elevated/50" : ""} hover:bg-overlay-elevated/30 transition-colors`}
+                  className={`${idx < items.length - 1 ? "border-b border-white/5" : ""} hover:bg-overlay-elevated/30 transition-colors`}
                 >
                   <td className="px-5 py-3.5">
                     {editingId === item.id ? (
