@@ -32,7 +32,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const app = invitation.applications as { name: string; email: string } | null;
+  const appsRaw = invitation.applications as unknown;
+  const app = (Array.isArray(appsRaw) ? appsRaw[0] : appsRaw) as
+    | { name: string; email: string }
+    | null;
 
   return NextResponse.json({
     valid: true,
