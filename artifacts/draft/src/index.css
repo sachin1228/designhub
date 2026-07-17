@@ -1,36 +1,43 @@
 @import 'tailwindcss';
 
-/* ─── Raw design tokens ─────────────────────────────────────────────── */
+/*
+ * Design tokens — Replit dark workspace palette
+ * Sourced from @replit/uikit dark theme.
+ * Brand accent swapped from Replit orange → blue.
+ */
 :root {
   color-scheme: dark;
 
-  /* Backgrounds — neutral dark grays, no blue tint */
-  --d-background:        #0e0e10;
-  --d-background-subtle: #18181b;
+  /* ── Backgrounds (4-step elevation scale) ─────────────────────────── */
+  --d-bg-root:    #0D0D0D;   /* page canvas — near black                */
+  --d-bg-default: #1C1C1C;   /* default surface (card)                  */
+  --d-bg-higher:  #252525;   /* raised surface (inputs, hover)          */
+  --d-bg-highest: #2E2E2E;   /* top-level elevated (dropdowns, tooltips)*/
 
-  /* Surfaces */
-  --d-surface:           #18181b;
-  --d-surface-raised:    #27272a;
+  /* ── Foreground ───────────────────────────────────────────────────── */
+  --d-fg-default:  #FFFFFF;
+  --d-fg-dimmer:   #AFAFAF;   /* secondary / placeholder text           */
+  --d-fg-dimmest:  #6C6C6C;   /* disabled / hint text                   */
 
-  /* Foreground / text */
-  --d-foreground:        #fafafa;
-  --d-foreground-muted:  #a1a1aa;
-  --d-foreground-subtle: #71717a;
+  /* ── Outline / borders — transparent white, no hard gray ─────────── */
+  --d-outline-default:  rgba(255, 255, 255, 0.10);
+  --d-outline-dimmer:   rgba(255, 255, 255, 0.05);
+  --d-outline-stronger: rgba(255, 255, 255, 0.15);
 
-  /* Accent — blue, used only for buttons and links */
-  --d-accent:            #3b82f6;
-  --d-accent-hover:      #2563eb;
-  --d-accent-soft:       #1e3a5f;
-  --d-accent-foreground: #ffffff;
+  /* ── Shadows ──────────────────────────────────────────────────────── */
+  --d-shadow-1: 0px 4px 16px rgba(0, 0, 0, 0.32);
+  --d-shadow-2: 0px 8px 32px rgba(0, 0, 0, 0.40),
+                0px 1px 0px  rgba(255, 255, 255, 0.04) inset;
+  --d-shadow-3: 0px 16px 64px rgba(0, 0, 0, 0.48),
+                0px 1px 0px  rgba(255, 255, 255, 0.04) inset;
 
-  /* Borders */
-  --d-border:            #27272a;
-  --d-border-subtle:     #3f3f46;
+  /* ── Brand accent — blue only (buttons, links, focus rings) ───────── */
+  --d-accent:            #3B82F6;
+  --d-accent-hover:      #2563EB;
+  --d-accent-dimmest:    rgba(59, 130, 246, 0.12);
+  --d-accent-foreground: #FFFFFF;
 
-  /* Shadow */
-  --d-shadow-card: 0 0 0 1px #27272a, 0 8px 32px rgb(0 0 0 / 0.5);
-
-  /* Radius */
+  /* ── Radius ───────────────────────────────────────────────────────── */
   --d-radius-sm:   4px;
   --d-radius-md:   8px;
   --d-radius-lg:   12px;
@@ -40,29 +47,41 @@
 
 /* ─── Tailwind v4 theme ─────────────────────────────────────────────── */
 @theme inline {
-  --color-background:        var(--d-background);
-  --color-background-subtle: var(--d-background-subtle);
-  --color-surface:           var(--d-surface);
-  --color-surface-raised:    var(--d-surface-raised);
+  /* Backgrounds */
+  --color-background:        var(--d-bg-root);
+  --color-background-subtle: var(--d-bg-default);
+  --color-surface:           var(--d-bg-default);
+  --color-surface-raised:    var(--d-bg-higher);
+  --color-surface-highest:   var(--d-bg-highest);
 
-  --color-foreground:        var(--d-foreground);
-  --color-foreground-muted:  var(--d-foreground-muted);
-  --color-foreground-subtle: var(--d-foreground-subtle);
+  /* Foreground */
+  --color-foreground:        var(--d-fg-default);
+  --color-foreground-muted:  var(--d-fg-dimmer);
+  --color-foreground-subtle: var(--d-fg-dimmest);
 
+  /* Borders */
+  --color-border:            var(--d-outline-default);
+  --color-border-dimmer:     var(--d-outline-dimmer);
+  --color-border-stronger:   var(--d-outline-stronger);
+
+  /* Accent */
   --color-accent:            var(--d-accent);
   --color-accent-hover:      var(--d-accent-hover);
-  --color-accent-soft:       var(--d-accent-soft);
+  --color-accent-soft:       var(--d-accent-dimmest);
   --color-accent-foreground: var(--d-accent-foreground);
 
-  --color-border:            var(--d-border);
-  --color-border-subtle:     var(--d-border-subtle);
+  /* Shadows */
+  --shadow-sm:   var(--d-shadow-1);
+  --shadow-md:   var(--d-shadow-2);
+  --shadow-lg:   var(--d-shadow-3);
+  --shadow-card: var(--d-shadow-2);
 
+  /* Typography */
   --font-display: 'Space Grotesk', sans-serif;
   --font-body:    'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
 
-  --shadow-card: var(--d-shadow-card);
-
+  /* Radius */
   --radius-sm:   var(--d-radius-sm);
   --radius-md:   var(--d-radius-md);
   --radius-lg:   var(--d-radius-lg);
@@ -76,8 +95,8 @@
 
   body {
     font-family: var(--font-body);
-    background-color: var(--d-background);
-    color: var(--d-foreground);
+    background-color: var(--d-bg-root);
+    color: var(--d-fg-default);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
