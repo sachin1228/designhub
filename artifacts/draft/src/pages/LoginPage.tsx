@@ -1,117 +1,162 @@
 import { APP_NAME } from "@/lib/constants";
 
+/* Replit-matched input style — applied via inline style + JS focus/blur */
+const inputBase: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  background: "var(--d-bg-higher)",
+  border: "1px solid rgba(255, 255, 255, 0.10)",
+  borderRadius: "6px",
+  padding: "7px 10px",
+  fontSize: "14px",
+  lineHeight: "20px",
+  color: "var(--d-fg-default)",
+  outline: "none",
+  transition: "border-color 120ms ease, box-shadow 120ms ease",
+};
+
+const inputFocus: React.CSSProperties = {
+  borderColor: "rgba(59, 130, 246, 0.70)",
+  boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.15)",
+};
+
+function ReplitInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      style={inputBase}
+      onFocus={e => Object.assign(e.currentTarget.style, inputFocus)}
+      onBlur={e =>  Object.assign(e.currentTarget.style, { borderColor: "rgba(255,255,255,0.10)", boxShadow: "none" })}
+    />
+  );
+}
+
 export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-[360px]">
 
         {/* Wordmark */}
-        <div className="mb-8 text-center">
-          <span className="font-display text-2xl font-semibold text-foreground tracking-tight">
+        <div className="mb-7 text-center">
+          <span
+            className="text-2xl font-semibold tracking-tight text-foreground"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
             {APP_NAME}
-            <span className="text-accent">/</span>
+            <span style={{ color: "var(--d-accent)" }}>/</span>
           </span>
         </div>
 
-        {/* Card — Replit shadow-2 with inset top-edge highlight */}
+        {/* Card — 8 px radius, Replit shadow-2 with inset top-edge highlight */}
         <div
-          className="rounded-xl bg-surface px-8 py-8"
           style={{
-            border: "1px solid rgba(255,255,255,0.10)",
-            boxShadow:
-              "0px 8px 32px rgba(0,0,0,0.40), 0px 1px 0px rgba(255,255,255,0.04) inset",
+            background: "var(--d-bg-default)",
+            border: "1px solid rgba(255, 255, 255, 0.10)",
+            borderRadius: "8px",
+            boxShadow: "var(--d-shadow-2)",
+            padding: "24px",
           }}
         >
-          <h2 className="font-display text-[1.125rem] font-semibold text-foreground leading-snug">
+          {/* Heading — Instrument Serif (Reckless Neue feel) */}
+          <h2
+            className="text-[22px] leading-snug text-foreground"
+            style={{ fontFamily: "var(--font-heading)", fontWeight: 400 }}
+          >
             Welcome back
           </h2>
-          <p className="mt-1 text-sm text-foreground-muted">
+          <p className="mt-1 text-[13px] text-foreground-muted">
             Log in to keep working on your portfolio.
           </p>
 
-          <form className="mt-6 flex flex-col gap-4">
+          <form className="mt-5 flex flex-col gap-3">
             {/* Email */}
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-foreground">
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="email"
+                className="text-[12px] font-medium text-foreground"
+              >
                 Email address
-              </span>
-              <input
+              </label>
+              <ReplitInput
+                id="email"
                 type="email"
+                autoComplete="email"
                 placeholder="you@studio.com"
-                className="rounded-lg px-3.5 py-2.5 text-sm text-foreground outline-none transition-all"
-                style={{
-                  background: "var(--d-bg-higher)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                }}
-                onFocus={e => {
-                  e.currentTarget.style.borderColor = "rgba(59,130,246,0.6)";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)";
-                }}
-                onBlur={e => {
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
               />
-            </label>
+            </div>
 
             {/* Password */}
-            <label className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-foreground">
+                <label
+                  htmlFor="password"
+                  className="text-[12px] font-medium text-foreground"
+                >
                   Password
-                </span>
+                </label>
                 <a
                   href="#"
-                  className="text-xs text-accent transition-colors hover:text-accent-hover"
+                  className="text-[12px] transition-colors"
+                  style={{ color: "var(--d-accent)" }}
                 >
                   Forgot password?
                 </a>
               </div>
-              <input
+              <ReplitInput
+                id="password"
                 type="password"
+                autoComplete="current-password"
                 placeholder="••••••••"
-                className="rounded-lg px-3.5 py-2.5 text-sm text-foreground outline-none transition-all"
-                style={{
-                  background: "var(--d-bg-higher)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                }}
-                onFocus={e => {
-                  e.currentTarget.style.borderColor = "rgba(59,130,246,0.6)";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)";
-                }}
-                onBlur={e => {
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
               />
-            </label>
+            </div>
 
             {/* Primary CTA */}
             <button
               type="button"
-              className="mt-1 rounded-lg bg-accent py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+              className="mt-0.5 w-full py-[7px] text-[14px] font-medium transition-colors"
+              style={{
+                background: "var(--d-accent)",
+                color: "var(--d-accent-foreground)",
+                borderRadius: "6px",
+                border: "none",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = "var(--d-accent-hover)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "var(--d-accent)")}
             >
               Log in
             </button>
           </form>
 
           {/* Divider */}
-          <div className="my-5 flex items-center gap-3">
-            <span className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
-            <span className="font-mono text-[10px] uppercase tracking-widest text-foreground-subtle">
+          <div className="my-4 flex items-center gap-3">
+            <span
+              className="h-px flex-1"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            />
+            <span
+              className="text-[11px] uppercase tracking-widest"
+              style={{ fontFamily: "var(--font-mono)", color: "var(--d-fg-dimmest)" }}
+            >
               or continue with
             </span>
-            <span className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+            <span
+              className="h-px flex-1"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            />
           </div>
 
-          {/* OAuth buttons */}
-          <div className="flex gap-3">
+          {/* OAuth — match Replit secondary button style */}
+          <div className="flex gap-2">
             {["Google", "Apple"].map(provider => (
               <button
                 key={provider}
                 type="button"
-                className="flex-1 rounded-lg py-2.5 text-sm text-foreground transition-colors"
-                style={{ border: "1px solid rgba(255,255,255,0.10)", background: "var(--d-bg-higher)" }}
+                className="flex-1 py-[7px] text-[13px] text-foreground transition-colors"
+                style={{
+                  background: "var(--d-bg-higher)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: "6px",
+                }}
                 onMouseEnter={e => (e.currentTarget.style.background = "var(--d-bg-highest)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "var(--d-bg-higher)")}
               >
@@ -121,12 +166,13 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Sign-up link */}
-        <p className="mt-5 text-center text-sm text-foreground-muted">
+        {/* Sign-up footer */}
+        <p className="mt-4 text-center text-[13px] text-foreground-muted">
           New to {APP_NAME}?{" "}
           <a
             href="#"
-            className="font-medium text-accent transition-colors hover:text-accent-hover"
+            className="font-medium transition-colors"
+            style={{ color: "var(--d-accent)" }}
           >
             Create an account
           </a>

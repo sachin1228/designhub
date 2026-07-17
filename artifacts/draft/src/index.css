@@ -1,91 +1,86 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens — Replit dark workspace palette
- * Sourced from @replit/uikit dark theme.
- * Brand accent swapped from Replit orange → blue.
+ * Design tokens — Replit dark workspace palette (@replit/uikit)
+ * Brand accent: blue (#3B82F6) in place of Replit orange.
+ * Heading font: Instrument Serif (editorial serif, Reckless Neue style).
  */
 :root {
   color-scheme: dark;
 
-  /* ── Backgrounds (4-step elevation scale) ─────────────────────────── */
-  --d-bg-root:    #0D0D0D;   /* page canvas — near black                */
-  --d-bg-default: #1C1C1C;   /* default surface (card)                  */
-  --d-bg-higher:  #252525;   /* raised surface (inputs, hover)          */
-  --d-bg-highest: #2E2E2E;   /* top-level elevated (dropdowns, tooltips)*/
+  /* ── Backgrounds — 4-step elevation ─────────────────────────────────── */
+  --d-bg-root:    #0D0D0D;
+  --d-bg-default: #1C1C1C;
+  --d-bg-higher:  #252525;
+  --d-bg-highest: #2E2E2E;
 
-  /* ── Foreground ───────────────────────────────────────────────────── */
+  /* ── Foreground ──────────────────────────────────────────────────────── */
   --d-fg-default:  #FFFFFF;
-  --d-fg-dimmer:   #AFAFAF;   /* secondary / placeholder text           */
-  --d-fg-dimmest:  #6C6C6C;   /* disabled / hint text                   */
+  --d-fg-dimmer:   #AFAFAF;
+  --d-fg-dimmest:  #6C6C6C;
 
-  /* ── Outline / borders — transparent white, no hard gray ─────────── */
+  /* ── Outline / borders — transparent white, Replit style ────────────── */
   --d-outline-default:  rgba(255, 255, 255, 0.10);
   --d-outline-dimmer:   rgba(255, 255, 255, 0.05);
   --d-outline-stronger: rgba(255, 255, 255, 0.15);
 
-  /* ── Shadows ──────────────────────────────────────────────────────── */
+  /* ── Shadows — Replit shadow scale ──────────────────────────────────── */
   --d-shadow-1: 0px 4px 16px rgba(0, 0, 0, 0.32);
   --d-shadow-2: 0px 8px 32px rgba(0, 0, 0, 0.40),
                 0px 1px 0px  rgba(255, 255, 255, 0.04) inset;
   --d-shadow-3: 0px 16px 64px rgba(0, 0, 0, 0.48),
                 0px 1px 0px  rgba(255, 255, 255, 0.04) inset;
 
-  /* ── Brand accent — blue only (buttons, links, focus rings) ───────── */
+  /* ── Brand accent — blue only (buttons, links, focus rings) ─────────── */
   --d-accent:            #3B82F6;
   --d-accent-hover:      #2563EB;
   --d-accent-dimmest:    rgba(59, 130, 246, 0.12);
   --d-accent-foreground: #FFFFFF;
 
-  /* ── Radius ───────────────────────────────────────────────────────── */
-  --d-radius-sm:   4px;
-  --d-radius-md:   8px;
-  --d-radius-lg:   12px;
-  --d-radius-xl:   16px;
+  /* ── Radius — Replit sharp scale ─────────────────────────────────────── */
+  --d-radius-xs:   4px;   /* tiny chips, badges                          */
+  --d-radius-sm:   6px;   /* inputs, small controls                      */
+  --d-radius-md:   8px;   /* cards, buttons, panels                      */
+  --d-radius-lg:   12px;  /* modals, large surfaces                      */
   --d-radius-full: 9999px;
 }
 
-/* ─── Tailwind v4 theme ─────────────────────────────────────────────── */
+/* ─── Tailwind v4 theme ──────────────────────────────────────────────── */
 @theme inline {
-  /* Backgrounds */
   --color-background:        var(--d-bg-root);
   --color-background-subtle: var(--d-bg-default);
   --color-surface:           var(--d-bg-default);
   --color-surface-raised:    var(--d-bg-higher);
   --color-surface-highest:   var(--d-bg-highest);
 
-  /* Foreground */
   --color-foreground:        var(--d-fg-default);
   --color-foreground-muted:  var(--d-fg-dimmer);
   --color-foreground-subtle: var(--d-fg-dimmest);
 
-  /* Borders */
   --color-border:            var(--d-outline-default);
   --color-border-dimmer:     var(--d-outline-dimmer);
   --color-border-stronger:   var(--d-outline-stronger);
 
-  /* Accent */
   --color-accent:            var(--d-accent);
   --color-accent-hover:      var(--d-accent-hover);
   --color-accent-soft:       var(--d-accent-dimmest);
   --color-accent-foreground: var(--d-accent-foreground);
 
-  /* Shadows */
   --shadow-sm:   var(--d-shadow-1);
   --shadow-md:   var(--d-shadow-2);
   --shadow-lg:   var(--d-shadow-3);
   --shadow-card: var(--d-shadow-2);
 
-  /* Typography */
-  --font-display: 'Space Grotesk', sans-serif;
+  /* Instrument Serif as display/heading — editorial, Reckless Neue feel */
+  --font-heading: 'Instrument Serif', Georgia, serif;
   --font-body:    'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
   --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
 
-  /* Radius */
+  --radius-xs:   var(--d-radius-xs);
   --radius-sm:   var(--d-radius-sm);
   --radius-md:   var(--d-radius-md);
   --radius-lg:   var(--d-radius-lg);
-  --radius-xl:   var(--d-radius-xl);
   --radius-full: var(--d-radius-full);
 }
 
