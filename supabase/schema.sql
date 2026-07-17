@@ -91,9 +91,12 @@ create table if not exists users (
   name           text not null,
   email          text not null unique,
   password_hash  text not null,
+  is_blocked     boolean not null default false,
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );
+
+create index if not exists idx_users_is_blocked on users (is_blocked);
 
 create index if not exists idx_users_email on users (email);
 

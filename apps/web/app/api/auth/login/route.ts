@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   // Look up user
   const { data: user } = await db
     .from("users")
-    .select("id, name, email, password_hash, application_id")
+    .select("id, name, email, password_hash, application_id, is_blocked")
     .eq("email", email.toLowerCase())
     .maybeSingle();
 
@@ -94,6 +94,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Invalid email or password." },
       { status: 401 }
+    );
+  }
+
+  if (user.is_blocked) {
+    return NextResponse.json(
+      { error: "Your account has been suspended. Please contact support." },
+      { status: 403 }
     );
   }
 

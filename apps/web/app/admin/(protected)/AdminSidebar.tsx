@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LayoutList, Building2, MapPin, Layers, Database, ChevronDown } from "lucide-react";
+import { LayoutList, Building2, MapPin, Layers, Database, ChevronDown, Users } from "lucide-react";
 
 const MASTER_DATA = [
-  { href: "/admin/companies", label: "Companies",     icon: Building2 },
-  { href: "/admin/cities",    label: "Cities",        icon: MapPin    },
-  { href: "/admin/sectors",   label: "Industry Sectors", icon: Layers   },
+  { href: "/admin/users",     label: "Users",            icon: Users    },
+  { href: "/admin/companies", label: "Companies",        icon: Building2 },
+  { href: "/admin/cities",    label: "Cities",           icon: MapPin    },
+  { href: "/admin/sectors",   label: "Industry Sectors", icon: Layers    },
 ];
 
 export function AdminSidebar() {
