@@ -2,7 +2,7 @@ import { getSession } from "@/lib/auth/session";
 import { createServiceClient } from "@/lib/supabase/service";
 import { APP_NAME } from "@draft/shared";
 
-export const metadata = { title: "Dashboard — drafthub" };
+export const metadata = { title: `Dashboard — drafthub` };
 
 async function getUser(userId: string) {
   const db = createServiceClient();
