@@ -130,7 +130,7 @@ function DetailModal({
     "rounded-md border border-overlay-elevated bg-overlay px-3.5 py-2.5 font-body text-sm text-overlay-foreground outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent/20 w-full";
 
   return (
-    <Modal open onClose={onClose} maxWidth="max-w-2xl">
+    <Modal open onClose={onClose} maxWidth="max-w-2xl" hideCloseButton>
       <div className="flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
