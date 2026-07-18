@@ -7,6 +7,43 @@ import { Eye, EyeOff, Heart } from "lucide-react";
 import { APP_NAME } from "@draft/shared";
 import { Spinner } from "@/components/ui/Spinner";
 
+// Dicebear avataaars that animate up from the bottom of the orange card
+const AVATAR_SEEDS = [
+  { seed: "Felix",  delay: 0,    scale: "h-20" },
+  { seed: "Lena",   delay: 0.12, scale: "h-24" },
+  { seed: "Marcus", delay: 0.24, scale: "h-28" },
+  { seed: "Zara",   delay: 0.36, scale: "h-24" },
+  { seed: "Kai",    delay: 0.48, scale: "h-20" },
+];
+
+function FloatingAvatars() {
+  return (
+    <div className="relative h-44 w-full overflow-hidden rounded-md bg-gradient-to-br from-accent to-[#9B320C]">
+      <style>{`
+        @keyframes avatarRise {
+          from { transform: translateY(115%); }
+          to   { transform: translateY(0);    }
+        }
+        .avatar-rise {
+          animation: avatarRise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+      `}</style>
+      <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center gap-0.5 px-3">
+        {AVATAR_SEEDS.map(({ seed, delay, scale }) => (
+          <img
+            key={seed}
+            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=transparent`}
+            className={`avatar-rise ${scale} w-auto flex-shrink-0`}
+            style={{ animationDelay: `${delay}s` }}
+            alt=""
+            aria-hidden="true"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CornerBrackets({
   variant = "accent",
 }: {
@@ -101,7 +138,7 @@ export default function LoginPage() {
               aria-hidden="true"
             />
 
-            <div className="relative h-32 w-full overflow-hidden rounded-md bg-gradient-to-br from-accent to-[#9B320C]" />
+            <FloatingAvatars />
 
             <div className="mt-4 flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft font-body text-xs font-semibold text-accent">
@@ -129,11 +166,11 @@ export default function LoginPage() {
 
         <div className="relative z-10 max-w-sm">
           <h1 className="font-display text-3xl font-semibold leading-tight text-foreground">
-            A social platform built for designers.
+            Join a community of designers.
           </h1>
           <p className="mt-3 font-body text-sm text-foreground-muted">
-            Share your work, connect with other creatives, get feedback,
-            and discover new career opportunities.
+            Share your work, get real feedback, and connect with creatives
+            who push each other forward.
           </p>
         </div>
       </section>
