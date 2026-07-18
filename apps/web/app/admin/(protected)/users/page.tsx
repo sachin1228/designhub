@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Spinner } from "@/components/ui/Spinner";
 
 interface Profile {
@@ -23,7 +23,6 @@ interface User {
 }
 
 export default function UsersPage() {
-  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -103,9 +102,14 @@ export default function UsersPage() {
                   className={`${idx < users.length - 1 ? "border-b border-white/5" : ""} hover:bg-surface-raised transition-colors`}
                 >
                   <td className="px-5 py-3.5">
-                    <p className={`font-body text-sm font-medium ${user.is_blocked ? "text-foreground-muted line-through" : "text-foreground"}`}>
+                    <Link
+                      href={`/admin/users/${user.id}`}
+                      className={`font-body text-sm font-medium hover:text-accent transition-colors ${
+                        user.is_blocked ? "text-foreground-muted line-through" : "text-foreground"
+                      }`}
+                    >
                       {user.name}
-                    </p>
+                    </Link>
                   </td>
                   <td className="px-5 py-3.5">
                     <p className="font-body text-sm text-foreground-muted">{user.email}</p>
@@ -132,12 +136,12 @@ export default function UsersPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <button
-                      onClick={() => router.push(`/admin/users/${user.id}`)}
+                    <Link
+                      href={`/admin/users/${user.id}`}
                       className="rounded-md border border-border px-3 py-1 font-body text-xs text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
                     >
                       View
-                    </button>
+                    </Link>
                   </td>
                 </tr>
               ))}
@@ -170,7 +174,6 @@ export default function UsersPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
