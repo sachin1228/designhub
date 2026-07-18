@@ -5,42 +5,6 @@ import { loginSchema } from "@/lib/validations";
 import { createSession, setSessionCookie } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/auth/rate-limit";
 
-/**
- * Resolve the admin bcrypt hash from environment variables.
- *
- * Next.js runs dotenv-expand after dotenv, which expands $VAR references even
- * inside single-quoted strings.  Bcrypt hashes start with $2a$/$2b$/$2y$ and
- * are therefore mangled before they reach the application.  Vercel bypasses
- * dotenv entirely, so production is unaffected.
- *
- * To sidestep this completely, store the hash base64-encoded in
- * ADMIN_PASSWORD_HASH — base64 contains no $ signs, so dotenv-expand leaves
- * it alone.  The raw ADMIN_PASSWORD fallback is kept for environments (e.g.
- * Vercel, Docker) that inject env vars without dotenv parsing.
- */
-function resolveAdminHash(): string | undefined {
-  // Preferred: base64-encoded hash — immune to dotenv-expand interpolation.
-  const b64 = process.env.ADMIN_PASSWORD_HASH;
-  if (b64) {
-    return Buffer.from(b64, "base64").toString("utf-8");
-  }
-
-  // Fallback: raw hash — works on Vercel/Docker; broken in local .env files.
-  const raw = process.env.ADMIN_PASSWORD;
-  if (raw?.startsWith("$2")) return raw;
-
-  if (raw) {
-    console.error(
-      "[auth] ADMIN_PASSWORD is malformed (dollar signs expanded by dotenv). " +
-      "Switch to ADMIN_PASSWORD_HASH instead — store the base64-encoded hash:\n" +
-      "  node -e \"console.log(Buffer.from(require('fs').readFileSync('/dev/stdin','utf8').trim()).toString('base64'))\" <<< '$2a$12$...'\n" +
-      "Or use the one-liner in .env.example."
-    );
-  }
-
-  return undefined;
-}
-
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for") ?? "unknown";
   const rl = rateLimit(`login:${ip}`, 10, 900); // 10 per 15 min
@@ -70,18 +34,17 @@ export async function POST(request: NextRequest) {
 
   // ── Admin short-circuit ──────────────────────────────────────────────
   const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPasswordHash = resolveAdminHash();
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (adminEmail && adminPasswordHash) {
-    if (
-      email.toLowerCase() === adminEmail.toLowerCase() &&
-      (await bcrypt.compare(password, adminPasswordHash))
-    ) {
-      const token = await createSession({ email: adminEmail, role: "admin" });
-      const response = NextResponse.json({ success: true, redirect: "/admin" });
-      setSessionCookie(response, token);
-      return response;
-    }
+  if (
+    adminEmail && adminPassword &&
+    email.toLowerCase() === adminEmail.toLowerCase() &&
+    password === adminPassword
+  ) {
+    const token = await createSession({ email: adminEmail, role: "admin" });
+    const response = NextResponse.json({ success: true, redirect: "/admin" });
+    setSessionCookie(response, token);
+    return response;
   }
 
   const db = createServiceClient();
