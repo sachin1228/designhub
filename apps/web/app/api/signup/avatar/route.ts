@@ -1,11 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
+import { sendWelcomeEmail } from "@/lib/email";
 
 const BUCKET = "profile-avatars";
 const MAX_BYTES = 3 * 1024 * 1024; // 3 MB (client compresses first, so this is a safety cap)
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const ALLOWED_SOURCES = ["dicebear", "boring-avatars", "upload"] as const;
+
+/** Mark invitation as used and send welcome email after successful signup completion. */
+async function finaliseSignup(userId: string): Promise<void> {
+  const db = createServiceClient();
+
+  // Fetch the user to get their application_id and name/email for the welcome email
+  const { data: user } = await db
+    .from("users")
+    .select("application_id, name, email")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!user?.application_id) return;
+
+  // Mark the invitation as used now that all 3 steps are complete
+  await db
+    .from("invitations")
+    .update({ used_at: new Date().toISOString() })
+    .eq("application_id", user.application_id)
+    .is("used_at", null);
+
+  // Send welcome email (non-blocking — don't fail the response if email fails)
+  try {
+    await sendWelcomeEmail(user.email, user.name);
+  } catch (emailErr) {
+    console.error("[signup/avatar] welcome email error:", emailErr);
+  }
+}
 
 export async function POST(request: NextRequest) {
   let session: Awaited<ReturnType<typeof requireSession>>;
@@ -70,6 +99,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to save avatar." }, { status: 500 });
     }
 
+    // All 3 steps done — mark invitation used and send welcome email
+    await finaliseSignup(session.userId!);
+
     return NextResponse.json({ avatar_url: publicUrl });
   }
 
@@ -103,6 +135,9 @@ export async function POST(request: NextRequest) {
     console.error("[signup/avatar] profile update error:", dbError);
     return NextResponse.json({ error: "Failed to save avatar." }, { status: 500 });
   }
+
+  // All 3 steps done — mark invitation used and send welcome email
+  await finaliseSignup(session.userId!);
 
   return NextResponse.json({ avatar_url });
 }
