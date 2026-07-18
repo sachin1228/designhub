@@ -145,15 +145,7 @@ export default function LoginPage() {
 
             <FloatingAvatars />
 
-            <div className="mt-3">
-              <p className="font-body text-[11px] font-medium text-accent uppercase tracking-wider">
-                Featured work
-              </p>
-              <p className="font-body text-sm font-semibold text-foreground mt-0.5">
-                Mobile Banking Redesign
-              </p>
-            </div>
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-4 flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft font-body text-xs font-semibold text-accent">
                 JL
               </div>
@@ -162,30 +154,27 @@ export default function LoginPage() {
                   Jordan Lee
                 </p>
                 <p className="font-mono text-[11px] text-foreground-muted">
-                  UI Designer · Open to opportunities
+                  Product Designer
                 </p>
               </div>
             </div>
-            <div className="mt-3 flex items-center justify-between">
-              <div className="flex items-center gap-4 font-mono text-[11px] text-foreground-muted">
-                <span className="flex items-center gap-1">
-                  <Eye size={12} /> 2.4k views
-                </span>
-                <span className="flex items-center gap-1">
-                  <Heart size={12} /> 312 likes
-                </span>
-              </div>
-              <span className="font-mono text-[10px] text-accent">14 comments</span>
+            <div className="mt-4 flex items-center gap-4 font-mono text-[11px] text-foreground-muted">
+              <span className="flex items-center gap-1">
+                <Eye size={12} /> 2.4k
+              </span>
+              <span className="flex items-center gap-1">
+                <Heart size={12} /> 312
+              </span>
             </div>
           </div>
         </div>
 
         <div className="relative z-10 max-w-sm">
           <h1 className="font-display text-3xl font-semibold leading-tight text-foreground">
-            Share work. Get feedback.<br />Grow your career.
+            Where designers connect, share, and grow.
           </h1>
           <p className="mt-3 font-body text-sm text-foreground-muted">
-            A social platform for designers — share your work, connect with other creatives, get feedback, join communities, and discover new career opportunities.
+            Showcase your work, get meaningful feedback, join communities, and discover real opportunities — built for UI/UX, product, and visual designers.
           </p>
         </div>
       </section>
@@ -201,7 +190,7 @@ export default function LoginPage() {
             <span className="text-accent">/</span>
           </span>
           <p className="font-body text-sm text-foreground-muted">
-            For designers. By designers.
+            For UI/UX, product &amp; social designers
           </p>
         </div>
 
