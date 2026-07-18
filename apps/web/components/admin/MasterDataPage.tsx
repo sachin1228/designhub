@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Pencil, Plus, ToggleLeft, ToggleRight, Check, X, Trash2, Search } from "lucide-react";
+import { Plus, Search, X, ChevronRight } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
+import { useRouter } from "next/navigation";
 
 export interface MasterItem {
   id: string;
@@ -15,9 +16,12 @@ interface MasterDataPageProps {
   title: string;
   entity: string;
   apiBase: string;
+  /** e.g. /admin/companies — used to navigate to the detail page */
+  basePath: string;
 }
 
-export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) {
+export function MasterDataPage({ title, entity, apiBase, basePath }: MasterDataPageProps) {
+  const router = useRouter();
   const [items, setItems] = useState<MasterItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"active" | "inactive">("active");
@@ -30,20 +34,9 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
   const [addError, setAddError] = useState<string | null>(null);
   const modalInputRef = useRef<HTMLInputElement>(null);
 
-  // Edit
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editLoading, setEditLoading] = useState(false);
-
-  // Delete
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // Always fetch all so tab switching doesn't need a refetch
       const res = await fetch(`${apiBase}?all=true`);
       if (!res.ok) { setItems([]); return; }
       const data = await res.json();
@@ -99,52 +92,6 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
     }
   }
 
-  async function handleEditSave(id: string) {
-    const trimmed = editName.trim();
-    if (!trimmed) return;
-    setEditLoading(true);
-    try {
-      const res = await fetch(`${apiBase}/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
-      });
-      if (res.ok) { setEditingId(null); load(); }
-    } finally {
-      setEditLoading(false);
-    }
-  }
-
-  async function handleToggle(item: MasterItem) {
-    await fetch(`${apiBase}/${item.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: !item.is_active }),
-    });
-    load();
-  }
-
-  async function handleDelete(item: MasterItem) {
-    setDeleteLoading(true);
-    setDeleteError(null);
-    try {
-      const res = await fetch(`${apiBase}/${item.id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) {
-        setDeleteError(data.error ?? "Failed to delete.");
-        setDeletingId(null);
-      } else {
-        setDeletingId(null);
-        load();
-      }
-    } catch {
-      setDeleteError("Network error. Please try again.");
-      setDeletingId(null);
-    } finally {
-      setDeleteLoading(false);
-    }
-  }
-
   return (
     <div>
       {/* Header */}
@@ -184,16 +131,6 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
         })}
       </div>
 
-      {/* Delete error */}
-      {deleteError && (
-        <div className="mb-3 flex items-start gap-2 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2">
-          <p className="font-body text-xs text-red-400 flex-1">{deleteError}</p>
-          <button onClick={() => setDeleteError(null)} className="text-red-400 hover:text-red-300">
-            <X size={12} />
-          </button>
-        </div>
-      )}
-
       {/* Search */}
       <div className="relative mb-3">
         <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted pointer-events-none" />
@@ -202,7 +139,7 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={`Search ${title.toLowerCase()}…`}
-          className="w-full rounded-lg border border-border bg-surface pl-8 pr-3 py-2 font-body text-xs text-foreground placeholder:text-foreground-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
+          className="w-full rounded-lg border border-border bg-surface pl-8 pr-8 py-2 font-body text-xs text-foreground placeholder:text-foreground-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
         />
         {search && (
           <button
@@ -241,82 +178,30 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
               <tr className="border-b border-border">
                 <th className="px-4 py-2 text-left font-body text-[10px] font-medium text-foreground-muted uppercase tracking-wider">Name</th>
                 <th className="px-4 py-2 text-left font-body text-[10px] font-medium text-foreground-muted uppercase tracking-wider">Status</th>
-                <th className="px-4 py-2 text-right font-body text-[10px] font-medium text-foreground-muted uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-2" />
               </tr>
             </thead>
             <tbody>
               {filtered.map((item, idx) => (
                 <tr
                   key={item.id}
-                  className={`${idx < filtered.length - 1 ? "border-b border-white/5" : ""} hover:bg-surface-raised transition-colors`}
+                  onClick={() => router.push(`${basePath}/${item.id}`)}
+                  className={`cursor-pointer ${idx < filtered.length - 1 ? "border-b border-white/5" : ""} hover:bg-surface-raised transition-colors`}
                 >
-                  {/* Name */}
-                  <td className="px-4 py-2">
-                    {editingId === item.id ? (
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="rounded border border-border bg-surface px-2 py-1 font-body text-xs text-foreground outline-none focus:border-accent flex-1"
-                          autoFocus
-                        />
-                        <button onClick={() => handleEditSave(item.id)} disabled={editLoading} className="text-green-400 hover:text-green-300 transition-colors" aria-label="Save">
-                          {editLoading ? <Spinner className="h-3 w-3" /> : <Check size={13} />}
-                        </button>
-                        <button onClick={() => setEditingId(null)} className="text-foreground-muted hover:text-foreground transition-colors" aria-label="Cancel">
-                          <X size={13} />
-                        </button>
-                      </div>
-                    ) : (
-                      <span className={`font-body text-xs ${item.is_active ? "text-foreground" : "text-foreground-muted line-through"}`}>
-                        {item.name}
-                      </span>
-                    )}
+                  <td className="px-4 py-2.5">
+                    <span className={`font-body text-xs ${item.is_active ? "text-foreground" : "text-foreground-muted line-through"}`}>
+                      {item.name}
+                    </span>
                   </td>
-
-                  {/* Status */}
-                  <td className="px-4 py-2">
-                    <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-mono text-[10px] font-medium ${item.is_active ? "bg-green-500/10 text-green-400" : "bg-surface-raised text-foreground-muted"}`}>
+                  <td className="px-4 py-2.5">
+                    <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-mono text-[10px] font-medium ${
+                      item.is_active ? "bg-green-500/10 text-green-400" : "bg-surface-raised text-foreground-muted"
+                    }`}>
                       {item.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
-
-                  {/* Actions */}
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-end gap-2.5">
-                      {deletingId === item.id ? (
-                        <div className="flex items-center gap-2">
-                          <span className="font-body text-[10px] text-foreground-muted whitespace-nowrap">Delete &quot;{item.name}&quot;?</span>
-                          <button
-                            onClick={() => handleDelete(item)}
-                            disabled={deleteLoading}
-                            className="rounded px-1.5 py-0.5 font-body text-[10px] font-medium text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60 whitespace-nowrap"
-                          >
-                            {deleteLoading ? "…" : "Yes, delete"}
-                          </button>
-                          <button onClick={() => setDeletingId(null)} className="text-foreground-muted hover:text-foreground" aria-label="Cancel">
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ) : editingId !== item.id && (
-                        <>
-                          <button onClick={() => { setEditingId(item.id); setEditName(item.name); }} className="text-foreground-muted hover:text-foreground transition-colors" title="Edit">
-                            <Pencil size={12} />
-                          </button>
-                          <button
-                            onClick={() => handleToggle(item)}
-                            className={`transition-colors ${item.is_active ? "text-foreground-muted hover:text-yellow-400" : "text-foreground-muted hover:text-green-400"}`}
-                            title={item.is_active ? "Deactivate" : "Activate"}
-                          >
-                            {item.is_active ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
-                          </button>
-                          <button onClick={() => setDeletingId(item.id)} className="text-foreground-muted hover:text-red-400 transition-colors" title="Delete">
-                            <Trash2 size={12} />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                  <td className="px-4 py-2.5 w-6">
+                    <ChevronRight size={13} className="text-foreground-muted" />
                   </td>
                 </tr>
               ))}
@@ -328,7 +213,8 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
       {/* Row count */}
       {!loading && tabItems.length > 0 && (
         <p className="mt-2 text-right font-body text-[10px] text-foreground-muted">
-          {search ? `${filtered.length} of ${tabItems.length}` : tabItems.length} {entity.toLowerCase()}{tabItems.length !== 1 ? "s" : ""}
+          {search ? `${filtered.length} of ${tabItems.length}` : tabItems.length}{" "}
+          {entity.toLowerCase()}{tabItems.length !== 1 ? "s" : ""}
         </p>
       )}
 

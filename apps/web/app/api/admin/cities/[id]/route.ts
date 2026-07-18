@@ -8,15 +8,31 @@ const patchSchema = masterDataSchema
   .extend({ is_active: z.boolean().optional() })
   .partial();
 
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try { await requireSession("admin"); } catch (e) { return e as Response; }
+
+  const { id } = await params;
+  const db = createServiceClient();
+
+  const { data, error } = await db
+    .from("cities")
+    .select("id, name, is_active, created_at, updated_at")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) return NextResponse.json({ error: "Failed to fetch city." }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "City not found." }, { status: 404 });
+  return NextResponse.json({ city: data });
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    await requireSession("admin");
-  } catch (e) {
-    return e as Response;
-  }
+  try { await requireSession("admin"); } catch (e) { return e as Response; }
 
   const { id } = await params;
   const parsed = patchSchema.safeParse(await request.json().catch(() => ({})));
@@ -41,7 +57,6 @@ export async function PATCH(
     }
     return NextResponse.json({ error: "Failed to update city." }, { status: 500 });
   }
-
   return NextResponse.json({ city: data });
 }
 
@@ -49,22 +64,13 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    await requireSession("admin");
-  } catch (e) {
-    return e as Response;
-  }
+  try { await requireSession("admin"); } catch (e) { return e as Response; }
 
   const { id } = await params;
   const db = createServiceClient();
-
-  const { error } = await db
-    .from("cities")
-    .delete()
-    .eq("id", id);
+  const { error } = await db.from("cities").delete().eq("id", id);
 
   if (error) {
-    // FK violation — city is linked to a designer profile
     if (error.code === "23503") {
       return NextResponse.json(
         { error: "Cannot delete: this city is linked to one or more designer profiles. Deactivate it instead." },
@@ -73,6 +79,5 @@ export async function DELETE(
     }
     return NextResponse.json({ error: "Failed to delete city." }, { status: 500 });
   }
-
   return NextResponse.json({ success: true });
 }
