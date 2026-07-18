@@ -6,7 +6,6 @@ import { useState } from "react";
 import { LayoutList, Building2, MapPin, Layers, Database, ChevronDown, Users } from "lucide-react";
 
 const MASTER_DATA = [
-  { href: "/admin/users",     label: "Users",            icon: Users    },
   { href: "/admin/companies", label: "Companies",        icon: Building2 },
   { href: "/admin/cities",    label: "Cities",           icon: MapPin    },
   { href: "/admin/sectors",   label: "Industry Sectors", icon: Layers    },
@@ -14,6 +13,8 @@ const MASTER_DATA = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+
+  const usersActive = pathname.startsWith("/admin/users");
 
   const masterDataActive = MASTER_DATA.some((item) =>
     pathname.startsWith(item.href)
@@ -35,6 +36,20 @@ export function AdminSidebar() {
       >
         <LayoutList size={16} className={pathname === "/admin" ? "text-accent" : ""} />
         Applications
+      </Link>
+
+      {/* Users */}
+      <Link
+        href="/admin/users"
+        prefetch={false}
+        className={`flex items-center gap-3 rounded-lg px-3 py-2 font-body text-sm transition-colors ${
+          usersActive
+            ? "bg-surface-raised text-foreground"
+            : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
+        }`}
+      >
+        <Users size={16} className={usersActive ? "text-accent" : ""} />
+        Users
       </Link>
 
       {/* Master Data accordion */}
