@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Pencil, Plus, ToggleLeft, ToggleRight, Check, X, Trash2 } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -23,30 +23,30 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(true);
 
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
   const [addName, setAddName] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
-  const [addSuccess, setAddSuccess] = useState<string | null>(null);
+  const modalInputRef = useRef<HTMLInputElement>(null);
 
+  // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editLoading, setEditLoading] = useState(false);
 
+  // Delete state
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${apiBase}?all=${showAll}`);
-      if (!res.ok) {
-        setItems([]);
-        return;
-      }
+      if (!res.ok) { setItems([]); return; }
       const data = await res.json();
-      // The key differs per entity type — try all possible keys
-      const rows: MasterItem[] =
-        data.companies ?? data.cities ?? data.sectors ?? [];
+      const rows: MasterItem[] = data.companies ?? data.cities ?? data.sectors ?? [];
       setItems(rows);
     } catch {
       setItems([]);
@@ -57,6 +57,25 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
 
   useEffect(() => { load(); }, [load]);
 
+  // Focus input when modal opens
+  useEffect(() => {
+    if (modalOpen) {
+      setTimeout(() => modalInputRef.current?.focus(), 50);
+    }
+  }, [modalOpen]);
+
+  function openModal() {
+    setAddName("");
+    setAddError(null);
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    setModalOpen(false);
+    setAddName("");
+    setAddError(null);
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = addName.trim();
@@ -66,7 +85,6 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
     }
     setAddLoading(true);
     setAddError(null);
-    setAddSuccess(null);
     try {
       const res = await fetch(apiBase, {
         method: "POST",
@@ -78,9 +96,7 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
         setAddError(data.error ?? "Failed to add.");
         return;
       }
-      setAddName("");
-      setAddSuccess(`${entity} added successfully.`);
-      setTimeout(() => setAddSuccess(null), 3000);
+      closeModal();
       load();
     } catch {
       setAddError("Network error. Please try again.");
@@ -99,10 +115,7 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: trimmed }),
       });
-      if (res.ok) {
-        setEditingId(null);
-        load();
-      }
+      if (res.ok) { setEditingId(null); load(); }
     } finally {
       setEditLoading(false);
     }
@@ -119,85 +132,80 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
 
   async function handleDelete(item: MasterItem) {
     setDeleteLoading(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`${apiBase}/${item.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
-        setAddError(data.error ?? "Failed to delete.");
-        setTimeout(() => setAddError(null), 4000);
+        setDeleteError(data.error ?? "Failed to delete.");
+        setDeletingId(null);
       } else {
+        setDeletingId(null);
         load();
       }
     } catch {
-      setAddError("Network error. Please try again.");
-      setTimeout(() => setAddError(null), 4000);
+      setDeleteError("Network error. Please try again.");
+      setDeletingId(null);
     } finally {
       setDeleteLoading(false);
-      setDeletingId(null);
     }
   }
 
   const inputClass =
-    "rounded-md border border-border bg-surface px-3 py-2 font-body text-sm text-foreground outline-none transition-colors placeholder:text-foreground-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/20";
+    "w-full rounded-lg border border-border bg-surface px-3 py-2.5 font-body text-sm text-foreground outline-none transition-colors placeholder:text-foreground-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/20";
 
   return (
     <div>
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl font-semibold text-foreground">
-          {title}
-        </h1>
-        <label className="flex items-center gap-2 font-body text-sm text-foreground-muted cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={showAll}
-            onChange={(e) => setShowAll(e.target.checked)}
-            className="accent-accent"
-          />
-          Show inactive
-        </label>
+        <h1 className="font-display text-2xl font-semibold text-foreground">{title}</h1>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 font-body text-sm text-foreground-muted cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showAll}
+              onChange={(e) => setShowAll(e.target.checked)}
+              className="accent-accent"
+            />
+            Show inactive
+          </label>
+          <button
+            onClick={openModal}
+            className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+          >
+            <Plus size={16} />
+            Add {entity}
+          </button>
+        </div>
       </div>
 
-      {/* Add form */}
-      <form onSubmit={handleAdd} className="mb-2 flex gap-3">
-        <input
-          type="text"
-          value={addName}
-          onChange={(e) => { setAddName(e.target.value); setAddError(null); setAddSuccess(null); }}
-          placeholder={`New ${entity} name`}
-          className={`${inputClass} flex-1`}
-        />
-        <button
-          type="submit"
-          disabled={addLoading}
-          className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-60"
-        >
-          {addLoading ? <Spinner className="h-4 w-4 text-white" /> : <Plus size={16} />}
-          Add
-        </button>
-      </form>
-
-      {/* Feedback messages */}
-      {addError && (
-        <p className="mb-4 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 font-body text-sm text-red-400">
-          {addError}
-        </p>
-      )}
-      {addSuccess && (
-        <p className="mb-4 rounded-md border border-green-500/20 bg-green-500/10 px-3 py-2 font-body text-sm text-green-400">
-          {addSuccess}
-        </p>
+      {/* Delete error banner */}
+      {deleteError && (
+        <div className="mb-4 flex items-start gap-3 rounded-md border border-red-500/20 bg-red-500/10 px-4 py-3">
+          <p className="font-body text-sm text-red-400 flex-1">{deleteError}</p>
+          <button onClick={() => setDeleteError(null)} className="text-red-400 hover:text-red-300 mt-0.5">
+            <X size={14} />
+          </button>
+        </div>
       )}
 
       {/* Table */}
-      <div className={`rounded-xl border border-border bg-surface overflow-hidden ${addError || addSuccess ? "" : "mt-4"}`}>
+      <div className="rounded-xl border border-border bg-surface overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-12">
             <Spinner className="h-5 w-5 text-foreground-muted" />
           </div>
         ) : items.length === 0 ? (
-          <p className="py-12 text-center font-body text-sm text-foreground-muted">
-            No {entity.toLowerCase()}s yet.
-          </p>
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <p className="font-body text-sm text-foreground-muted">No {entity.toLowerCase()}s yet.</p>
+            <button
+              onClick={openModal}
+              className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+            >
+              <Plus size={15} />
+              Add your first {entity.toLowerCase()}
+            </button>
+          </div>
         ) : (
           <table className="w-full">
             <thead>
@@ -220,7 +228,7 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
                           type="text"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
-                          className={`${inputClass} flex-1`}
+                          className="rounded-md border border-border bg-surface px-3 py-2 font-body text-sm text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 flex-1"
                           autoFocus
                         />
                         <button
@@ -252,7 +260,25 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-3">
-                      {editingId !== item.id && deletingId !== item.id && (
+                      {deletingId === item.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-body text-xs text-foreground-muted whitespace-nowrap">Delete &quot;{item.name}&quot;?</span>
+                          <button
+                            onClick={() => handleDelete(item)}
+                            disabled={deleteLoading}
+                            className="rounded px-2 py-0.5 font-body text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60 whitespace-nowrap"
+                          >
+                            {deleteLoading ? "Deleting…" : "Yes, delete"}
+                          </button>
+                          <button
+                            onClick={() => setDeletingId(null)}
+                            className="text-foreground-muted hover:text-foreground transition-colors"
+                            aria-label="Cancel delete"
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      ) : editingId !== item.id && (
                         <>
                           <button
                             onClick={() => { setEditingId(item.id); setEditName(item.name); }}
@@ -280,27 +306,6 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
                           </button>
                         </>
                       )}
-
-                      {/* Inline delete confirmation */}
-                      {deletingId === item.id && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-body text-xs text-foreground-muted">Delete &quot;{item.name}&quot;?</span>
-                          <button
-                            onClick={() => handleDelete(item)}
-                            disabled={deleteLoading}
-                            className="rounded px-2 py-0.5 font-body text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60"
-                          >
-                            {deleteLoading ? "Deleting…" : "Yes, delete"}
-                          </button>
-                          <button
-                            onClick={() => setDeletingId(null)}
-                            className="text-foreground-muted hover:text-foreground transition-colors"
-                            aria-label="Cancel delete"
-                          >
-                            <X size={15} />
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </td>
                 </tr>
@@ -309,6 +314,70 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
           </table>
         )}
       </div>
+
+      {/* Add Modal */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+          {/* Dialog */}
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-display text-lg font-semibold text-foreground">
+                Add {entity}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="text-foreground-muted hover:text-foreground transition-colors"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleAdd}>
+              <label className="block font-body text-sm font-medium text-foreground-muted mb-1.5">
+                {entity} name
+              </label>
+              <input
+                ref={modalInputRef}
+                type="text"
+                value={addName}
+                onChange={(e) => { setAddName(e.target.value); setAddError(null); }}
+                placeholder={`e.g. ${entity === "Company" ? "Figma" : entity === "City" ? "Pune" : "SaaS & Software"}`}
+                className={inputClass}
+              />
+              {addError && (
+                <p className="mt-2 font-body text-sm text-red-400">{addError}</p>
+              )}
+
+              <div className="mt-5 flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="rounded-md border border-border px-4 py-2 font-body text-sm text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addLoading}
+                  className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-body text-sm font-medium text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-60"
+                >
+                  {addLoading ? <Spinner className="h-4 w-4 text-white" /> : <Plus size={15} />}
+                  Add {entity}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
