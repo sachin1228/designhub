@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+type ResumeStep = 2 | 3;
+
+/** Check how far through signup the user for this application has progressed. */
+async function getResumeStep(
+  db: ReturnType<typeof import("@/lib/supabase/service").createServiceClient>,
+  applicationId: string
+): Promise<ResumeStep | "complete" | "none"> {
+  const { data: user } = await db
+    .from("users")
+    .select("id")
+    .eq("application_id", applicationId)
+    .maybeSingle();
+
+  if (!user) return "none";
+
+  const { data: profile } = await db
+    .from("designer_profiles")
+    .select("id, avatar_url")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!profile) return 2; // User created, profile not saved yet
+  if (!profile.avatar_url) return 3; // Profile saved, avatar not set yet
+  return "complete"; // All 3 steps done
+}
+
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token");
   if (!token) {
@@ -25,65 +51,53 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // If the invitation is marked used, check whether signup was actually completed.
-  // If a user exists for this application but hasn't finished all 3 steps,
-  // allow them to resume rather than showing "link already used".
-  if (invitation.used_at) {
-    const { data: user } = await db
-      .from("users")
-      .select("id")
-      .eq("application_id", invitation.application_id)
-      .maybeSingle();
-
-    if (user) {
-      const { data: profile } = await db
-        .from("designer_profiles")
-        .select("id, avatar_url")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!profile) {
-        // User created (step 1 done) but profile not saved yet — resume at step 2
-        const appsRaw = invitation.applications as unknown;
-        const app = (Array.isArray(appsRaw) ? appsRaw[0] : appsRaw) as
-          | { name: string; email: string }
-          | null;
-        return NextResponse.json({
-          valid: true,
-          resumeStep: 2,
-          applicationId: invitation.application_id,
-          applicantName: app?.name ?? "",
-          applicantEmail: app?.email ?? "",
-        });
-      }
-
-      if (!profile.avatar_url) {
-        // Profile saved (step 2 done) but avatar not set yet — resume at step 3
-        const appsRaw = invitation.applications as unknown;
-        const app = (Array.isArray(appsRaw) ? appsRaw[0] : appsRaw) as
-          | { name: string; email: string }
-          | null;
-        return NextResponse.json({
-          valid: true,
-          resumeStep: 3,
-          applicationId: invitation.application_id,
-          applicantName: app?.name ?? "",
-          applicantEmail: app?.email ?? "",
-        });
-      }
-    }
-
-    // Signup fully completed — link is truly used
-    return NextResponse.json(
-      { valid: false, error: "This invitation link has already been used." },
-      { status: 410 }
-    );
-  }
-
   const appsRaw = invitation.applications as unknown;
   const app = (Array.isArray(appsRaw) ? appsRaw[0] : appsRaw) as
     | { name: string; email: string }
     | null;
+
+  if (invitation.used_at) {
+    // used_at is set — could be truly complete, or could be a stale state.
+    const resumeStep = await getResumeStep(db, invitation.application_id);
+
+    if (resumeStep === "complete") {
+      return NextResponse.json(
+        { valid: false, error: "This invitation link has already been used." },
+        { status: 410 }
+      );
+    }
+
+    if (resumeStep === "none") {
+      // used_at is set but no user exists — genuinely invalid
+      return NextResponse.json(
+        { valid: false, error: "This invitation link has already been used." },
+        { status: 410 }
+      );
+    }
+
+    // Signup is in progress — allow the user to resume
+    return NextResponse.json({
+      valid: true,
+      resumeStep,
+      applicationId: invitation.application_id,
+      applicantName: app?.name ?? "",
+      applicantEmail: app?.email ?? "",
+    });
+  }
+
+  // used_at is null — check whether a signup is already in progress (mid-flow).
+  // This lets us show the correct step after a page refresh before step 3 completes.
+  const resumeStep = await getResumeStep(db, invitation.application_id);
+
+  if (resumeStep !== "none" && resumeStep !== "complete") {
+    return NextResponse.json({
+      valid: true,
+      resumeStep,
+      applicationId: invitation.application_id,
+      applicantName: app?.name ?? "",
+      applicantEmail: app?.email ?? "",
+    });
+  }
 
   return NextResponse.json({
     valid: true,

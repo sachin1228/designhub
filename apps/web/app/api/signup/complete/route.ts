@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
   const db = createServiceClient();
 
-  // Validate invitation token (not expired; used_at is checked separately below)
+  // Validate invitation token (must exist and not be expired)
   const { data: invitation } = await db
     .from("invitations")
     .select("id, expires_at, used_at, application_id")
@@ -60,24 +60,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // If the invitation was already used, only allow resuming an incomplete signup.
-  // Check whether a user already exists for this application.
-  if (invitation.used_at) {
-    const { data: existingUser } = await db
-      .from("users")
-      .select("id, name, email, password_hash")
-      .eq("application_id", invitation.application_id)
-      .maybeSingle();
+  // Always check by application_id first — this is the single-account-per-invite
+  // guard and also handles resuming an incomplete signup (regardless of used_at).
+  const { data: existingUser } = await db
+    .from("users")
+    .select("id, name, email, password_hash")
+    .eq("application_id", invitation.application_id)
+    .maybeSingle();
 
-    if (!existingUser) {
-      // Link is used but no user found — genuinely invalid
-      return NextResponse.json(
-        { error: "This invitation link has already been used." },
-        { status: 400 }
-      );
-    }
-
-    // User exists — verify password so they can resume their incomplete signup
+  if (existingUser) {
+    // A user already exists for this application — the invite was started before.
+    // Verify their password so they can restore the session and continue from step 2/3.
     const passwordMatch = await bcrypt.compare(password, existingUser.password_hash);
     if (!passwordMatch) {
       return NextResponse.json(
@@ -102,7 +95,15 @@ export async function POST(request: NextRequest) {
     return response;
   }
 
-  // Fresh signup — check that no account with this email already exists
+  // If used_at is set and no user exists, the link was genuinely fully used.
+  if (invitation.used_at) {
+    return NextResponse.json(
+      { error: "This invitation link has already been used." },
+      { status: 400 }
+    );
+  }
+
+  // Fresh signup — additionally guard against the same email from a different invite.
   const { data: existingByEmail } = await db
     .from("users")
     .select("id")
@@ -118,8 +119,8 @@ export async function POST(request: NextRequest) {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // Create the user — DO NOT mark the invitation as used_at yet.
-  // used_at is set only after all 3 steps are complete (step 3 / avatar route).
+  // Create the user — DO NOT mark used_at yet.
+  // used_at is set only after all 3 steps complete (avatar route).
   const { data: user, error: userError } = await db
     .from("users")
     .insert({
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Start a session so Step 2 and Step 3 can use requireSession
+  // Issue a session so steps 2 and 3 can use requireSession.
   const sessionToken = await createSession({
     userId: user.id,
     email: user.email,

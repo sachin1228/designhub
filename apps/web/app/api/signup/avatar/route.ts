@@ -8,11 +8,15 @@ const MAX_BYTES = 3 * 1024 * 1024; // 3 MB (client compresses first, so this is 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const ALLOWED_SOURCES = ["dicebear", "boring-avatars", "upload"] as const;
 
-/** Mark invitation as used and send welcome email after successful signup completion. */
+/**
+ * Mark the invitation as used (only on first completion) and send a welcome
+ * email. Using `is("used_at", null)` in the update ensures idempotency —
+ * the email is only sent when used_at transitions from null to a value.
+ */
 async function finaliseSignup(userId: string): Promise<void> {
   const db = createServiceClient();
 
-  // Fetch the user to get their application_id and name/email for the welcome email
+  // Fetch user for application_id + name/email
   const { data: user } = await db
     .from("users")
     .select("application_id, name, email")
@@ -21,18 +25,21 @@ async function finaliseSignup(userId: string): Promise<void> {
 
   if (!user?.application_id) return;
 
-  // Mark the invitation as used now that all 3 steps are complete
-  await db
+  // Atomic: only update if used_at is still null (first-time completion guard)
+  const { data: updated } = await db
     .from("invitations")
     .update({ used_at: new Date().toISOString() })
     .eq("application_id", user.application_id)
-    .is("used_at", null);
+    .is("used_at", null)
+    .select("id");
 
-  // Send welcome email (non-blocking — don't fail the response if email fails)
-  try {
-    await sendWelcomeEmail(user.email, user.name);
-  } catch (emailErr) {
-    console.error("[signup/avatar] welcome email error:", emailErr);
+  // Send welcome email only when we were the ones to set used_at
+  if (updated && updated.length > 0) {
+    try {
+      await sendWelcomeEmail(user.email, user.name);
+    } catch (emailErr) {
+      console.error("[signup/avatar] welcome email error:", emailErr);
+    }
   }
 }
 
@@ -99,13 +106,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to save avatar." }, { status: 500 });
     }
 
-    // All 3 steps done — mark invitation used and send welcome email
+    // All 3 steps done — mark invitation used (idempotent) and send welcome email
     await finaliseSignup(session.userId!);
 
     return NextResponse.json({ avatar_url: publicUrl });
   }
 
-  // ── Avatar URL selection path (DiceBear / Boring Avatars) ──
+  // ── Avatar URL selection path (DiceBear / Boring Avatars / Robohash) ──
   let body: unknown;
   try {
     body = await request.json();
@@ -136,7 +143,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to save avatar." }, { status: 500 });
   }
 
-  // All 3 steps done — mark invitation used and send welcome email
+  // All 3 steps done — mark invitation used (idempotent) and send welcome email
   await finaliseSignup(session.userId!);
 
   return NextResponse.json({ avatar_url });
