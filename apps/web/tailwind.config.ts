@@ -28,12 +28,9 @@ const config: Config = {
         "foreground-subtle":  "var(--color-foreground-subtle)",
 
         // Accent (draft/ orange brand)
-        // Function form lets opacity modifiers work (e.g. ring-accent/20, bg-accent/10)
-        // by injecting rgba(var(--color-accent-rgb), opacityValue) when needed.
-        accent: ({ opacityValue }: { opacityValue?: string }) =>
-          opacityValue !== undefined
-            ? `rgba(var(--color-accent-rgb), ${opacityValue})`
-            : "var(--color-accent)",
+        // <alpha-value> is Tailwind's placeholder — replaced with the opacity
+        // fraction at build time so ring-accent/20, bg-accent/10, etc. work.
+        accent: "rgb(var(--color-accent-rgb) / <alpha-value>)",
         "accent-hover":       "var(--color-accent-hover)",
         "accent-soft":        "var(--color-accent-soft)",
         "accent-foreground":  "var(--color-accent-foreground)",

@@ -29,7 +29,7 @@
 
   /* Accent — draft/ orange brand */
   --color-accent:            #FF5E1F;
-  --color-accent-rgb:        255, 94, 31;   /* RGB channels for opacity modifiers */
+  --color-accent-rgb:        255 94 31;     /* RGB channels for opacity modifiers (space-sep for modern rgb()) */
   --color-accent-hover:      #E65012;
   --color-accent-soft:       #FFE9DD;
   --color-accent-foreground: #FFFFFF;
@@ -85,7 +85,7 @@
 
     /* Accent — slightly brighter for dark-mode legibility */
     --color-accent:            #ff5e1f;
-    --color-accent-rgb:        255, 94, 31;   /* RGB channels for opacity modifiers */
+    --color-accent-rgb:        255 94 31;     /* RGB channels for opacity modifiers (space-sep for modern rgb()) */
     --color-accent-hover:      #E65012;
     --color-accent-soft:       #262220;
     --color-accent-foreground: #FFFFFF;
