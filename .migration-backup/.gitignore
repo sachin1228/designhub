@@ -1,0 +1,123 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+.pnp
+.pnp.js
+
+# =========================
+# Build output
+# =========================
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+
+# =========================
+# Environment files
+# =========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Keep example env
+!.env.example
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# Cache
+# =========================
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# =========================
+# Vercel
+# =========================
+.vercel/
+
+# =========================
+# Supabase
+# =========================
+supabase/.temp/
+supabase/.branches/
+
+# =========================
+# Testing
+# =========================
+playwright-report/
+test-results/
+coverage/
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+*.iml
+
+# Keep shared VS Code settings if desired
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# =========================
+# Temporary files
+# =========================
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# =========================
+# Package manager
+# =========================
+.npm/
+.pnpm-store/
+
+# =========================
+# Misc
+# =========================
+*.pid
+*.seed
+
+# =========================
+# Generated uploads
+# =========================
+uploads/
+storage/
+public/uploads/
+
+# =========================
+# Local SQLite databases
+# =========================
+*.sqlite
+*.sqlite3
+*.db
