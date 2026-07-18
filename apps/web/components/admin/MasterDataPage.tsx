@@ -145,8 +145,8 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
         />
         <button
           type="submit"
-          disabled={addLoading || !addName.trim()}
-          className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-60 disabled:cursor-not-allowed"
+          disabled={addLoading}
+          className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-60"
         >
           {addLoading ? <Spinner className="h-4 w-4 text-white" /> : <Plus size={16} />}
           Add
