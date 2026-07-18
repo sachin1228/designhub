@@ -13,16 +13,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try { await requireSession("admin"); } catch (e) { return e as Response; }
-
   const { id } = await params;
   const db = createServiceClient();
-
   const { data, error } = await db
     .from("companies")
-    .select("id, name, is_active, created_at, updated_at")
+    .select("id, name, image_url, is_active, created_at, updated_at")
     .eq("id", id)
     .maybeSingle();
-
   if (error) return NextResponse.json({ error: "Failed to fetch company." }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Company not found." }, { status: 404 });
   return NextResponse.json({ company: data });
@@ -33,7 +30,6 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try { await requireSession("admin"); } catch (e) { return e as Response; }
-
   const { id } = await params;
   const parsed = patchSchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
@@ -42,7 +38,6 @@ export async function PATCH(
       { status: 422 }
     );
   }
-
   const db = createServiceClient();
   const { data, error } = await db
     .from("companies")
@@ -50,7 +45,6 @@ export async function PATCH(
     .eq("id", id)
     .select()
     .single();
-
   if (error) {
     if (error.code === "23505") {
       return NextResponse.json({ error: "A company with this name already exists." }, { status: 409 });
@@ -65,11 +59,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try { await requireSession("admin"); } catch (e) { return e as Response; }
-
   const { id } = await params;
   const db = createServiceClient();
   const { error } = await db.from("companies").delete().eq("id", id);
-
   if (error) {
     if (error.code === "23503") {
       return NextResponse.json(
