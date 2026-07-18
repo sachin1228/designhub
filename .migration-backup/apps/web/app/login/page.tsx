@@ -129,11 +129,11 @@ export default function LoginPage() {
 
         <div className="relative z-10 max-w-sm">
           <h1 className="font-display text-3xl font-semibold leading-tight text-foreground">
-            Where design work finds its audience.
+            A social platform built for designers.
           </h1>
           <p className="mt-3 font-body text-sm text-foreground-muted">
-            Portfolios, feedback, and real opportunities — for UI/UX,
-            product, and social media designers.
+            Share your work, connect with other creatives, get feedback,
+            and discover new career opportunities.
           </p>
         </div>
       </section>
@@ -149,7 +149,7 @@ export default function LoginPage() {
             <span className="text-accent">/</span>
           </span>
           <p className="font-body text-sm text-foreground-muted">
-            For UI/UX, product &amp; social designers
+            Share work. Connect. Grow your career.
           </p>
         </div>
 
@@ -161,7 +161,7 @@ export default function LoginPage() {
               Welcome back
             </h2>
             <p className="relative mt-1 font-body text-sm text-foreground-muted">
-              Log in to keep working on your portfolio.
+              Log in to connect with your creative community.
             </p>
 
             <form className="relative mt-7 flex flex-col gap-5" onSubmit={handleLogin}>
