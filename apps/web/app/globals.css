@@ -14,13 +14,13 @@
 :root {
   color-scheme: light dark;
 
-  /* Backgrounds */
-  --color-background:        #FFFFFF;
-  --color-background-subtle: #FAFAFA;
+  /* Backgrounds — light gray so white surfaces stand out */
+  --color-background:        #F2F2F4;
+  --color-background-subtle: #EBEBED;
 
-  /* Surfaces */
+  /* Surfaces — white cards/sidebar/topbar pop against the gray page */
   --color-surface:           #FFFFFF;
-  --color-surface-raised:    #F5F5F5;
+  --color-surface-raised:    #EBEBED;
 
   /* Foreground / text */
   --color-foreground:        #171717;
@@ -29,16 +29,17 @@
 
   /* Accent — draft/ orange brand */
   --color-accent:            #FF5E1F;
+  --color-accent-rgb:        255 94 31;     /* RGB channels for opacity modifiers (space-sep for modern rgb()) */
   --color-accent-hover:      #E65012;
   --color-accent-soft:       #FFE9DD;
   --color-accent-foreground: #FFFFFF;
 
   /* Borders */
-  --color-border:            #ECECEC;
-  --color-border-subtle:     #F5F5F5;
+  --color-border:            #E0E0E2;
+  --color-border-subtle:     #EBEBED;
 
   /* Brand signal */
-  --color-signal:            #C8FF5B;
+  --color-signal:            #1289ff;
 
   /* Always-dark overlay panel (brand canvas side) */
   --color-overlay:            #161413;
@@ -84,6 +85,7 @@
 
     /* Accent — slightly brighter for dark-mode legibility */
     --color-accent:            #ff5e1f;
+    --color-accent-rgb:        255 94 31;     /* RGB channels for opacity modifiers (space-sep for modern rgb()) */
     --color-accent-hover:      #E65012;
     --color-accent-soft:       #262220;
     --color-accent-foreground: #FFFFFF;
@@ -93,7 +95,7 @@
     --color-border-subtle:     #262220;
 
     /* Signal stays vivid */
-    --color-signal:            #C8FF5B;
+    --color-signal:            #1289ff;
 
     /* Overlay panel — same in both modes (always dark) */
     --color-overlay:            #161413;
@@ -149,6 +151,14 @@ body {
       linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px);
     background-size: 14px 14px;
   }
+}
+
+/* ─── Suppress browser's native blue focus ring on form elements ────── */
+/* Components apply the brand orange ring via Tailwind focus:ring-accent/20 */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
