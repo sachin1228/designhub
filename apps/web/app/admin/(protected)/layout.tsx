@@ -16,7 +16,7 @@ export default async function AdminProtectedLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-overlay text-overlay-foreground">
+    <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 flex w-56 flex-col border-r border-overlay-elevated bg-overlay-raised">
         {/* Brand */}
