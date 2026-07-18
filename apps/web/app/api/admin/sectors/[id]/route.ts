@@ -57,11 +57,22 @@ export async function DELETE(
 
   const { id } = await params;
   const db = createServiceClient();
+
   const { error } = await db
     .from("design_sectors")
-    .update({ is_active: false })
+    .delete()
     .eq("id", id);
 
-  if (error) return NextResponse.json({ error: "Failed to deactivate sector." }, { status: 500 });
+  if (error) {
+    // FK violation — sector is linked to a designer profile
+    if (error.code === "23503") {
+      return NextResponse.json(
+        { error: "Cannot delete: this sector is linked to one or more designer profiles. Deactivate it instead." },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: "Failed to delete sector." }, { status: 500 });
+  }
+
   return NextResponse.json({ success: true });
 }

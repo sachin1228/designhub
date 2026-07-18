@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Pencil, Plus, ToggleLeft, ToggleRight, Check, X } from "lucide-react";
+import { Pencil, Plus, ToggleLeft, ToggleRight, Check, X, Trash2 } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 
 export interface MasterItem {
@@ -31,6 +31,9 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editLoading, setEditLoading] = useState(false);
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,6 +115,26 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
       body: JSON.stringify({ is_active: !item.is_active }),
     });
     load();
+  }
+
+  async function handleDelete(item: MasterItem) {
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${apiBase}/${item.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        setAddError(data.error ?? "Failed to delete.");
+        setTimeout(() => setAddError(null), 4000);
+      } else {
+        load();
+      }
+    } catch {
+      setAddError("Network error. Please try again.");
+      setTimeout(() => setAddError(null), 4000);
+    } finally {
+      setDeleteLoading(false);
+      setDeletingId(null);
+    }
   }
 
   const inputClass =
@@ -229,23 +252,55 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-3">
-                      {editingId !== item.id && (
-                        <button
-                          onClick={() => { setEditingId(item.id); setEditName(item.name); }}
-                          className="text-foreground-muted hover:text-foreground transition-colors"
-                          aria-label="Edit"
-                        >
-                          <Pencil size={15} />
-                        </button>
+                      {editingId !== item.id && deletingId !== item.id && (
+                        <>
+                          <button
+                            onClick={() => { setEditingId(item.id); setEditName(item.name); }}
+                            className="text-foreground-muted hover:text-foreground transition-colors"
+                            aria-label="Edit"
+                            title="Edit"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleToggle(item)}
+                            className={`transition-colors ${item.is_active ? "text-foreground-muted hover:text-yellow-400" : "text-foreground-muted hover:text-green-400"}`}
+                            aria-label={item.is_active ? "Deactivate" : "Activate"}
+                            title={item.is_active ? "Deactivate" : "Activate"}
+                          >
+                            {item.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                          </button>
+                          <button
+                            onClick={() => setDeletingId(item.id)}
+                            className="text-foreground-muted hover:text-red-400 transition-colors"
+                            aria-label="Delete"
+                            title="Delete"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </>
                       )}
-                      <button
-                        onClick={() => handleToggle(item)}
-                        className={`transition-colors ${item.is_active ? "text-foreground-muted hover:text-red-400" : "text-foreground-muted hover:text-green-400"}`}
-                        aria-label={item.is_active ? "Deactivate" : "Activate"}
-                        title={item.is_active ? "Deactivate" : "Activate"}
-                      >
-                        {item.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                      </button>
+
+                      {/* Inline delete confirmation */}
+                      {deletingId === item.id && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-body text-xs text-foreground-muted">Delete &quot;{item.name}&quot;?</span>
+                          <button
+                            onClick={() => handleDelete(item)}
+                            disabled={deleteLoading}
+                            className="rounded px-2 py-0.5 font-body text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60"
+                          >
+                            {deleteLoading ? "Deleting…" : "Yes, delete"}
+                          </button>
+                          <button
+                            onClick={() => setDeletingId(null)}
+                            className="text-foreground-muted hover:text-foreground transition-colors"
+                            aria-label="Cancel delete"
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>

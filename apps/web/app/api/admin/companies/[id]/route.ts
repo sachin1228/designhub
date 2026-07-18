@@ -58,14 +58,20 @@ export async function DELETE(
   const { id } = await params;
   const db = createServiceClient();
 
-  // Soft-delete: set is_active = false
   const { error } = await db
     .from("companies")
-    .update({ is_active: false })
+    .delete()
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: "Failed to deactivate company." }, { status: 500 });
+    // FK violation — company is linked to a designer profile
+    if (error.code === "23503") {
+      return NextResponse.json(
+        { error: "Cannot delete: this company is linked to one or more designer profiles. Deactivate it instead." },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: "Failed to delete company." }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

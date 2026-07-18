@@ -57,11 +57,22 @@ export async function DELETE(
 
   const { id } = await params;
   const db = createServiceClient();
+
   const { error } = await db
     .from("cities")
-    .update({ is_active: false })
+    .delete()
     .eq("id", id);
 
-  if (error) return NextResponse.json({ error: "Failed to deactivate city." }, { status: 500 });
+  if (error) {
+    // FK violation — city is linked to a designer profile
+    if (error.code === "23503") {
+      return NextResponse.json(
+        { error: "Cannot delete: this city is linked to one or more designer profiles. Deactivate it instead." },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: "Failed to delete city." }, { status: 500 });
+  }
+
   return NextResponse.json({ success: true });
 }
