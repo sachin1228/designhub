@@ -133,6 +133,36 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (userError) {
+    // Unique-violation on application_id (code 23505) means a concurrent
+    // request just created the user. Fetch that row and resume the session.
+    if ((userError as { code?: string }).code === "23505") {
+      const { data: raceUser } = await db
+        .from("users")
+        .select("id, name, email, password_hash")
+        .eq("application_id", invitation.application_id)
+        .maybeSingle();
+
+      if (raceUser) {
+        const match = await bcrypt.compare(password, raceUser.password_hash);
+        if (!match) {
+          return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+        }
+        const sessionToken = await createSession({
+          userId: raceUser.id,
+          email: raceUser.email,
+          role: "user",
+        });
+        const resp = NextResponse.json({
+          success: true,
+          userId: raceUser.id,
+          name: raceUser.name,
+          resumed: true,
+        });
+        setSessionCookie(resp, sessionToken);
+        return resp;
+      }
+    }
+
     console.error("[signup/complete] user insert error:", userError);
     return NextResponse.json(
       { error: "Failed to create account. Please try again." },
