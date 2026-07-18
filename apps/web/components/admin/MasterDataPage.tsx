@@ -26,6 +26,7 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
   const [addName, setAddName] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [addSuccess, setAddSuccess] = useState<string | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -35,13 +36,17 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
     setLoading(true);
     try {
       const res = await fetch(`${apiBase}?all=${showAll}`);
+      if (!res.ok) {
+        setItems([]);
+        return;
+      }
       const data = await res.json();
       // The key differs per entity type — try all possible keys
       const rows: MasterItem[] =
         data.companies ?? data.cities ?? data.sectors ?? [];
       setItems(rows);
     } catch {
-      // ignore
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -51,13 +56,19 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
+    const trimmed = addName.trim();
+    if (!trimmed) {
+      setAddError("Name cannot be empty.");
+      return;
+    }
     setAddLoading(true);
     setAddError(null);
+    setAddSuccess(null);
     try {
       const res = await fetch(apiBase, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: addName }),
+        body: JSON.stringify({ name: trimmed }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -65,21 +76,25 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
         return;
       }
       setAddName("");
+      setAddSuccess(`${entity} added successfully.`);
+      setTimeout(() => setAddSuccess(null), 3000);
       load();
     } catch {
-      setAddError("Network error.");
+      setAddError("Network error. Please try again.");
     } finally {
       setAddLoading(false);
     }
   }
 
   async function handleEditSave(id: string) {
+    const trimmed = editName.trim();
+    if (!trimmed) return;
     setEditLoading(true);
     try {
       const res = await fetch(`${apiBase}/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName }),
+        body: JSON.stringify({ name: trimmed }),
       });
       if (res.ok) {
         setEditingId(null);
@@ -120,30 +135,38 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
       </div>
 
       {/* Add form */}
-      <form onSubmit={handleAdd} className="mb-6 flex gap-3">
+      <form onSubmit={handleAdd} className="mb-2 flex gap-3">
         <input
           type="text"
           value={addName}
-          onChange={(e) => { setAddName(e.target.value); setAddError(null); }}
+          onChange={(e) => { setAddName(e.target.value); setAddError(null); setAddSuccess(null); }}
           placeholder={`New ${entity} name`}
           className={`${inputClass} flex-1`}
-          required
         />
         <button
           type="submit"
-          disabled={addLoading}
-          className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-60"
+          disabled={addLoading || !addName.trim()}
+          className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {addLoading ? <Spinner className="h-4 w-4 text-white" /> : <Plus size={16} />}
           Add
         </button>
       </form>
+
+      {/* Feedback messages */}
       {addError && (
-        <p className="mb-4 font-body text-sm text-red-400">{addError}</p>
+        <p className="mb-4 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 font-body text-sm text-red-400">
+          {addError}
+        </p>
+      )}
+      {addSuccess && (
+        <p className="mb-4 rounded-md border border-green-500/20 bg-green-500/10 px-3 py-2 font-body text-sm text-green-400">
+          {addSuccess}
+        </p>
       )}
 
       {/* Table */}
-      <div className="rounded-xl border border-border bg-surface overflow-hidden">
+      <div className={`rounded-xl border border-border bg-surface overflow-hidden ${addError || addSuccess ? "" : "mt-4"}`}>
         {loading ? (
           <div className="flex justify-center py-12">
             <Spinner className="h-5 w-5 text-foreground-muted" />
