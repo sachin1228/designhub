@@ -27,8 +27,13 @@ const config: Config = {
         "foreground-muted":   "var(--color-foreground-muted)",
         "foreground-subtle":  "var(--color-foreground-subtle)",
 
-        // Accent (draft/ purple brand)
-        accent:               "var(--color-accent)",
+        // Accent (draft/ orange brand)
+        // Function form lets opacity modifiers work (e.g. ring-accent/20, bg-accent/10)
+        // by injecting rgba(var(--color-accent-rgb), opacityValue) when needed.
+        accent: ({ opacityValue }: { opacityValue?: string }) =>
+          opacityValue !== undefined
+            ? `rgba(var(--color-accent-rgb), ${opacityValue})`
+            : "var(--color-accent)",
         "accent-hover":       "var(--color-accent-hover)",
         "accent-soft":        "var(--color-accent-soft)",
         "accent-foreground":  "var(--color-accent-foreground)",
