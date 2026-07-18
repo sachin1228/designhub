@@ -77,8 +77,6 @@ const ALL_ROBOHASH_SETS: { set: string; label: string }[] = [
   { set: "set4", label: "Kittens" },
 ];
 
-const QUICK_PICK_COUNT = 8;
-
 // ─── Types ────────────────────────────────────────────────────
 
 type AvatarSource = "dicebear" | "boring-avatars" | "robohash";
@@ -105,65 +103,73 @@ interface TokenState {
 
 type Step = 1 | 2 | 3 | "done";
 
-type ModalTab = "dicebear" | "boring" | "robohash";
+type AvatarTab = AvatarSource;
 
 // ─── Helpers ──────────────────────────────────────────────────
 
-/** Simple hash so different names produce different shuffles. */
-function hashCode(str: string): number {
-  let h = 5381;
-  for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) + h) ^ str.charCodeAt(i);
-  }
-  return Math.abs(h >>> 0);
-}
-
-/** LCG shuffle seeded with a number — deterministic per user name. */
-function seededShuffle<T>(arr: T[], seed: number): T[] {
-  const a = [...arr];
-  let s = seed >>> 0;
-  for (let i = a.length - 1; i > 0; i--) {
-    s = Math.imul(s, 1664525) + 1013904223;
-    s >>>= 0;
-    const j = s % (i + 1);
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 function getAllAvatarOptions(name: string): AvatarOption[] {
-  const seed = encodeURIComponent(name || "designer");
-  const dicebear = ALL_DICEBEAR_STYLES.map(({ style, label }) => ({
-    id: `dicebear-${style}`,
-    source: "dicebear" as AvatarSource,
-    style,
-    label,
-    dbUrl: `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}`,
-    seed: name || "designer",
-  }));
-  const boring = ALL_BORING_STYLES.map(({ style, label }) => ({
-    id: `boring-${style}`,
-    source: "boring-avatars" as AvatarSource,
-    style,
-    label,
-    dbUrl: `boring://${style}/${seed}`,
-    seed: name || "designer",
-  }));
-  const robohash = ALL_ROBOHASH_SETS.map(({ set, label }) => ({
-    id: `robohash-${set}`,
-    source: "robohash" as AvatarSource,
-    style: set,
-    label,
-    dbUrl: `https://robohash.org/${seed}?set=${set}&size=200x200`,
-    seed: name || "designer",
-  }));
+  const baseName = name || "designer";
+  const seedNames = Array.from({ length: 6 }, (_, index) =>
+    index === 0 ? baseName : `${baseName} ${index + 1}`
+  );
+
+  const dicebear = ALL_DICEBEAR_STYLES.flatMap(({ style, label }) =>
+    seedNames.map((seedName, index) => {
+      const seed = encodeURIComponent(seedName);
+      return {
+        id: `dicebear-${style}-${index}`,
+        source: "dicebear" as AvatarSource,
+        style,
+        label: index === 0 ? label : `${label} ${index + 1}`,
+        dbUrl: `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}`,
+        seed: seedName,
+      };
+    })
+  );
+  const boring = ALL_BORING_STYLES.flatMap(({ style, label }) =>
+    seedNames.map((seedName, index) => {
+      const seed = encodeURIComponent(seedName);
+      return {
+        id: `boring-${style}-${index}`,
+        source: "boring-avatars" as AvatarSource,
+        style,
+        label: index === 0 ? label : `${label} ${index + 1}`,
+        dbUrl: `boring://${style}/${seed}`,
+        seed: seedName,
+      };
+    })
+  );
+  const robohash = ALL_ROBOHASH_SETS.flatMap(({ set, label }) =>
+    seedNames.map((seedName, index) => {
+      const seed = encodeURIComponent(seedName);
+      return {
+        id: `robohash-${set}-${index}`,
+        source: "robohash" as AvatarSource,
+        style: set,
+        label: index === 0 ? label : `${label} ${index + 1}`,
+        dbUrl: `https://robohash.org/${seed}?set=${set}&size=200x200`,
+        seed: seedName,
+      };
+    })
+  );
+
   return [...dicebear, ...boring, ...robohash];
 }
 
-function getQuickPicks(name: string): AvatarOption[] {
+function getAvatarTabLabel(source: AvatarSource) {
+  if (source === "dicebear") return "DiceBear";
+  if (source === "boring-avatars") return "Boring Avatars";
+  return "Robohash";
+}
+
+function getAvatarSourceOptions(name: string) {
   const all = getAllAvatarOptions(name);
-  const shuffled = seededShuffle(all, hashCode(name || "designer"));
-  return shuffled.slice(0, QUICK_PICK_COUNT);
+  return {
+    all,
+    dicebear: all.filter((option) => option.source === "dicebear"),
+    "boring-avatars": all.filter((option) => option.source === "boring-avatars"),
+    robohash: all.filter((option) => option.source === "robohash"),
+  };
 }
 
 /** Compress + center-crop a file to 300×300 JPEG via Canvas. */
@@ -215,8 +221,8 @@ function AvatarPreview({
       </span>
     );
   }
-  // eslint-disable-next-line @next/next/no-img-element
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={option.dbUrl}
       alt={option.label}
@@ -228,127 +234,6 @@ function AvatarPreview({
   );
 }
 
-// ─── Browse All Modal ─────────────────────────────────────────
-
-function BrowseModal({
-  name,
-  selected,
-  onSelect,
-  onClose,
-}: {
-  name: string;
-  selected: AvatarOption | null;
-  onSelect: (opt: AvatarOption) => void;
-  onClose: () => void;
-}) {
-  const [tab, setTab] = useState<ModalTab>("dicebear");
-  const all = useMemo(() => getAllAvatarOptions(name), [name]);
-  const dicebearOpts = all.filter((o) => o.source === "dicebear");
-  const boringOpts   = all.filter((o) => o.source === "boring-avatars");
-  const robohashOpts = all.filter((o) => o.source === "robohash");
-
-  const tabs: { key: ModalTab; label: string; count: number }[] = [
-    { key: "dicebear", label: "DiceBear",       count: dicebearOpts.length },
-    { key: "boring",   label: "Boring Avatars",  count: boringOpts.length },
-    { key: "robohash", label: "Robohash",        count: robohashOpts.length },
-  ];
-
-  const options =
-    tab === "dicebear" ? dicebearOpts :
-    tab === "boring"   ? boringOpts   : robohashOpts;
-
-  // Close on backdrop click
-  function handleBackdrop(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget) onClose();
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
-      onClick={handleBackdrop}
-    >
-      <div className="relative w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-overlay-elevated bg-overlay-raised shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-overlay-elevated shrink-0">
-          <h3 className="font-display text-lg font-semibold text-overlay-foreground">
-            Browse all styles
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated transition-colors"
-            aria-label="Close"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 px-5 py-3 border-b border-overlay-elevated shrink-0">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              className={`rounded-md px-3 py-1.5 font-body text-xs font-medium transition-colors ${
-                tab === t.key
-                  ? "bg-accent text-accent-foreground"
-                  : "text-overlay-muted hover:text-overlay-foreground hover:bg-overlay-elevated"
-              }`}
-            >
-              {t.label}
-              <span className="ml-1.5 opacity-60">{t.count}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Grid */}
-        <div className="overflow-y-auto p-5">
-          <div className="grid grid-cols-4 gap-3">
-            {options.map((opt) => {
-              const isSelected = selected?.id === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => { onSelect(opt); onClose(); }}
-                  title={opt.label}
-                  className={`relative flex flex-col items-center gap-2 rounded-xl p-2 transition-all focus:outline-none ${
-                    isSelected
-                      ? "ring-2 ring-accent bg-accent/10"
-                      : "hover:bg-overlay-elevated"
-                  }`}
-                >
-                  <AvatarPreview option={opt} size={60} />
-                  <span className="font-body text-[10px] text-overlay-muted text-center leading-tight line-clamp-2">
-                    {opt.label}
-                  </span>
-                  {isSelected && (
-                    <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent">
-                      <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-                      </svg>
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-overlay-elevated shrink-0">
-          <p className="font-body text-[11px] text-overlay-muted text-center">
-            Click any avatar to select it and close this panel
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main component ───────────────────────────────────────────
 
 function SignupInner() {
@@ -357,7 +242,11 @@ function SignupInner() {
   const token = searchParams.get("token") ?? "";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [tokenState, setTokenState] = useState<TokenState>({ status: "loading" });
+  const [tokenState, setTokenState] = useState<TokenState>(() =>
+    token
+      ? { status: "loading" }
+      : { status: "invalid", error: "No invitation token found in the URL." }
+  );
 
   // Step 1
   const [step1, setStep1] = useState({ name: "", email: "", password: "", confirm_password: "" });
@@ -375,20 +264,24 @@ function SignupInner() {
   const [step2Error,   setStep2Error]   = useState<string | null>(null);
 
   // Step 3
-  const [quickPicks, setQuickPicks] = useState<AvatarOption[]>([]);
+  const [activeAvatarTab, setActiveAvatarTab] = useState<AvatarTab>("dicebear");
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarOption | null>(null);
   const [uploadedBlob, setUploadedBlob] = useState<Blob | null>(null);
   const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null);
   const [step3Loading, setStep3Loading] = useState(false);
   const [step3Error,   setStep3Error]   = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
+
+  const avatarSourceOptions = useMemo(() => getAvatarSourceOptions(step1.name), [step1.name]);
+  const avatarTabs: { key: AvatarTab; label: string; count: number }[] = [
+    { key: "dicebear", label: getAvatarTabLabel("dicebear"), count: avatarSourceOptions.dicebear.length },
+    { key: "boring-avatars", label: getAvatarTabLabel("boring-avatars"), count: avatarSourceOptions["boring-avatars"].length },
+    { key: "robohash", label: getAvatarTabLabel("robohash"), count: avatarSourceOptions.robohash.length },
+  ];
+  const visibleAvatarOptions = avatarSourceOptions[activeAvatarTab];
 
   // ── Validate token ─────────────────────────────────────────
   useEffect(() => {
-    if (!token) {
-      setTokenState({ status: "invalid", error: "No invitation token found in the URL." });
-      return;
-    }
+    if (!token) return;
     fetch(`/api/signup/validate?token=${encodeURIComponent(token)}`)
       .then((r) => r.json())
       .then((d) => {
@@ -410,20 +303,6 @@ function SignupInner() {
       fetch("/api/data/cities")   .then((r) => r.json()).then((d) => setCities(d.cities ?? [])),
       fetch("/api/data/sectors")  .then((r) => r.json()).then((d) => setSectors(d.sectors ?? [])),
     ]).catch(() => {});
-  }, [step]);
-
-  // ── Build quick picks when entering step 3 ─────────────────
-  useEffect(() => {
-    if (step !== 3) return;
-    const picks = getQuickPicks(step1.name);
-    setQuickPicks(picks);
-    setSelectedAvatar(picks[0] ?? null);
-    setUploadedBlob(null);
-    if (uploadPreviewUrl) URL.revokeObjectURL(uploadPreviewUrl);
-    setUploadPreviewUrl(null);
-    setStep3Error(null);
-    setShowModal(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   // ── Handlers ───────────────────────────────────────────────
@@ -469,6 +348,13 @@ function SignupInner() {
       });
       const data = await res.json();
       if (!res.ok) { setStep2Error(data.error ?? "Failed to save profile."); return; }
+      const options = getAvatarSourceOptions(step1.name);
+      setActiveAvatarTab("dicebear");
+      setSelectedAvatar(options.dicebear[0] ?? options.all[0] ?? null);
+      setUploadedBlob(null);
+      if (uploadPreviewUrl) URL.revokeObjectURL(uploadPreviewUrl);
+      setUploadPreviewUrl(null);
+      setStep3Error(null);
       setStep(3);
     } catch {
       setStep2Error("Network error. Please try again.");
@@ -702,45 +588,56 @@ function SignupInner() {
                 </div>
               )}
 
-              {/* Quick-pick grid (8 random, different per user) */}
-              <div className="grid grid-cols-4 gap-2.5 mb-3">
-                {quickPicks.map((option) => {
-                  const isSelected = selectedAvatar?.id === option.id && !uploadPreviewUrl;
-                  return (
+              <div className="mb-5 overflow-hidden rounded-xl border border-overlay-elevated">
+                <div className="flex gap-1 border-b border-overlay-elevated bg-overlay px-2 py-2">
+                  {avatarTabs.map((tab) => (
                     <button
-                      key={option.id}
+                      key={tab.key}
                       type="button"
-                      onClick={() => handlePickAvatar(option)}
-                      title={option.label}
-                      className={`relative flex items-center justify-center rounded-xl p-1.5 transition-all focus:outline-none ${
-                        isSelected ? "ring-2 ring-accent bg-accent/10" : "hover:bg-overlay-elevated"
+                      onClick={() => setActiveAvatarTab(tab.key)}
+                      className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-2.5 py-2 font-body text-xs font-medium transition-colors ${
+                        activeAvatarTab === tab.key
+                          ? "bg-accent text-accent-foreground"
+                          : "text-overlay-muted hover:bg-overlay-elevated hover:text-overlay-foreground"
                       }`}
                     >
-                      <AvatarPreview option={option} size={56} />
-                      {isSelected && (
-                        <span className="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent">
-                          <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-                          </svg>
-                        </span>
-                      )}
+                      <span className="truncate">{tab.label}</span>
+                      <span className="shrink-0 opacity-70">{tab.count}</span>
                     </button>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
 
-              {/* Browse all */}
-              <button
-                type="button"
-                onClick={() => setShowModal(true)}
-                className="mb-5 flex w-full items-center justify-center gap-1.5 rounded-md border border-overlay-elevated px-4 py-2 font-body text-xs text-overlay-muted hover:border-accent/50 hover:text-overlay-foreground transition-colors"
-              >
-                <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-                  <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clipRule="evenodd" />
-                </svg>
-                Browse all 39 styles — DiceBear · Boring Avatars · Robohash
-              </button>
+                <div className="max-h-[310px] overflow-y-auto p-3">
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {visibleAvatarOptions.map((option) => {
+                      const isSelected = selectedAvatar?.id === option.id && !uploadPreviewUrl;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => handlePickAvatar(option)}
+                          title={option.label}
+                          className={`relative flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-xl p-1.5 transition-all focus:outline-none ${
+                            isSelected ? "ring-2 ring-accent bg-accent/10" : "hover:bg-overlay-elevated"
+                          }`}
+                        >
+                          <AvatarPreview option={option} size={52} />
+                          <span className="w-full truncate text-center font-body text-[10px] leading-none text-overlay-muted">
+                            {option.label}
+                          </span>
+                          {isSelected && (
+                            <span className="absolute bottom-6 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent">
+                              <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
 
               {/* Divider */}
               <div className="flex items-center gap-3 mb-5">
@@ -766,7 +663,7 @@ function SignupInner() {
                         if (uploadPreviewUrl) URL.revokeObjectURL(uploadPreviewUrl);
                         setUploadPreviewUrl(null);
                         setUploadedBlob(null);
-                        setSelectedAvatar(quickPicks[0] ?? null);
+                        setSelectedAvatar(avatarSourceOptions[activeAvatarTab][0] ?? avatarSourceOptions.all[0] ?? null);
                       }}
                       className="mt-1 font-body text-xs text-overlay-muted hover:text-red-400 transition-colors">
                       Remove
@@ -804,7 +701,7 @@ function SignupInner() {
                 <span className="text-2xl">✓</span>
               </div>
               <h2 className="font-display text-xl font-semibold text-overlay-foreground mb-2">
-                You're in!
+                You&apos;re in!
               </h2>
               <p className="font-body text-sm text-overlay-muted">Redirecting to your dashboard…</p>
             </div>
@@ -813,15 +710,6 @@ function SignupInner() {
         </div>
       </main>
 
-      {/* Browse all modal */}
-      {showModal && (
-        <BrowseModal
-          name={step1.name}
-          selected={selectedAvatar}
-          onSelect={handlePickAvatar}
-          onClose={() => setShowModal(false)}
-        />
-      )}
     </>
   );
 }
