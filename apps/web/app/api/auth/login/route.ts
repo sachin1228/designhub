@@ -34,35 +34,17 @@ export async function POST(request: NextRequest) {
 
   // ── Admin short-circuit ──────────────────────────────────────────────
   const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPasswordHash = process.env.ADMIN_PASSWORD;
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (adminEmail && adminPasswordHash) {
-    // Bcrypt hashes always start with $2a$, $2b$, or $2y$.
-    // If the value doesn't match this pattern it means dotenv expanded the
-    // dollar signs when loading .env / .env.local, corrupting the hash.
-    // Fix: wrap the value in single quotes in your env file:
-    //   ADMIN_PASSWORD='$2a$12$...'
-    if (!adminPasswordHash.startsWith("$2")) {
-      console.error(
-        "[auth] ADMIN_PASSWORD is malformed — dollar signs were likely " +
-        "expanded by dotenv. In .env / .env.local wrap the bcrypt hash in " +
-        "single quotes: ADMIN_PASSWORD='$2a$12$...'"
-      );
-      return NextResponse.json(
-        { error: "Server misconfiguration. Please contact the administrator." },
-        { status: 500 }
-      );
-    }
-
-    if (
-      email.toLowerCase() === adminEmail.toLowerCase() &&
-      (await bcrypt.compare(password, adminPasswordHash))
-    ) {
-      const token = await createSession({ email: adminEmail, role: "admin" });
-      const response = NextResponse.json({ success: true, redirect: "/admin" });
-      setSessionCookie(response, token);
-      return response;
-    }
+  if (
+    adminEmail && adminPassword &&
+    email.toLowerCase() === adminEmail.toLowerCase() &&
+    password === adminPassword
+  ) {
+    const token = await createSession({ email: adminEmail, role: "admin" });
+    const response = NextResponse.json({ success: true, redirect: "/admin" });
+    setSessionCookie(response, token);
+    return response;
   }
 
   const db = createServiceClient();
