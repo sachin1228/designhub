@@ -398,7 +398,7 @@ export default function AdminApplicationsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-overlay-elevated bg-overlay-raised overflow-hidden mb-4">
+      <div className="rounded-xl border border-white/10 bg-overlay-raised overflow-hidden mb-4">
         {loading ? (
           <div className="flex justify-center py-16">
             <Spinner className="h-5 w-5 text-overlay-muted" />
@@ -408,7 +408,7 @@ export default function AdminApplicationsPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-overlay-elevated">
+              <tr className="border-b border-white/10">
                 {["Name", "Email", "Status", "Tags", "Applied", ""].map((h) => (
                   <th key={h} className="px-5 py-3 text-left font-body text-xs font-medium text-overlay-muted uppercase tracking-wider">
                     {h}
@@ -420,7 +420,7 @@ export default function AdminApplicationsPage() {
               {applications.map((app, idx) => (
                 <tr
                   key={app.id}
-                  className={`${idx < applications.length - 1 ? "border-b border-overlay-elevated/50" : ""} hover:bg-overlay-elevated/30 transition-colors cursor-pointer`}
+                  className={`${idx < applications.length - 1 ? "border-b border-white/[0.06]" : ""} hover:bg-white/[0.03] transition-colors cursor-pointer`}
                   onClick={() => setSelectedApp(app)}
                 >
                   <td className="px-5 py-3.5">
