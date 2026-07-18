@@ -7,7 +7,7 @@
  *   packages/design-system/src/css/tokens.css (this content)
  *
  * Inlined here so any Next.js version (14+) can resolve it without
- * relying on CSS @import from package exports.
+ * relying on CSS @import from the package exports.
  */
 
 /* ─── Light mode (default) ─────────────────────────────────────────── */
