@@ -14,28 +14,28 @@
 :root {
   color-scheme: light dark;
 
-  /* Backgrounds */
-  --color-background:        #FFFFFF;
-  --color-background-subtle: #FAFAFA;
+  /* Backgrounds — warm cream inspired by the brand palette */
+  --color-background:        #F5F0DF;
+  --color-background-subtle: #EDE8D3;
 
   /* Surfaces */
-  --color-surface:           #FFFFFF;
-  --color-surface-raised:    #F5F5F5;
+  --color-surface:           #FDFAF3;
+  --color-surface-raised:    #EDE8D5;
 
   /* Foreground / text */
-  --color-foreground:        #171717;
-  --color-foreground-muted:  #5A5A5A;
-  --color-foreground-subtle: #7B7B7B;
+  --color-foreground:        #1A1410;
+  --color-foreground-muted:  #6B6254;
+  --color-foreground-subtle: #8A7E72;
 
   /* Accent — draft/ orange brand */
   --color-accent:            #FF5E1F;
   --color-accent-hover:      #E65012;
-  --color-accent-soft:       #FFE9DD;
+  --color-accent-soft:       #FFE4D3;
   --color-accent-foreground: #FFFFFF;
 
   /* Borders */
-  --color-border:            #ECECEC;
-  --color-border-subtle:     #F5F5F5;
+  --color-border:            #D9D2BB;
+  --color-border-subtle:     #E8E2D0;
 
   /* Brand signal */
   --color-signal:            #C8FF5B;
@@ -47,11 +47,11 @@
   --color-overlay-foreground: #F5F2F0;
   --color-overlay-muted:      #7B7B7B;
 
-  /* Shadows */
-  --shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.04);
-  --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
-  --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
-  --shadow-card: 0 0 0 1px var(--color-border), 0 2px 4px rgb(0 0 0 / 0.04);
+  /* Shadows — warm-tinted */
+  --shadow-xs:   0 1px 2px 0 rgb(60 40 10 / 0.06);
+  --shadow-sm:   0 1px 3px 0 rgb(60 40 10 / 0.09), 0 1px 2px -1px rgb(60 40 10 / 0.08);
+  --shadow-md:   0 4px 6px -1px rgb(60 40 10 / 0.10), 0 2px 4px -2px rgb(60 40 10 / 0.09);
+  --shadow-card: 0 0 0 1px var(--color-border), 0 2px 4px rgb(60 40 10 / 0.06);
 
   /* Radius */
   --radius-sm:   4px;
@@ -61,8 +61,8 @@
   --radius-full: 9999px;
 
   /* Grid pattern */
-  --grid-line-color: rgba(0, 0, 0, 0.055);
-  --grid-dot-color:  rgba(0, 0, 0, 0.12);
+  --grid-line-color: rgba(80, 55, 20, 0.07);
+  --grid-dot-color:  rgba(80, 55, 20, 0.14);
   --grid-size:       28px;
 }
 
