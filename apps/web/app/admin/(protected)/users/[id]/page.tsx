@@ -7,6 +7,8 @@ import { Spinner } from "@/components/ui/Spinner";
 
 interface Profile {
   experience_level: string;
+  avatar_url?: string | null;
+  avatar_source?: string | null;
   companies: { name: string } | null;
   cities: { name: string } | null;
   design_sectors: { name: string } | null;
@@ -28,10 +30,26 @@ interface Application {
 }
 
 const EXPERIENCE_LABELS: Record<string, string> = {
-  junior: "Junior (0–2 yrs)",
-  mid: "Mid Level (2–5 yrs)",
-  senior: "Senior (5–10 yrs)",
-  lead: "Lead / Principal",
+  student:       "Student",
+  fresher:       "Fresher (0–1 yrs)",
+  junior:        "Junior Designer (1–3 yrs)",
+  mid_level:     "Mid-Level Designer (3–5 yrs)",
+  senior:        "Senior Designer (5–8 yrs)",
+  lead:          "Lead Designer (8–12 yrs)",
+  principal:     "Principal Designer",
+  staff:         "Staff Designer",
+  design_manager:"Design Manager",
+  head_of_design:"Head of Design",
+  director:      "Director of Design",
+  vp:            "VP of Design",
+  consultant:    "Design Consultant",
+  freelancer:    "Freelancer",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  dicebear:       "DiceBear (generated)",
+  "boring-avatars": "Boring Avatars (generated)",
+  upload:         "Custom upload",
 };
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -116,6 +134,13 @@ export default function UserDetailPage() {
   }
 
   const profile = user.designer_profiles;
+  const avatarUrl = profile?.avatar_url;
+  const initials = user.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div className="max-w-2xl">
@@ -130,13 +155,31 @@ export default function UserDetailPage() {
 
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">{user.name}</h1>
-          <span className={`mt-1.5 inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[11px] font-medium ${
-            user.is_blocked ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400"
-          }`}>
-            {user.is_blocked ? "Blocked" : "Active"}
-          </span>
+        <div className="flex items-center gap-4">
+          {/* Avatar */}
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt={user.name}
+              width={64}
+              height={64}
+              className="h-16 w-16 rounded-full object-cover bg-surface-raised ring-1 ring-border"
+            />
+          ) : (
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-surface-raised ring-1 ring-border font-display text-xl font-semibold text-foreground-muted select-none">
+              {initials}
+            </span>
+          )}
+
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-foreground">{user.name}</h1>
+            <span className={`mt-1.5 inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[11px] font-medium ${
+              user.is_blocked ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400"
+            }`}>
+              {user.is_blocked ? "Blocked" : "Active"}
+            </span>
+          </div>
         </div>
 
         <div className="flex gap-2">
@@ -172,6 +215,31 @@ export default function UserDetailPage() {
 
       {/* Details card */}
       <div className="rounded-xl border border-border bg-surface px-6 py-1">
+
+        {/* Profile picture row */}
+        <InfoRow
+          label="Profile picture"
+          value={
+            avatarUrl ? (
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={avatarUrl}
+                  alt={user.name}
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-full object-cover bg-surface-raised"
+                />
+                <span className="text-foreground-muted text-xs">
+                  {SOURCE_LABELS[profile?.avatar_source ?? ""] ?? profile?.avatar_source ?? ""}
+                </span>
+              </div>
+            ) : (
+              <span className="text-foreground-muted">No avatar set</span>
+            )
+          }
+        />
+
         <InfoRow label="Email" value={user.email} />
         <InfoRow
           label="Joined"
