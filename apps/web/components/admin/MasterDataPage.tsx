@@ -20,7 +20,7 @@ interface MasterDataPageProps {
 export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) {
   const [items, setItems] = useState<MasterItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAll, setShowAll] = useState(true);
+  const [activeTab, setActiveTab] = useState<"active" | "inactive">("active");
   const [search, setSearch] = useState("");
 
   // Modal
@@ -43,7 +43,8 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase}?all=${showAll}`);
+      // Always fetch all so tab switching doesn't need a refetch
+      const res = await fetch(`${apiBase}?all=true`);
       if (!res.ok) { setItems([]); return; }
       const data = await res.json();
       const rows: MasterItem[] = data.companies ?? data.cities ?? data.sectors ?? [];
@@ -53,7 +54,7 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
     } finally {
       setLoading(false);
     }
-  }, [apiBase, showAll]);
+  }, [apiBase]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -61,11 +62,16 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
     if (modalOpen) setTimeout(() => modalInputRef.current?.focus(), 50);
   }, [modalOpen]);
 
+  const tabItems = useMemo(() =>
+    items.filter((i) => (activeTab === "active" ? i.is_active : !i.is_active)),
+    [items, activeTab]
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((i) => i.name.toLowerCase().includes(q));
-  }, [items, search]);
+    if (!q) return tabItems;
+    return tabItems.filter((i) => i.name.toLowerCase().includes(q));
+  }, [tabItems, search]);
 
   function openModal() { setAddName(""); setAddError(null); setModalOpen(true); }
   function closeModal() { setModalOpen(false); setAddName(""); setAddError(null); }
@@ -144,24 +150,38 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h1 className="font-display text-xl font-semibold text-foreground">{title}</h1>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-1.5 font-body text-xs text-foreground-muted cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={showAll}
-              onChange={(e) => setShowAll(e.target.checked)}
-              className="accent-accent"
-            />
-            Show inactive
-          </label>
-          <button
-            onClick={openModal}
-            className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 font-body text-xs font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
-          >
-            <Plus size={13} />
-            Add {entity}
-          </button>
-        </div>
+        <button
+          onClick={openModal}
+          className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 font-body text-xs font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+        >
+          <Plus size={13} />
+          Add {entity}
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-3 border-b border-border">
+        {(["active", "inactive"] as const).map((tab) => {
+          const count = items.filter((i) => (tab === "active" ? i.is_active : !i.is_active)).length;
+          return (
+            <button
+              key={tab}
+              onClick={() => { setActiveTab(tab); setSearch(""); }}
+              className={`px-4 py-2 font-body text-xs font-medium capitalize transition-colors border-b-2 -mb-px ${
+                activeTab === tab
+                  ? "border-accent text-accent"
+                  : "border-transparent text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              {tab}
+              <span className={`ml-1.5 rounded-full px-1.5 py-0.5 font-mono text-[10px] ${
+                activeTab === tab ? "bg-accent/15 text-accent" : "bg-surface-raised text-foreground-muted"
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Delete error */}
@@ -306,9 +326,9 @@ export function MasterDataPage({ title, entity, apiBase }: MasterDataPageProps) 
       </div>
 
       {/* Row count */}
-      {!loading && items.length > 0 && (
+      {!loading && tabItems.length > 0 && (
         <p className="mt-2 text-right font-body text-[10px] text-foreground-muted">
-          {search ? `${filtered.length} of ${items.length}` : items.length} {entity.toLowerCase()}{items.length !== 1 ? "s" : ""}
+          {search ? `${filtered.length} of ${tabItems.length}` : tabItems.length} {entity.toLowerCase()}{tabItems.length !== 1 ? "s" : ""}
         </p>
       )}
 
