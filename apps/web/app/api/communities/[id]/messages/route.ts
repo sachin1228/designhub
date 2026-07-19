@@ -31,7 +31,7 @@ export async function GET(
 
   let query = db
     .from("community_messages")
-    .select("id, content, created_at, user_id, users(name, avatar_url)")
+    .select("id, content, created_at, user_id")
     .eq("community_id", communityId)
     .order("created_at", { ascending: false })
     .limit(PAGE_SIZE);
@@ -45,8 +45,22 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch messages." }, { status: 500 });
   }
 
+  // Fetch unique senders in one round-trip
+  const uniqueUserIds = [...new Set((data ?? []).map((m) => m.user_id))];
+  const userMap: Record<string, { name: string; avatar_url: string | null }> = {};
+  if (uniqueUserIds.length) {
+    const { data: users } = await db
+      .from("users")
+      .select("id, name, avatar_url")
+      .in("id", uniqueUserIds);
+    for (const u of users ?? []) userMap[u.id] = { name: u.name, avatar_url: u.avatar_url };
+  }
+
   // Return oldest-first for display
-  const messages = (data ?? []).reverse();
+  const messages = (data ?? [])
+    .reverse()
+    .map((m) => ({ ...m, users: userMap[m.user_id] ?? null }));
+
   return NextResponse.json({ messages });
 }
 

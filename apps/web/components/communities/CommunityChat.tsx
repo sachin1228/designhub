@@ -145,10 +145,11 @@ export function CommunityChat({
         body: JSON.stringify({ content }),
       });
       if (res.ok) {
+        const { message } = await res.json();
+        // Append the returned message immediately — don't wait for realtime
+        setMessages((prev) => [...prev, message]);
         setInput("");
         inputRef.current?.focus();
-        // Message will appear via realtime. Also refetch as fallback.
-        fetchMessages();
       } else {
         const d = await res.json();
         setError(d.error ?? "Failed to send.");
