@@ -349,7 +349,7 @@ export function CommunityChat({
             {error && (
               <p className="font-body text-xs text-red-400 mb-2 pl-1">{error}</p>
             )}
-            <div className="flex items-end gap-2 bg-surface-raised border border-border rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.35)] px-4 py-3">
+            <div className="flex items-end gap-2 bg-surface-raised border border-border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.18)] px-3 py-2">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -360,25 +360,20 @@ export function CommunityChat({
                 className="flex-1 resize-none bg-transparent font-body text-sm text-foreground placeholder:text-foreground-muted outline-none max-h-32 overflow-y-auto"
                 style={{ lineHeight: "1.6", minHeight: "1.6rem" }}
               />
-              <button
-                onClick={handleSend}
-                disabled={sending || !input.trim()}
-                className={`shrink-0 h-8 w-8 flex items-center justify-center rounded-full transition-all duration-150 ${
-                  input.trim()
-                    ? "bg-accent text-accent-foreground hover:bg-accent-hover"
-                    : "bg-accent/25 text-accent-foreground/30 cursor-not-allowed"
-                }`}
-                aria-label="Send"
-              >
-                {/* WhatsApp-style filled send arrow */}
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-[15px] h-[15px]" style={{ marginLeft: "1px" }}>
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                </svg>
-              </button>
+              {input.trim() && (
+                <button
+                  onClick={handleSend}
+                  disabled={sending}
+                  className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-accent text-accent-foreground hover:bg-accent-hover transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Send"
+                >
+                  {/* WhatsApp-style filled send arrow */}
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-[15px] h-[15px]" style={{ marginLeft: "1px" }}>
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </svg>
+                </button>
+              )}
             </div>
-            <p className="font-body text-[10px] text-foreground-muted mt-1.5 ml-1">
-              Enter to send · Shift+Enter for new line
-            </p>
           </div>
         </div>
 
