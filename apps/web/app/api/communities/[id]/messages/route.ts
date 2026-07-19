@@ -46,14 +46,17 @@ export async function GET(
   }
 
   // Fetch unique senders in one round-trip
+  // avatar_url lives in designer_profiles, name lives in users — join both
   const uniqueUserIds = [...new Set((data ?? []).map((m) => m.user_id))];
   const userMap: Record<string, { name: string; avatar_url: string | null }> = {};
   if (uniqueUserIds.length) {
-    const { data: users } = await db
-      .from("users")
-      .select("id, name, avatar_url")
-      .in("id", uniqueUserIds);
-    for (const u of users ?? []) userMap[u.id] = { name: u.name, avatar_url: u.avatar_url };
+    const [{ data: users }, { data: profiles }] = await Promise.all([
+      db.from("users").select("id, name").in("id", uniqueUserIds),
+      db.from("designer_profiles").select("user_id, avatar_url").in("user_id", uniqueUserIds),
+    ]);
+    const avatarMap: Record<string, string | null> = {};
+    for (const p of profiles ?? []) avatarMap[p.user_id] = p.avatar_url;
+    for (const u of users ?? []) userMap[u.id] = { name: u.name, avatar_url: avatarMap[u.id] ?? null };
   }
 
   // Return oldest-first for display
@@ -110,15 +113,14 @@ export async function POST(
     return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
   }
 
-  // Step 2: fetch sender info separately (avoids !inner join issues)
-  const { data: user } = await db
-    .from("users")
-    .select("name, avatar_url")
-    .eq("id", userId)
-    .single();
+  // Step 2: fetch sender info — name from users, avatar_url from designer_profiles
+  const [{ data: user }, { data: profile }] = await Promise.all([
+    db.from("users").select("name").eq("id", userId).single(),
+    db.from("designer_profiles").select("avatar_url").eq("user_id", userId).maybeSingle(),
+  ]);
 
   return NextResponse.json(
-    { message: { ...inserted, users: user ?? null } },
+    { message: { ...inserted, users: user ? { name: user.name, avatar_url: profile?.avatar_url ?? null } : null } },
     { status: 201 }
   );
 }
