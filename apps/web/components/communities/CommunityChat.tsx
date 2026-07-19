@@ -341,7 +341,7 @@ export function CommunityChat({
             {error && (
               <p className="font-body text-xs text-red-400 mb-2">{error}</p>
             )}
-            <div className="flex items-end gap-2">
+            <div className="relative flex items-end">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -349,17 +349,19 @@ export function CommunityChat({
                 onKeyDown={handleKeyDown}
                 placeholder={`Message ${community.name}…`}
                 rows={1}
-                className="flex-1 resize-none rounded-xl border border-border bg-surface-raised px-4 py-2.5 font-body text-sm text-foreground placeholder:text-foreground-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors max-h-32 overflow-y-auto"
-                style={{ lineHeight: "1.5" }}
+                className="w-full resize-none rounded-xl border border-border bg-surface-raised px-4 py-2.5 font-body text-sm text-foreground placeholder:text-foreground-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors max-h-32 overflow-y-auto"
+                style={{ lineHeight: "1.5", paddingRight: input.trim() ? "3rem" : "1rem", transition: "padding 0.15s ease" }}
               />
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || sending}
-                className="h-10 w-10 flex items-center justify-center rounded-xl bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-                aria-label="Send"
-              >
-                <Send size={16} />
-              </button>
+              {input.trim() && (
+                <button
+                  onClick={handleSend}
+                  disabled={sending}
+                  className="absolute right-2 bottom-1.5 h-7 w-7 flex items-center justify-center rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Send"
+                >
+                  <Send size={14} />
+                </button>
+              )}
             </div>
             <p className="font-body text-[10px] text-foreground-muted mt-1.5 ml-1">
               Enter to send · Shift+Enter for new line
