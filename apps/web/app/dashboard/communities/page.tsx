@@ -132,20 +132,37 @@ export default function CommunitiesIndexPage() {
         </div>
 
         {/* Tab filters */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-3 border-b border-border">
-          {TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
-              className={`shrink-0 font-body text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                activeTab === tab.value
-                  ? "bg-accent text-white"
-                  : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-0 overflow-x-auto border-b border-border">
+          {TABS.map((tab) => {
+            const count = tab.value === "all"
+              ? communities.length
+              : communities.filter((c) => c.type === tab.value).length;
+            const isActive = activeTab === tab.value;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`relative shrink-0 flex items-center gap-2 px-4 py-2.5 font-body text-sm font-medium transition-colors ${
+                  isActive
+                    ? "text-accent"
+                    : "text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+                <span className={`font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
+                  isActive
+                    ? "bg-accent/15 text-accent"
+                    : "bg-surface-raised text-foreground-muted"
+                }`}>
+                  {count}
+                </span>
+                {/* Active underline */}
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t-full" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
