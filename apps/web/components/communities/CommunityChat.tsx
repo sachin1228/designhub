@@ -329,7 +329,7 @@ export function CommunityChat({
                             {sender.name}
                           </p>
                         )}
-                        <div className="rounded-2xl rounded-tl-sm bg-surface-raised border border-border px-3 py-2">
+                        <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 py-2">
                           <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">{msg.content}</p>
                         </div>
                         <p className="font-mono text-[10px] text-foreground-muted mt-0.5 ml-0.5">
@@ -349,7 +349,7 @@ export function CommunityChat({
             {error && (
               <p className="font-body text-xs text-red-400 mb-2 pl-1">{error}</p>
             )}
-            <div className="flex items-center gap-2 bg-surface-raised border border-border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.18)] px-4 h-[52px]">
+            <div className="flex items-center gap-2 bg-surface-raised rounded-2xl shadow-md px-4 h-[52px]">
               <textarea
                 ref={inputRef}
                 value={input}
