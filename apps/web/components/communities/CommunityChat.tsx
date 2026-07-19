@@ -358,7 +358,7 @@ export function CommunityChat({
                 placeholder={`Message ${community.name}…`}
                 rows={1}
                 className="flex-1 resize-none bg-transparent font-body text-sm text-foreground placeholder:text-foreground-muted outline-none max-h-32 overflow-y-auto"
-                style={{ lineHeight: "1.6", minHeight: "1.6rem" }}
+                style={{ lineHeight: "1.6", minHeight: "52px" }}
               />
               {input.trim() && (
                 <button
