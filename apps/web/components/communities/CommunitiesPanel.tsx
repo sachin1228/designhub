@@ -82,12 +82,11 @@ function CommunityAvatar({
 function CommunityRow({
   c,
   active,
-  isLast,
+ 
   onClick,
 }: {
   c: Community;
   active: boolean;
-  isLast: boolean;
   onClick: () => void;
 }) {
   return (
@@ -95,8 +94,6 @@ function CommunityRow({
       <button
         onClick={onClick}
         className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
-          isLast ? "" : "border-b border-white/5"
-        } ${
           active
             ? "bg-accent/10 border-l-2 border-l-accent"
             : "hover:bg-surface-raised border-l-2 border-l-transparent"
@@ -170,7 +167,7 @@ function SectionGroup({
             key={c.id}
             c={c}
             active={c.id === activeCommunityId}
-            isLast={idx === communities.length - 1}
+
             onClick={() => onNavigate(c.id)}
           />
         ))}
