@@ -118,7 +118,7 @@ interface AvatarOption {
   seed: string;
 }
 
-interface MasterItem { id: string; name: string }
+interface MasterItem { id: string; name: string; image_url?: string | null }
 
 interface TokenState {
   status: "loading" | "valid" | "invalid";
@@ -839,7 +839,7 @@ function SignupInner() {
                   <span className="font-body text-xs font-medium text-overlay-foreground">
                     Company <span className="text-red-400">*</span>
                   </span>
-                  <SearchableSelect options={companies.map((c) => ({ value: c.id, label: c.name }))}
+                  <SearchableSelect options={companies.map((c) => ({ value: c.id, label: c.name, imageUrl: c.image_url }))}
                     value={step2.company_id} onChange={(v) => setStep2((p) => ({ ...p, company_id: v }))}
                     placeholder="Select a company" allowOther otherLabel="Other" />
                 </div>
@@ -848,7 +848,7 @@ function SignupInner() {
                   <span className="font-body text-xs font-medium text-overlay-foreground">
                     City <span className="text-red-400">*</span>
                   </span>
-                  <SearchableSelect options={cities.map((c) => ({ value: c.id, label: c.name }))}
+                  <SearchableSelect options={cities.map((c) => ({ value: c.id, label: c.name, imageUrl: c.image_url }))}
                     value={step2.city_id} onChange={(v) => setStep2((p) => ({ ...p, city_id: v }))}
                     placeholder="Select a city" allowOther otherLabel="Other" />
                 </div>
@@ -857,7 +857,7 @@ function SignupInner() {
                   <span className="font-body text-xs font-medium text-overlay-foreground">
                     Industry Sector <span className="text-red-400">*</span>
                   </span>
-                  <SearchableSelect options={sectors.map((s) => ({ value: s.id, label: s.name }))}
+                  <SearchableSelect options={sectors.map((s) => ({ value: s.id, label: s.name, imageUrl: s.image_url }))}
                     value={step2.sector_id} onChange={(v) => setStep2((p) => ({ ...p, sector_id: v }))}
                     placeholder="Select a sector" allowOther otherLabel="Other" />
                 </div>
