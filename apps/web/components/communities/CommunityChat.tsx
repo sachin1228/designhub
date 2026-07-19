@@ -308,7 +308,7 @@ export function CommunityChat({
                   }
 
                   return (
-                    <div key={msg.id} className={`flex items-end gap-2 ${isSameAuthor ? "mt-0.5" : "mt-3"}`}>
+                    <div key={msg.id} className={`flex items-start gap-2 ${isSameAuthor ? "mt-0.5" : "mt-3"}`}>
                       {/* Avatar — only for first in a run */}
                       <div className="w-7 shrink-0">
                         {!isSameAuthor && sender && (
