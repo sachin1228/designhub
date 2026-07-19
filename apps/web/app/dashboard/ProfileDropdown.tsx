@@ -63,9 +63,14 @@ export function ProfileDropdown({ name, email, avatarUrl, initial }: Props) {
         )}
       </button>
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-surface shadow-lg border border-border overflow-hidden z-50">
+      {/* Dropdown — always mounted, animated like Alpine.js x-transition */}
+      <div
+        className={`absolute right-0 top-full mt-2 w-56 rounded-xl bg-surface shadow-lg border border-border overflow-hidden z-50 origin-top-right transform transition ${
+          open
+            ? "opacity-100 scale-100 ease-out duration-100 pointer-events-auto"
+            : "opacity-0 scale-95 ease-in duration-75 pointer-events-none"
+        }`}
+      >
           {/* User info */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
             <div className="h-9 w-9 rounded-full overflow-hidden shrink-0">
@@ -95,7 +100,7 @@ export function ProfileDropdown({ name, email, avatarUrl, initial }: Props) {
             </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
