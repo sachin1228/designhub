@@ -222,9 +222,17 @@ export function CommunityChat({
       {/* Chat header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-surface shrink-0">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-surface-raised flex items-center justify-center text-sm shrink-0">
+          <div className="h-9 w-9 rounded-full bg-surface-raised flex items-center justify-center text-sm shrink-0 overflow-hidden">
             {community.image_url
-              ? <img src={community.image_url} alt={community.name} className="h-9 w-9 rounded-full object-cover" />
+              ? <img
+                  src={community.image_url}
+                  alt={community.name}
+                  className="h-9 w-9 rounded-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.parentElement!.textContent = TYPE_EMOJI[community.type] ?? "💬";
+                  }}
+                />
               : TYPE_EMOJI[community.type] ?? "💬"}
           </div>
           <div>

@@ -38,6 +38,38 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
+function CommunityAvatar({
+  imageUrl,
+  name,
+  type,
+  active,
+}: {
+  imageUrl: string | null;
+  name: string;
+  type: string;
+  active: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const fallback = TYPE_EMOJI[type] ?? "💬";
+  if (imageUrl && !failed) {
+    return (
+      <img
+        src={imageUrl}
+        alt={name}
+        className="h-10 w-10 rounded-full object-cover shrink-0"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-base font-medium select-none ${
+      active ? "bg-accent/20" : "bg-surface-raised"
+    }`}>
+      {fallback}
+    </div>
+  );
+}
+
 export function CommunitiesPanel() {
   const router = useRouter();
   const pathname = usePathname();
@@ -119,19 +151,12 @@ export function CommunitiesPanel() {
                     }`}
                   >
                     {/* Avatar / icon */}
-                    {c.image_url ? (
-                      <img
-                        src={c.image_url}
-                        alt={c.name}
-                        className="h-10 w-10 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-base font-medium select-none ${
-                        active ? "bg-accent/20" : "bg-surface-raised"
-                      }`}>
-                        {TYPE_EMOJI[c.type] ?? "💬"}
-                      </div>
-                    )}
+                    <CommunityAvatar
+                      imageUrl={c.image_url}
+                      name={c.name}
+                      type={c.type}
+                      active={active}
+                    />
 
                     {/* Text */}
                     <div className="flex-1 min-w-0">

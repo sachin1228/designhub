@@ -286,7 +286,7 @@ function AvatarPreview({
 
 // ─── Interest emoji mapping (frontend-side) ──────────────────
 
-const INTEREST_EMOJIS: Record<string, string> = {
+export const INTEREST_EMOJIS: Record<string, string> = {
   "UI / UX Design":     "🧑‍🎨",
   "Product Design":     "📦",
   "Graphic Design":     "✏️",
@@ -308,6 +308,24 @@ const INTEREST_EMOJIS: Record<string, string> = {
   "3D Design":          "🗿",
   "Other":              "✨",
 };
+
+// ─── InterestIcon: shows uploaded image, falls back to emoji ──
+
+function InterestIcon({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
+  const [failed, setFailed] = useState(false);
+  const emoji = INTEREST_EMOJIS[name] ?? "🎨";
+  if (imageUrl && !failed) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        className="h-5 w-5 rounded object-cover shrink-0"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return <span className="text-base leading-none">{emoji}</span>;
+}
 
 // ─── InterestsMultiSelect ─────────────────────────────────────
 
@@ -388,7 +406,6 @@ function InterestsMultiSelect({
           <div className="max-h-64 overflow-y-auto">
             {options.map((option) => {
               const isSelected = selected.includes(option.id);
-              const emoji = INTEREST_EMOJIS[option.name] ?? "🎨";
               return (
                 <button
                   key={option.id}
@@ -396,10 +413,7 @@ function InterestsMultiSelect({
                   onClick={() => toggle(option.id)}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-overlay-elevated transition-colors"
                 >
-                  {option.image_url
-                    ? <img src={option.image_url} alt="" className="h-5 w-5 rounded object-cover shrink-0" />
-                    : <span className="text-base leading-none">{emoji}</span>
-                  }
+                  <InterestIcon imageUrl={option.image_url} name={option.name} />
                   <span className="flex-1 font-body text-sm text-overlay-foreground">
                     {option.name}
                   </span>
