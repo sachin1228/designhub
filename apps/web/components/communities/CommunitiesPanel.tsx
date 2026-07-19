@@ -14,16 +14,18 @@ interface LastMessage {
 interface Community {
   id: string;
   name: string;
-  type: "city" | "sector" | "interest";
+  type: "city" | "sector" | "interest" | "company" | "experience_level";
   image_url: string | null;
   member_count: number;
   last_message: LastMessage | null;
 }
 
 const TYPE_EMOJI: Record<string, string> = {
-  city: "📍",
-  sector: "🏢",
-  interest: "✦",
+  city:             "📍",
+  sector:           "🏢",
+  interest:         "✦",
+  company:          "🏬",
+  experience_level: "🎯",
 };
 
 function timeAgo(iso: string) {

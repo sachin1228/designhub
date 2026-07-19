@@ -28,7 +28,47 @@ export async function GET() {
 
   if (cErr) return NextResponse.json({ error: "Failed to fetch communities." }, { status: 500 });
 
-  // 3. Member counts
+  // 3. Resolve image_url from master tables (for communities created before image support,
+  //    or when the master-data image was updated after the community was created).
+  //    Batch by type to avoid N+1 queries.
+  const byType: Record<string, { id: string; reference_id: string }[]> = {};
+  for (const c of communities ?? []) {
+    if (!byType[c.type]) byType[c.type] = [];
+    byType[c.type].push({ id: c.id, reference_id: c.reference_id });
+  }
+
+  const masterImageMap: Record<string, string | null> = {}; // community_id → image_url
+
+  const tableLookup: Record<string, { table: string; idCol: string }> = {
+    city:             { table: "cities",            idCol: "id" },
+    sector:           { table: "design_sectors",    idCol: "id" },
+    interest:         { table: "design_interests",  idCol: "id" },
+    company:          { table: "companies",         idCol: "id" },
+    experience_level: { table: "experience_levels", idCol: "id" },
+  };
+
+  await Promise.all(
+    Object.entries(byType).map(async ([type, items]) => {
+      const lookup = tableLookup[type];
+      if (!lookup) return;
+
+      const refIds = items.map((i) => i.reference_id);
+      const { data: rows } = await db
+        .from(lookup.table as any)
+        .select(`${lookup.idCol}, image_url`)
+        .in(lookup.idCol, refIds);
+
+      const imgMap = Object.fromEntries(
+        (rows ?? []).map((r: any) => [r[lookup.idCol], r.image_url ?? null])
+      );
+
+      for (const item of items) {
+        masterImageMap[item.id] = imgMap[item.reference_id] ?? null;
+      }
+    })
+  );
+
+  // 4. Member counts
   const countResults = await Promise.all(
     ids.map((id) =>
       db
@@ -40,7 +80,7 @@ export async function GET() {
   );
   const countMap = Object.fromEntries(countResults.map((r) => [r.id, r.count]));
 
-  // 4. Last message per community — no join, fetch user name separately
+  // 5. Last message per community
   const lastMsgResults = await Promise.all(
     ids.map(async (id) => {
       const { data: msg } = await db
@@ -64,10 +104,11 @@ export async function GET() {
   );
   const lastMsgMap = Object.fromEntries(lastMsgResults.map((r) => [r.id, r.last]));
 
-  // 5. Assemble + sort by last message recency
+  // 6. Assemble — prefer master-table image over stored community image
   const result = (communities ?? [])
     .map((c) => ({
       ...c,
+      image_url: masterImageMap[c.id] ?? c.image_url ?? null,
       member_count: countMap[c.id] ?? 0,
       last_message: lastMsgMap[c.id] ?? null,
     }))
