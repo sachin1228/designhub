@@ -64,7 +64,7 @@ function CommunityCard({
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="font-body text-sm font-medium text-foreground truncate group-hover:text-accent transition-colors">
+        <p className="font-body text-sm font-normal text-foreground truncate group-hover:text-accent transition-colors">
           {c.name}
         </p>
         <div className="flex items-center gap-1 mt-0.5">
@@ -75,7 +75,7 @@ function CommunityCard({
 
       {/* Joined badge */}
       {c.joined && (
-        <span className="shrink-0 font-body text-[10px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+        <span className="shrink-0 font-body text-[10px] font-normal text-accent bg-accent/10 px-2 py-0.5 rounded-full">
           Joined
         </span>
       )}
@@ -142,7 +142,7 @@ export default function CommunitiesIndexPage() {
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
-                className={`relative shrink-0 flex items-center gap-2 px-4 py-2.5 font-body text-sm font-medium transition-colors ${
+                className={`relative shrink-0 flex items-center gap-2 px-4 py-2.5 font-body text-sm font-normal transition-colors ${
                   isActive
                     ? "text-accent"
                     : "text-foreground-muted hover:text-foreground"
