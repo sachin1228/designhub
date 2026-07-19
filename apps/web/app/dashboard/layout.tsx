@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 flex w-56 flex-col border-r border-border bg-surface">
+      <aside className="fixed inset-y-0 left-0 flex w-64 flex-col border-r border-border bg-surface">
         {/* Brand */}
         <div className="px-4 py-4 border-b border-border">
           <span className="font-display text-base font-semibold text-foreground">
@@ -32,7 +32,7 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Right side */}
-      <div className="ml-56 flex flex-1 flex-col">
+      <div className="ml-64 flex flex-1 flex-col">
         {/* Topbar */}
         <header className="sticky top-0 z-10 flex items-center justify-end border-b border-border bg-surface px-6 py-3">
           <DashboardLogoutButton />
