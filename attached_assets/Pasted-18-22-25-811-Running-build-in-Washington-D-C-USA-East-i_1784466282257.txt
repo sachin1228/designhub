@@ -1,0 +1,48 @@
+18:22:25.811 Running build in Washington, D.C., USA (East) – iad1
+18:22:25.812 Build machine configuration: 2 cores, 8 GB
+18:22:25.981 Cloning github.com/sachin1228/designhub (Branch: feature/communities, Commit: 483c453)
+18:22:26.942 Cloning completed: 961.000ms
+18:22:27.339 Restored build cache from previous deployment (43JeWvQFzvTEDPhbcLnFYiwT16Xe)
+18:22:27.733 Running "vercel build"
+18:22:27.752 Vercel CLI 56.2.0
+18:22:28.115 Installing dependencies...
+18:22:29.296 
+18:22:29.296 up to date in 1s
+18:22:29.297 
+18:22:29.298 168 packages are looking for funding
+18:22:29.298   run `npm fund` for details
+18:22:29.327 Detected Next.js version: 16.2.10
+18:22:29.333 Running "npm run build"
+18:22:29.491 
+18:22:29.491 > web@0.1.0 build
+18:22:29.492 > next build
+18:22:29.492 
+18:22:30.085   Applying modifyConfig from Vercel
+18:22:30.167 ▲ Next.js 16.2.10 (Turbopack)
+18:22:30.168 
+18:22:30.176 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+18:22:30.208   Creating an optimized production build ...
+18:22:43.459 ✓ Compiled successfully in 12.7s
+18:22:43.469   Running TypeScript ...
+18:22:51.601 Failed to type check.
+18:22:51.601 
+18:22:51.602 ./app/api/communities/auto-join/route.ts:103:22
+18:22:51.602 Type error: Conversion of type '{ name: any; image_url: any; }[]' to type '{ name: string; image_url: string | null; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+18:22:51.602   Type '{ name: any; image_url: any; }[]' is missing the following properties from type '{ name: string; image_url: string | null; }': name, image_url
+18:22:51.602 
+18:22:51.603   101 |
+18:22:51.603   102 |   for (const row of interests ?? []) {
+18:22:51.603 > 103 |     const interest = row.design_interests as { name: string; image_url: string | null } |...
+18:22:51.603       |                      ^
+18:22:51.604   104 |     if (row.interest_id && interest?.name) {
+18:22:51.604   105 |       specs.push({
+18:22:51.604   106 |         type: "interest",
+18:22:51.645 Next.js build worker exited with code: 1 and signal: null
+18:22:51.680 npm error Lifecycle script `build` failed with error:
+18:22:51.680 npm error code 1
+18:22:51.680 npm error path /vercel/path0/apps/web
+18:22:51.680 npm error workspace web@0.1.0
+18:22:51.681 npm error location /vercel/path0/apps/web
+18:22:51.681 npm error command failed
+18:22:51.681 npm error command sh -c next build
+18:22:51.701 Error: Command "npm run build" exited with 1
