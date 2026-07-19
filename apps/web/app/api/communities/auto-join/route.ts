@@ -36,7 +36,7 @@ export async function POST() {
   const specs: CommunitySpec[] = [];
 
   if (profile?.city_id) {
-    const city = profile.cities as { name: string; image_url: string | null } | null;
+    const city = profile.cities as unknown as { name: string; image_url: string | null } | null;
     specs.push({
       type: "city",
       reference_id: profile.city_id,
@@ -46,7 +46,7 @@ export async function POST() {
   }
 
   if (profile?.sector_id) {
-    const sector = profile.design_sectors as { name: string; image_url: string | null } | null;
+    const sector = profile.design_sectors as unknown as { name: string; image_url: string | null } | null;
     specs.push({
       type: "sector",
       reference_id: profile.sector_id,
@@ -56,7 +56,7 @@ export async function POST() {
   }
 
   if (profile?.company_id) {
-    const company = profile.companies as { name: string; image_url: string | null } | null;
+    const company = profile.companies as unknown as { name: string; image_url: string | null } | null;
     specs.push({
       type: "company",
       reference_id: profile.company_id,
