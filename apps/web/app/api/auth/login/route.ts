@@ -7,11 +7,20 @@ import { rateLimit } from "@/lib/auth/rate-limit";
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = rateLimit(`login:${ip}`, 10, 900); // 10 per 15 min
-  if (!rl.success) {
+
+  // IP-level gate: coarse defence against scanning from a single source.
+  // Note: x-forwarded-for is attacker-controlled if not set by a trusted proxy.
+  // For production, configure your load-balancer / CDN to set this header and
+  // replace this in-memory store with Redis (e.g. Upstash) so limits survive
+  // restarts and span all instances.
+  const rlIp = rateLimit(`login:ip:${ip}`, 10, 900); // 10 per 15 min per IP
+  if (!rlIp.success) {
     return NextResponse.json(
       { error: "Too many login attempts. Please try again later." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((rlIp.resetAt - Date.now()) / 1000)) },
+      }
     );
   }
 
@@ -32,24 +41,38 @@ export async function POST(request: NextRequest) {
 
   const { email, password } = parsed.data;
 
-  // ── Admin short-circuit ──────────────────────────────────────────────
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  // Per-account gate: prevents distributed brute-force (many IPs, one target).
+  const rlEmail = rateLimit(`login:email:${email.toLowerCase()}`, 20, 900); // 20 per 15 min per account
+  if (!rlEmail.success) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Please try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((rlEmail.resetAt - Date.now()) / 1000)) },
+      }
+    );
+  }
 
-  if (
-    adminEmail && adminPassword &&
-    email.toLowerCase() === adminEmail.toLowerCase() &&
-    password === adminPassword
-  ) {
-    const token = await createSession({ email: adminEmail, role: "admin" });
-    const response = NextResponse.json({ success: true, redirect: "/admin" });
-    setSessionCookie(response, token);
-    return response;
+  // ── Admin short-circuit ──────────────────────────────────────────────
+  // ADMIN_PASSWORD_HASH must be a bcrypt hash — never store the plaintext password.
+  // To generate: node -e "require('bcryptjs').hash('yourpassword', 12).then(console.log)"
+  const adminEmail    = process.env.ADMIN_EMAIL;
+  const adminPwHash   = process.env.ADMIN_PASSWORD_HASH; // bcrypt hash, NOT plaintext
+
+  if (adminEmail && adminPwHash && email.toLowerCase() === adminEmail.toLowerCase()) {
+    const adminMatch = await bcrypt.compare(password, adminPwHash);
+    if (adminMatch) {
+      const token = await createSession({ email: adminEmail, role: "admin" });
+      const response = NextResponse.json({ success: true, redirect: "/admin" });
+      setSessionCookie(response, token);
+      return response;
+    }
+    // Wrong password — fall through to the same generic error; don't hint it's admin.
+    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
   const db = createServiceClient();
 
-  // Look up user
   const { data: user } = await db
     .from("users")
     .select("id, name, email, password_hash, application_id, is_blocked")
@@ -57,33 +80,8 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (!user) {
-    // Check if there's a pending or rejected application to give a useful message
-    const { data: app } = await db
-      .from("applications")
-      .select("status")
-      .eq("applicant_email", email.toLowerCase())
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (app?.status === "pending") {
-      return NextResponse.json(
-        { error: "Your application is still under review." },
-        { status: 403 }
-      );
-    }
-    if (app?.status === "rejected") {
-      return NextResponse.json(
-        {
-          error:
-            "Your application wasn't approved this time. You're welcome to improve your portfolio and apply again.",
-          showApplyLink: true,
-        },
-        { status: 403 }
-      );
-    }
-
-    // Generic error to avoid user enumeration
+    // Return a generic error. Do NOT query the applications table here —
+    // doing so would reveal whether the email was used to apply (user enumeration).
     return NextResponse.json(
       { error: "Invalid email or password." },
       { status: 401 }

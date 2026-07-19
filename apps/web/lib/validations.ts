@@ -17,6 +17,9 @@ export const loginSchema = z.object({
 
 export const signupStep1Schema = z
   .object({
+    // Token is validated here so it goes through the same type-safe path as
+    // the rest of the body, preventing non-string values from reaching the DB query.
+    token: z.string().min(1, "Invitation token is required"),
     name: z.string().min(2, "Name must be at least 2 characters").max(100),
     email: z.string().email("Please enter a valid email address"),
     password: z

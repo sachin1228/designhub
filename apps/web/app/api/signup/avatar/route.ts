@@ -6,17 +6,29 @@ import { sendWelcomeEmail } from "@/lib/email";
 const BUCKET = "profile-avatars";
 const MAX_BYTES = 3 * 1024 * 1024; // 3 MB (client compresses first, so this is a safety cap)
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-// All avatar source values the UI can send. "upload" is handled by the
-// multipart path above and never reaches this validation, but keep it here
-// so the constant is a complete allowlist of every accepted value.
-const ALLOWED_SOURCES = [
-  "dicebear",
-  "boring-avatars",
-  "robohash",
-  "avataaars",
-  "multiavatar",
-  "upload",
-] as const;
+const ALLOWED_SOURCES = ["dicebear", "boring-avatars", "robohash", "avataaars", "multiavatar", "upload"] as const;
+
+/**
+ * Allowlist of domains that may be stored as avatar URLs.
+ * Prevents arbitrary URLs being saved (SSRF if ever fetched server-side,
+ * phishing risk if rendered for other users).
+ */
+const ALLOWED_AVATAR_DOMAINS = new Set([
+  "api.dicebear.com",
+  "source.boringavatars.com",
+  "robohash.org",
+  "avataaars.io",
+  "api.multiavatar.com",
+]);
+
+function isAllowedAvatarUrl(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === "https:" && ALLOWED_AVATAR_DOMAINS.has(hostname);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Mark the invitation as used (only on first completion) and send a welcome
@@ -122,7 +134,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ avatar_url: publicUrl });
   }
 
-  // ── Avatar URL selection path (DiceBear / Boring Avatars / Robohash) ──
+  // ── Avatar URL selection path (DiceBear / Boring Avatars / Robohash / etc.) ──
   let body: unknown;
   try {
     body = await request.json();
@@ -140,6 +152,15 @@ export async function POST(request: NextRequest) {
   }
   if (!avatar_source || !ALLOWED_SOURCES.includes(avatar_source as never)) {
     return NextResponse.json({ error: "Invalid avatar_source." }, { status: 422 });
+  }
+
+  // Validate the URL comes from an approved avatar provider.
+  // Prevents arbitrary URLs being stored (SSRF / phishing vector).
+  if (!isAllowedAvatarUrl(avatar_url)) {
+    return NextResponse.json(
+      { error: "Avatar URL must be from an approved provider." },
+      { status: 422 }
+    );
   }
 
   const db = createServiceClient();

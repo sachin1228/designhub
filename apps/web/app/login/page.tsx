@@ -292,9 +292,11 @@ export default function LoginPage() {
             <div className="relative flex">
               <button
                 type="button"
-                className="flex-1 rounded-md border border-border bg-background py-2.5 font-body text-sm text-foreground transition-colors hover:bg-surface-raised"
+                disabled
+                title="Google login coming soon"
+                className="flex-1 rounded-md border border-border bg-background py-2.5 font-body text-sm text-foreground-muted cursor-not-allowed opacity-50"
               >
-                Google
+                Google (coming soon)
               </button>
             </div>
           </div>

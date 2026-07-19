@@ -25,7 +25,10 @@ export async function POST(request: NextRequest) {
   if (!rl.success) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      }
     );
   }
 
@@ -74,9 +77,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // ── Atomic claim: mark token used BEFORE touching the password ────────
+  // The WHERE used_at IS NULL guard ensures only one concurrent request wins.
+  // Without this, two simultaneous requests with different passwords would both
+  // pass the used_at check above, race on the UPDATE, and the last write would
+  // silently set an unexpected password.
+  const { data: claimed } = await db
+    .from("password_resets")
+    .update({ used_at: new Date().toISOString() })
+    .eq("id", reset.id)
+    .is("used_at", null)   // atomic guard — succeeds only if not already claimed
+    .select("id");
+
+  if (!claimed || claimed.length === 0) {
+    // Another concurrent request beat us to it.
+    return NextResponse.json(
+      { error: "This reset link has already been used. Please request a new one." },
+      { status: 410 }
+    );
+  }
+
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // Update password
   const { error: updateError } = await db
     .from("users")
     .update({ password_hash: passwordHash })
@@ -84,17 +106,16 @@ export async function POST(request: NextRequest) {
 
   if (updateError) {
     console.error("[reset-confirm] update error:", updateError);
+    // Un-claim the token so the user can retry.
+    await db
+      .from("password_resets")
+      .update({ used_at: null })
+      .eq("id", reset.id);
     return NextResponse.json(
       { error: "Failed to update password. Please try again." },
       { status: 500 }
     );
   }
-
-  // Mark token as used
-  await db
-    .from("password_resets")
-    .update({ used_at: new Date().toISOString() })
-    .eq("id", reset.id);
 
   return NextResponse.json({ success: true });
 }

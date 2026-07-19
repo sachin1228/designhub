@@ -11,7 +11,10 @@ export async function POST(request: NextRequest) {
   if (!rl.success) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      }
     );
   }
 
@@ -22,6 +25,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
+  // token is now part of signupStep1Schema, so it is type-checked and
+  // validated in the same pass as name/email/password — no raw cast needed.
   const parsed = signupStep1Schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -30,12 +35,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { name, email, password } = parsed.data;
-  const { token } = (body as { token?: string });
-
-  if (!token) {
-    return NextResponse.json({ error: "Invitation token is required." }, { status: 400 });
-  }
+  const { token, name, email, password } = parsed.data;
 
   const db = createServiceClient();
 
@@ -79,28 +79,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Work out which step they need to return to so the frontend can jump
-    // directly to the right step instead of always landing on step 2.
-    const { data: profile } = await db
-      .from("designer_profiles")
-      .select("id, avatar_url")
-      .eq("user_id", existingUser.id)
-      .maybeSingle();
-
-    const resumeStep: 2 | 3 | null = !profile ? 2 : !profile.avatar_url ? 3 : null;
-
-    if (resumeStep === null) {
-      // Signup was already fully completed — tell the user to log in normally.
-      return NextResponse.json(
-        {
-          error:
-            "Your account is already set up. Please log in using the login page.",
-          redirectToLogin: true,
-        },
-        { status: 409 }
-      );
-    }
-
     const sessionToken = await createSession({
       userId: existingUser.id,
       email: existingUser.email,
@@ -112,7 +90,6 @@ export async function POST(request: NextRequest) {
       userId: existingUser.id,
       name: existingUser.name,
       resumed: true,
-      resumeStep,
     });
     setSessionCookie(response, sessionToken);
     return response;

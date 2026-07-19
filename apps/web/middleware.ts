@@ -25,9 +25,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protect /dashboard/* — must be logged-in user
+  // Protect /dashboard/* — must be any authenticated user.
+  // Admin users are intentionally allowed here (e.g. to preview dashboard views).
   if (pathname.startsWith("/dashboard")) {
-    if (!session || session.role !== "user") {
+    if (!session) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       return NextResponse.redirect(url);
