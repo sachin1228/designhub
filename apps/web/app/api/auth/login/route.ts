@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { createServiceClient } from "@/lib/supabase/service";
 import { loginSchema } from "@/lib/validations";
 import { createSession, setSessionCookie } from "@/lib/auth/session";
@@ -54,14 +53,11 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Admin short-circuit ──────────────────────────────────────────────
-  // ADMIN_PASSWORD_HASH must be a bcrypt hash — never store the plaintext password.
-  // To generate: node -e "require('bcryptjs').hash('yourpassword', 12).then(console.log)"
   const adminEmail    = process.env.ADMIN_EMAIL;
-  const adminPwHash   = process.env.ADMIN_PASSWORD_HASH; // bcrypt hash, NOT plaintext
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (adminEmail && adminPwHash && email.toLowerCase() === adminEmail.toLowerCase()) {
-    const adminMatch = await bcrypt.compare(password, adminPwHash);
-    if (adminMatch) {
+  if (adminEmail && adminPassword && email.toLowerCase() === adminEmail.toLowerCase()) {
+    if (password === adminPassword) {
       const token = await createSession({ email: adminEmail, role: "admin" });
       const response = NextResponse.json({ success: true, redirect: "/admin" });
       setSessionCookie(response, token);
