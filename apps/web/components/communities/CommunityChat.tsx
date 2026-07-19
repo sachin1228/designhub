@@ -274,7 +274,7 @@ export function CommunityChat({
               <div key={group.date}>
                 {/* Date divider */}
                 <div className="flex items-center justify-center py-3">
-                  <span className="font-body text-[11px] text-foreground-muted bg-surface-raised border border-border/50 rounded-full px-3 py-0.5">
+                  <span className="font-body text-[11px] text-foreground-muted bg-surface-raised rounded-full px-3 py-0.5 shadow-[0_1px_6px_rgba(0,0,0,0.25)]">
                     {group.date}
                   </span>
                 </div>
