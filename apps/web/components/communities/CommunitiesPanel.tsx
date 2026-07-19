@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Users, MessageSquare, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Users, MessageSquare, ChevronDown, ChevronRight } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 
 interface LastMessage {
@@ -198,7 +198,6 @@ export function CommunitiesPanel() {
   const pathname = usePathname();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -217,62 +216,14 @@ export function CommunitiesPanel() {
 
   const activeCommunityId = pathname.match(/\/dashboard\/communities\/([^/]+)/)?.[1];
 
-  // When searching — flat list sorted by last message, no grouping
-  const searchQuery = search.trim().toLowerCase();
-  const filtered = searchQuery
-    ? communities.filter((c) => c.name.toLowerCase().includes(searchQuery))
-    : null; // null = show grouped view
-
   return (
     <div className="flex flex-col h-full w-72 shrink-0 border-r border-border bg-surface">
-      {/* Header */}
-      <div className="px-4 py-4 border-b border-border">
-        <h2 className="font-display text-base font-semibold text-foreground mb-3">Communities</h2>
-        <div className="relative">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search communities…"
-            className="w-full rounded-lg border border-border bg-surface-raised pl-8 pr-7 py-1.5 font-body text-xs text-foreground placeholder:text-foreground-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex justify-center py-12">
             <Spinner className="h-4 w-4 text-foreground-muted" />
           </div>
-        ) : filtered !== null ? (
-          /* Search results — flat */
-          filtered.length === 0 ? (
-            <div className="px-4 py-10 text-center">
-              <p className="font-body text-xs text-foreground-muted">No results for &quot;{search}&quot;</p>
-            </div>
-          ) : (
-            <ul>
-              {filtered.map((c, idx) => (
-                <CommunityRow
-                  key={c.id}
-                  c={c}
-                  active={c.id === activeCommunityId}
-                  isLast={idx === filtered.length - 1}
-                  onClick={() => router.push(`/dashboard/communities/${c.id}`)}
-                />
-              ))}
-            </ul>
-          )
         ) : communities.length === 0 ? (
           <div className="px-4 py-10 text-center">
             <MessageSquare size={24} className="mx-auto text-foreground-muted mb-2 opacity-40" />
