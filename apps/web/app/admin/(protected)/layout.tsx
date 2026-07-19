@@ -19,14 +19,14 @@ export default async function AdminProtectedLayout({
       <AdminTopbar />
 
       {/* Sidebar — starts below the topbar */}
-      <aside className="fixed top-11 bottom-0 left-0 flex w-44 flex-col overflow-y-auto border-r border-border bg-surface">
+      <aside className="fixed top-11 bottom-0 left-0 flex w-[12rem] flex-col overflow-y-auto border-r border-border bg-surface">
         <div className="px-3 py-3">
           <AdminSidebar />
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="ml-44 mt-11 flex-1 px-6 py-5">
+      <main className="ml-[12rem] mt-11 flex-1 px-6 py-5">
         {children}
       </main>
     </div>
