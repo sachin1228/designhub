@@ -46,7 +46,7 @@ function CommunityCard({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 w-full px-4 py-3 text-left rounded-xl bg-surface hover:bg-surface-raised transition-colors border border-border hover:border-border-raised group"
+      className="flex items-center gap-3 w-full px-6 py-3 text-left border-b border-border hover:bg-surface-raised transition-colors group"
     >
       {/* Avatar */}
       {c.image_url && !imgFailed ? (
@@ -167,7 +167,7 @@ export default function CommunitiesIndexPage() {
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex justify-center py-16">
             <Spinner className="h-5 w-5 text-foreground-muted" />
@@ -177,7 +177,7 @@ export default function CommunitiesIndexPage() {
             <p className="font-body text-sm text-foreground-muted">No communities found</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {filtered.map((c) => (
               <CommunityCard
                 key={c.id}
