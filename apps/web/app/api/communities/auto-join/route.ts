@@ -9,37 +9,105 @@ export async function POST() {
 
   const db = createServiceClient();
 
-  // ── 1. Load profile (city + sector) ─────────────────────────
+  // ── 1. Load full profile ─────────────────────────────────────
   const { data: profile } = await db
     .from("designer_profiles")
-    .select("city_id, sector_id, cities(name), design_sectors(name)")
+    .select(`
+      city_id, sector_id, company_id, experience_level,
+      cities(name, image_url),
+      design_sectors(name, image_url),
+      companies(name, image_url)
+    `)
     .eq("user_id", userId)
     .maybeSingle();
 
   // ── 2. Load interests ────────────────────────────────────────
   const { data: interests } = await db
     .from("user_interests")
-    .select("interest_id, design_interests(name)")
+    .select("interest_id, design_interests(name, image_url)")
     .eq("user_id", userId);
 
-  // Build list of communities to find-or-create
-  type CommunitySpec = { type: "city" | "sector" | "interest"; reference_id: string; name: string };
+  type CommunitySpec = {
+    type: "city" | "sector" | "interest" | "company" | "experience_level";
+    reference_id: string;
+    name: string;
+    image_url: string | null;
+  };
   const specs: CommunitySpec[] = [];
 
   if (profile?.city_id) {
-    const cityName = (profile.cities as { name: string } | null)?.name ?? "Unknown City";
-    specs.push({ type: "city", reference_id: profile.city_id, name: `${cityName} Designers` });
+    const city = profile.cities as { name: string; image_url: string | null } | null;
+    specs.push({
+      type: "city",
+      reference_id: profile.city_id,
+      name: `${city?.name ?? "Unknown City"} Designers`,
+      image_url: city?.image_url ?? null,
+    });
   }
 
   if (profile?.sector_id) {
-    const sectorName = (profile.design_sectors as { name: string } | null)?.name ?? "Unknown Sector";
-    specs.push({ type: "sector", reference_id: profile.sector_id, name: `${sectorName} Community` });
+    const sector = profile.design_sectors as { name: string; image_url: string | null } | null;
+    specs.push({
+      type: "sector",
+      reference_id: profile.sector_id,
+      name: `${sector?.name ?? "Unknown Sector"} Community`,
+      image_url: sector?.image_url ?? null,
+    });
+  }
+
+  if (profile?.company_id) {
+    const company = profile.companies as { name: string; image_url: string | null } | null;
+    specs.push({
+      type: "company",
+      reference_id: profile.company_id,
+      name: `${company?.name ?? "Unknown Company"} Designers`,
+      image_url: company?.image_url ?? null,
+    });
+  }
+
+  if (profile?.experience_level) {
+    // experience_level is a PG enum — look up its UUID from the experience_levels table
+    const { data: expLevel } = await db
+      .from("experience_levels")
+      .select("id, image_url")
+      .eq("slug", profile.experience_level)
+      .maybeSingle();
+
+    if (expLevel) {
+      const levelNames: Record<string, string> = {
+        student: "Students",
+        fresher: "Freshers",
+        junior: "Junior Designers",
+        mid_level: "Mid-Level Designers",
+        senior: "Senior Designers",
+        lead: "Lead Designers",
+        principal: "Principal Designers",
+        staff: "Staff Designers",
+        design_manager: "Design Managers",
+        head_of_design: "Heads of Design",
+        director: "Design Directors",
+        vp: "VP of Design",
+        consultant: "Design Consultants",
+        freelancer: "Freelancers",
+      };
+      specs.push({
+        type: "experience_level",
+        reference_id: expLevel.id,
+        name: levelNames[profile.experience_level] ?? profile.experience_level,
+        image_url: expLevel.image_url ?? null,
+      });
+    }
   }
 
   for (const row of interests ?? []) {
-    const interestName = (row.design_interests as { name: string } | null)?.name;
-    if (row.interest_id && interestName) {
-      specs.push({ type: "interest", reference_id: row.interest_id, name: interestName });
+    const interest = row.design_interests as { name: string; image_url: string | null } | null;
+    if (row.interest_id && interest?.name) {
+      specs.push({
+        type: "interest",
+        reference_id: row.interest_id,
+        name: interest.name,
+        image_url: interest.image_url ?? null,
+      });
     }
   }
 
@@ -52,7 +120,12 @@ export async function POST() {
     const { data: community, error } = await db
       .from("communities")
       .upsert(
-        { type: spec.type, reference_id: spec.reference_id, name: spec.name },
+        {
+          type: spec.type,
+          reference_id: spec.reference_id,
+          name: spec.name,
+          image_url: spec.image_url,
+        },
         { onConflict: "type,reference_id", ignoreDuplicates: false }
       )
       .select("id")
@@ -60,7 +133,6 @@ export async function POST() {
 
     if (error || !community) continue;
 
-    // Add user as member (idempotent)
     await db
       .from("community_members")
       .upsert(
