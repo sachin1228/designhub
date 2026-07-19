@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Send, Users, ArrowLeft } from "lucide-react";
+import { Send, Users, ArrowLeft, Clock, CheckCheck } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import { createBrowserClient } from "@/lib/supabase/browser";
 
@@ -16,6 +16,8 @@ interface Message {
   created_at: string;
   user_id: string;
   users: Sender | null;
+  // optimistic UI only — not stored in DB
+  status?: "sending" | "sent" | "failed";
 }
 
 interface Community {
@@ -138,6 +140,21 @@ export function CommunityChat({
     if (!content || sending) return;
     setSending(true);
     setError(null);
+
+    // Optimistic message — shown immediately with clock icon
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: Message = {
+      id: tempId,
+      content,
+      created_at: new Date().toISOString(),
+      user_id: currentUserId,
+      users: null,
+      status: "sending",
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setInput("");
+    inputRef.current?.focus();
+
     try {
       const res = await fetch(`/api/communities/${communityId}/messages`, {
         method: "POST",
@@ -146,15 +163,21 @@ export function CommunityChat({
       });
       if (res.ok) {
         const { message } = await res.json();
-        // Append the returned message immediately — don't wait for realtime
-        setMessages((prev) => [...prev, message]);
-        setInput("");
-        inputRef.current?.focus();
+        // Replace optimistic with real message (gets double-tick)
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...message, status: "sent" } : m))
+        );
       } else {
         const d = await res.json();
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m))
+        );
         setError(d.error ?? "Failed to send.");
       }
     } catch {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m))
+      );
       setError("Network error.");
     } finally {
       setSending(false);
@@ -258,12 +281,27 @@ export function CommunityChat({
                     return (
                       <div key={msg.id} className={`flex justify-end ${isSameAuthor ? "mt-0.5" : "mt-3"}`}>
                         <div className="max-w-[65%]">
-                          <div className="rounded-2xl rounded-tr-sm bg-accent px-3 py-2">
+                          <div className={`rounded-2xl rounded-tr-sm px-3 py-2 transition-opacity ${
+                            msg.status === "sending" ? "bg-accent opacity-70" :
+                            msg.status === "failed"  ? "bg-red-500/80" :
+                            "bg-accent"
+                          }`}>
                             <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">{msg.content}</p>
                           </div>
-                          <p className="font-mono text-[10px] text-foreground-muted text-right mt-0.5 pr-1">
-                            {fmtTime(msg.created_at)}
-                          </p>
+                          <div className="flex items-center justify-end gap-1 mt-0.5 pr-1">
+                            <span className="font-mono text-[10px] text-foreground-muted">
+                              {fmtTime(msg.created_at)}
+                            </span>
+                            {msg.status === "sending" && (
+                              <Clock size={10} className="text-foreground-muted animate-pulse" />
+                            )}
+                            {(msg.status === "sent" || !msg.status) && (
+                              <CheckCheck size={11} className="text-accent" />
+                            )}
+                            {msg.status === "failed" && (
+                              <span className="text-[10px] text-red-400">!</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -320,7 +358,7 @@ export function CommunityChat({
                 className="h-10 w-10 flex items-center justify-center rounded-xl bg-accent text-accent-foreground hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                 aria-label="Send"
               >
-                {sending ? <Spinner className="h-4 w-4 text-white" /> : <Send size={16} />}
+                <Send size={16} />
               </button>
             </div>
             <p className="font-body text-[10px] text-foreground-muted mt-1.5 ml-1">
