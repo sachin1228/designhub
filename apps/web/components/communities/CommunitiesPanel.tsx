@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Users, MessageSquare, ChevronDown, ChevronRight } from "lucide-react";
+import { Users, MessageSquare } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 
 interface LastMessage {
@@ -152,43 +152,29 @@ function SectionGroup({
   activeCommunityId: string | undefined;
   onNavigate: (id: string) => void;
 }) {
-  // Start open if any community in this group is currently active
-  const [open, setOpen] = useState(() =>
-    communities.some((c) => c.id === activeCommunityId)
-  );
-
   if (communities.length === 0) return null;
 
   return (
     <div>
-      {/* Section header */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-2 group"
-      >
-        <span className="font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted group-hover:text-foreground transition-colors">
+      {/* Section label */}
+      <div className="px-4 pt-4 pb-1">
+        <span className="font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
           {label}
         </span>
-        {open
-          ? <ChevronDown size={11} className="text-foreground-muted group-hover:text-foreground transition-colors" />
-          : <ChevronRight size={11} className="text-foreground-muted group-hover:text-foreground transition-colors" />
-        }
-      </button>
+      </div>
 
-      {/* Community rows */}
-      {open && (
-        <ul className="border-t border-white/5">
-          {communities.map((c, idx) => (
-            <CommunityRow
-              key={c.id}
-              c={c}
-              active={c.id === activeCommunityId}
-              isLast={idx === communities.length - 1}
-              onClick={() => onNavigate(c.id)}
-            />
-          ))}
-        </ul>
-      )}
+      {/* Community rows — always visible */}
+      <ul>
+        {communities.map((c, idx) => (
+          <CommunityRow
+            key={c.id}
+            c={c}
+            active={c.id === activeCommunityId}
+            isLast={idx === communities.length - 1}
+            onClick={() => onNavigate(c.id)}
+          />
+        ))}
+      </ul>
     </div>
   );
 }
@@ -231,7 +217,7 @@ export function CommunitiesPanel() {
           </div>
         ) : (
           /* Grouped view */
-          <div className="py-1 divide-y divide-white/5">
+          <div className="py-1">
             {SECTIONS.map((section) => {
               const group = communities.filter((c) => c.type === section.type);
               return (
