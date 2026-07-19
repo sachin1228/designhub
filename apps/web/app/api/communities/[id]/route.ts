@@ -52,7 +52,7 @@ export async function GET(
       .select(`${lookup.idCol}, image_url`)
       .eq(lookup.idCol, community.reference_id)
       .maybeSingle();
-    if (masterRow?.image_url) resolvedImageUrl = masterRow.image_url;
+    if ((masterRow as any)?.image_url) resolvedImageUrl = (masterRow as any).image_url;
   }
 
   // Member count
