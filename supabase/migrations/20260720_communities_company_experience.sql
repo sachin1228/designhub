@@ -40,7 +40,14 @@ insert into experience_levels (slug, name) values
 on conflict (slug) do nothing;
 
 alter table experience_levels enable row level security;
-create policy "public_read" on experience_levels for select using (true);
+do $ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'experience_levels' and policyname = 'public_read'
+  ) then
+    execute 'create policy "public_read" on experience_levels for select using (true)';
+  end if;
+end $;
 
 -- ─── 3. Add image_url to design_interests ───────────────────
 alter table design_interests
