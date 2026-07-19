@@ -7,7 +7,11 @@ import { createBrowserClient } from "@/lib/supabase/browser";
 import {
   msgCache,
   metaCache,
+  msgFetchedAt,
+  inFlightMsgFetch,
+  evictIfNeeded,
   META_STALE_MS,
+  MSG_STALE_MS,
   type CachedMessage,
   type CachedMeta,
 } from "@/lib/communities/cache";
@@ -92,6 +96,15 @@ export function CommunityChat({
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  /**
+   * Tracks the *currently mounted* communityId.
+   * Used as a stale-response guard: async fetches capture `communityId` by
+   * closure, then compare against this ref before writing to React state.
+   * If the user switched communities before the fetch finished, the ref will
+   * already point to a different id and the stale response is discarded.
+   */
+  const communityIdRef = useRef(communityId);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -108,58 +121,96 @@ export function CommunityChat({
 
   // ─── Fetch community metadata only (header + members) ────────────────────
   const fetchMeta = useCallback(async () => {
-    const res = await fetch(`/api/communities/${communityId}`);
+    const targetId = communityId; // captured at call time
+    const res = await fetch(`/api/communities/${targetId}`);
     if (!res.ok) return;
     const d = await res.json();
+
+    // Stale-response guard: discard if community changed while we were fetching
+    if (communityIdRef.current !== targetId) return;
+
     const cached: CachedMeta = {
       community: d.community,
       members: d.members ?? [],
       fetchedAt: Date.now(),
     };
-    metaCache.set(communityId, cached);
+    metaCache.set(targetId, cached);
     setCommunity(d.community);
     setMembers(d.members ?? []);
   }, [communityId]);
 
   // ─── Fetch messages (full or incremental via ?after=ISO) ─────────────────
   const fetchMessages = useCallback(
-    async (after?: string) => {
-      const url = after
-        ? `/api/communities/${communityId}/messages?after=${encodeURIComponent(after)}`
-        : `/api/communities/${communityId}/messages`;
+    (after?: string): Promise<void> => {
+      const targetId = communityId; // captured at call time
 
-      const res = await fetch(url);
-      if (!res.ok) return;
-      const d = await res.json();
-      const incoming: Message[] = d.messages ?? [];
-
-      if (after) {
-        // Incremental: merge new messages into existing cache
-        setMessages((prev) => {
-          const existingIds = new Set(prev.map((m) => m.id));
-          const toAdd = incoming.filter((m) => !existingIds.has(m.id));
-          if (toAdd.length === 0) return prev;
-          const merged = [
-            ...prev.filter((m) => !m.id.startsWith("temp-")),
-            ...toAdd,
-          ].sort(
-            (a, b) =>
-              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          );
-          msgCache.set(communityId, merged);
-          return merged;
-        });
-      } else {
-        // Full replace
-        msgCache.set(communityId, incoming);
-        setMessages(incoming);
+      // For full fetches: deduplicate concurrent requests.
+      // If a hover-prefetch already started a full fetch for this community,
+      // the click reuses that same promise instead of firing a second request.
+      if (!after) {
+        const inflight = inFlightMsgFetch.get(targetId);
+        if (inflight) return inflight;
       }
+
+      const url = after
+        ? `/api/communities/${targetId}/messages?after=${encodeURIComponent(after)}`
+        : `/api/communities/${targetId}/messages`;
+
+      const p: Promise<void> = fetch(url)
+        .then((res) => {
+          if (!res.ok) return;
+          return res.json();
+        })
+        .then((d) => {
+          if (!d) return;
+          const incoming: Message[] = d.messages ?? [];
+
+          if (after) {
+            // Incremental: merge new messages into existing cache.
+            // Guard: only update React state if still on the same community.
+            setMessages((prev) => {
+              if (communityIdRef.current !== targetId) return prev;
+              const existingIds = new Set(prev.map((m) => m.id));
+              const toAdd = incoming.filter((m) => !existingIds.has(m.id));
+              if (toAdd.length === 0) return prev;
+              const merged = [
+                ...prev.filter((m) => !m.id.startsWith("temp-")),
+                ...toAdd,
+              ].sort(
+                (a, b) =>
+                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
+              msgCache.set(targetId, merged);
+              return merged;
+            });
+          } else {
+            // Full replace — update cache unconditionally (correct data for that id),
+            // but only push to React state if still on this community.
+            msgCache.set(targetId, incoming);
+            msgFetchedAt.set(targetId, Date.now());
+            evictIfNeeded();
+            if (communityIdRef.current === targetId) {
+              setMessages(incoming);
+            }
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!after) inFlightMsgFetch.delete(targetId);
+        });
+
+      if (!after) inFlightMsgFetch.set(targetId, p);
+      return p;
     },
     [communityId]
   );
 
   // ─── On communityId change: show cache instantly, fetch in background ─────
   useEffect(() => {
+    // Keep the ref in sync immediately so stale-response guards work.
+    communityIdRef.current = communityId;
+    let cancelled = false;
+
     const cachedMsgs = msgCache.get(communityId);
     const cachedMeta = metaCache.get(communityId);
 
@@ -178,14 +229,23 @@ export function CommunityChat({
     const metaIsStale =
       !cachedMeta || Date.now() - cachedMeta.fetchedAt > META_STALE_MS;
 
-    // Background refresh — meta only when stale/missing, messages always
+    // Messages: skip background refetch if fresh (avoids a wasted request on
+    // every revisit; the Realtime subscription keeps data up-to-date instead).
+    const fetchedAt = msgFetchedAt.get(communityId);
+    const msgsStale = !fetchedAt || Date.now() - fetchedAt > MSG_STALE_MS;
+    const hasCachedMsgs = msgCache.has(communityId);
+
     (async () => {
       await Promise.all([
-        fetchMessages(), // always refresh messages in background
+        msgsStale || !hasCachedMsgs ? fetchMessages() : Promise.resolve(),
         metaIsStale ? fetchMeta() : Promise.resolve(),
       ]);
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     })();
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [communityId]);
 
@@ -220,11 +280,13 @@ export function CommunityChat({
             created_at: string;
           };
 
-          // Check the module-level cache (always current) for duplicates
+          // Check the module-level cache (always current) for duplicates.
+          // CommunitiesPanel may have already appended this message to the
+          // cache for non-selected communities, so we deduplicate here too.
           const cached = msgCache.get(communityId) ?? [];
           if (cached.some((m) => m.id === newRow.id)) return;
 
-          // Fetch only the new messages since the last one we have
+          // Fetch only the messages since the last real (non-optimistic) one.
           const lastReal = cached
             .filter((m) => !m.id.startsWith("temp-"))
             .at(-1);

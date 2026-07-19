@@ -4,7 +4,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Users, MessageSquare, Search } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
-import { msgCache } from "@/lib/communities/cache";
+import { createBrowserClient } from "@/lib/supabase/browser";
+import {
+  msgCache,
+  msgFetchedAt,
+  inFlightMsgFetch,
+  evictIfNeeded,
+  MSG_STALE_MS,
+  type CachedMessage,
+} from "@/lib/communities/cache";
 
 interface LastMessage {
   content: string;
@@ -81,20 +89,46 @@ function CommunityAvatar({
   );
 }
 
-/** Prefetch messages for a community on hover (200ms debounce, skip if cached) */
+/**
+ * Prefetch messages for a community on hover.
+ *
+ * - 200 ms debounce prevents spurious requests when the cursor moves quickly.
+ * - Skips if data is already fresh (within MSG_STALE_MS).
+ * - Deduplicates: if a fetch for this community is already in-flight (e.g.
+ *   started by a previous hover or a click), reuses the existing promise
+ *   instead of firing a second identical request.
+ */
 function usePrefetch() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onEnter = useCallback((communityId: string) => {
-    if (msgCache.has(communityId)) return; // already cached
+    // Already have fresh data — nothing to do.
+    const fetchedAt = msgFetchedAt.get(communityId);
+    if (fetchedAt && Date.now() - fetchedAt < MSG_STALE_MS) return;
+
+    // A fetch is already in-flight for this community — let it finish.
+    if (inFlightMsgFetch.has(communityId)) return;
+
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      fetch(`/api/communities/${communityId}/messages`)
-        .then((r) => r.ok ? r.json() : null)
+      // Re-check after the debounce window in case a click already started a fetch.
+      if (inFlightMsgFetch.has(communityId)) return;
+      const fetchedAt2 = msgFetchedAt.get(communityId);
+      if (fetchedAt2 && Date.now() - fetchedAt2 < MSG_STALE_MS) return;
+
+      const p: Promise<void> = fetch(`/api/communities/${communityId}/messages`)
+        .then((r) => (r.ok ? r.json() : null))
         .then((d) => {
-          if (d?.messages) msgCache.set(communityId, d.messages);
+          if (d?.messages) {
+            msgCache.set(communityId, d.messages);
+            msgFetchedAt.set(communityId, Date.now());
+            evictIfNeeded();
+          }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => inFlightMsgFetch.delete(communityId));
+
+      inFlightMsgFetch.set(communityId, p);
     }, 200);
   }, []);
 
@@ -152,9 +186,11 @@ function CommunityRow({
           <div className="flex items-center gap-1.5">
             {c.last_message ? (
               <p className="font-body text-[11px] text-foreground-muted truncate flex-1">
-                <span className="font-medium">
-                  {c.last_message.user?.name?.split(" ")[0]}:
-                </span>{" "}
+                {c.last_message.user && (
+                  <span className="font-medium">
+                    {c.last_message.user.name.split(" ")[0]}:
+                  </span>
+                )}{" "}
                 {c.last_message.content}
               </p>
             ) : (
@@ -220,6 +256,20 @@ export function CommunitiesPanel() {
   const [loading, setLoading] = useState(true);
   const { onEnter, onLeave } = usePrefetch();
 
+  const activeCommunityId = pathname.match(
+    /\/dashboard\/communities\/([^/]+)/
+  )?.[1];
+
+  /**
+   * Ref that always holds the latest activeCommunityId.
+   * Used inside the Realtime callback to decide whether to update msgCache
+   * for the selected community (CommunityChat owns that) vs a background one.
+   */
+  const activeCommunityIdRef = useRef<string | undefined>(activeCommunityId);
+  useEffect(() => {
+    activeCommunityIdRef.current = activeCommunityId;
+  }, [activeCommunityId]);
+
   // Fetch community list exactly once on mount
   const load = useCallback(async () => {
     try {
@@ -238,9 +288,104 @@ export function CommunitiesPanel() {
     load();
   }, [load]);
 
-  const activeCommunityId = pathname.match(
-    /\/dashboard\/communities\/([^/]+)/
-  )?.[1];
+  /**
+   * Realtime subscriptions — one channel per community.
+   *
+   * Responsibilities:
+   * 1. Update the sidebar last_message preview for ALL communities in real time.
+   * 2. For NON-selected communities: append the new message to msgCache so the
+   *    next visit renders instantly without a spinner. We store it with
+   *    `users: null` (sender name not available from the raw payload); the
+   *    background fetchMessages() that runs on selection will hydrate it.
+   *    We intentionally do NOT fire an extra API call here — CommunityChat's
+   *    Realtime handler covers the selected community, and for unselected ones
+   *    a partial message in cache is better than no cache at all.
+   *
+   * Effect re-runs only when the set of community IDs changes (e.g. user joins
+   * a new community), not on every navigation.
+   */
+  const communityIdsKey = communities.map((c) => c.id).join(",");
+
+  useEffect(() => {
+    if (!communities.length) return;
+
+    let supabase: ReturnType<typeof createBrowserClient>;
+    try {
+      supabase = createBrowserClient();
+    } catch {
+      return;
+    }
+
+    const channels = communities.map((c) =>
+      supabase
+        .channel(`panel:${c.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "community_messages",
+            filter: `community_id=eq.${c.id}`,
+          },
+          (payload) => {
+            const row = payload.new as {
+              id: string;
+              community_id: string;
+              content: string;
+              created_at: string;
+              user_id: string;
+            };
+
+            // 1. Update sidebar last_message and re-sort by recency.
+            setCommunities((prev) =>
+              [...prev]
+                .map((comm) =>
+                  comm.id === row.community_id
+                    ? {
+                        ...comm,
+                        last_message: {
+                          content: row.content,
+                          created_at: row.created_at,
+                          // Keep existing sender name if we have it; the
+                          // full fetch on next visit will correct it.
+                          user: comm.last_message?.user ?? null,
+                        },
+                      }
+                    : comm
+                )
+                .sort((a, b) => {
+                  const ta = a.last_message?.created_at ?? "";
+                  const tb = b.last_message?.created_at ?? "";
+                  return tb > ta ? 1 : -1;
+                })
+            );
+
+            // 2. For non-selected communities: append partial message to cache.
+            //    CommunityChat's own Realtime handler owns the selected community.
+            if (activeCommunityIdRef.current === row.community_id) return;
+
+            const cached = msgCache.get(row.community_id) ?? [];
+            if (cached.some((m) => m.id === row.id)) return; // already there
+
+            const partial: CachedMessage = {
+              id: row.id,
+              content: row.content,
+              created_at: row.created_at,
+              user_id: row.user_id,
+              users: null, // hydrated on next selection via fetchMessages()
+            };
+            msgCache.set(row.community_id, [...cached, partial]);
+            evictIfNeeded();
+          }
+        )
+        .subscribe()
+    );
+
+    return () => {
+      for (const ch of channels) supabase.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communityIdsKey]);
 
   function handleNavigate(id: string) {
     // Navigate immediately — CommunityChat will show cached data right away
