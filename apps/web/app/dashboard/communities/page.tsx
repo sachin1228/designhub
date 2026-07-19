@@ -149,7 +149,7 @@ export default function CommunitiesIndexPage() {
                 }`}
               >
                 {tab.label}
-                <span className={`font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
+                <span className={`font-mono text-[11px] font-medium px-1.5 py-0.5 rounded-full ${
                   isActive
                     ? "bg-accent/15 text-accent"
                     : "bg-surface-raised text-foreground-muted"
