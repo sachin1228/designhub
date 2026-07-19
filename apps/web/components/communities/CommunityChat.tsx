@@ -273,10 +273,10 @@ export function CommunityChat({
             {grouped.map((group) => (
               <div key={group.date}>
                 {/* Date divider */}
-                <div className="flex items-center gap-3 py-3">
-                  <div className="flex-1 h-px bg-border" />
-                  <span className="font-body text-[10px] text-foreground-muted px-2">{group.date}</span>
-                  <div className="flex-1 h-px bg-border" />
+                <div className="flex items-center justify-center py-3">
+                  <span className="font-body text-[11px] text-foreground-muted bg-surface-raised border border-border/50 rounded-full px-3 py-0.5">
+                    {group.date}
+                  </span>
                 </div>
 
                 {group.messages.map((msg, i) => {
