@@ -375,6 +375,13 @@ export function CommunitiesPanel() {
               users: null, // hydrated on next selection via fetchMessages()
             };
             msgCache.set(row.community_id, [...cached, partial]);
+            // Invalidate the fetch timestamp so the next visit always runs a
+            // full fetchMessages() to hydrate sender info. Without this, if
+            // msgFetchedAt[id] was set recently (< MSG_STALE_MS ago), the
+            // partial message with users:null would be treated as fully fresh
+            // and fetchMessages() would be skipped, leaving the sender name
+            // permanently missing.
+            msgFetchedAt.delete(row.community_id);
             evictIfNeeded();
           }
         )
