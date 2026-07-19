@@ -9,6 +9,7 @@ export default function ExperienceLevelDetailPage() {
       apiBase="/api/admin/experience-levels"
       listPath="/admin/experience-levels"
       responseKey="experience_level"
+      readOnly
     />
   );
 }

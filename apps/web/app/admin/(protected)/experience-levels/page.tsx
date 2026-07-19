@@ -9,6 +9,8 @@ export default function ExperienceLevelsPage() {
       entity="Experience Level"
       apiBase="/api/admin/experience-levels"
       basePath="/admin/experience-levels"
+      responseKey="experience_levels"
+      readOnly
     />
   );
 }
