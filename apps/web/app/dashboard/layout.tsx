@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { APP_NAME } from "@draft/shared";
+import { createServiceClient } from "@/lib/supabase/service";
 import { DashboardSidebar } from "@/app/dashboard/DashboardSidebar";
-import { DashboardLogoutButton } from "@/app/dashboard/DashboardLogoutButton";
+import { ProfileDropdown } from "@/app/dashboard/ProfileDropdown";
 
 export default async function DashboardLayout({
   children,
@@ -14,15 +15,36 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const initial = (session.email ?? "?").charAt(0).toUpperCase();
+  // Fetch name + avatar from DB
+  const db = createServiceClient();
+  const { data: user } = await db
+    .from("users")
+    .select("name, email")
+    .eq("id", session.userId!)
+    .maybeSingle();
+
+  const { data: profile } = await db
+    .from("designer_profiles")
+    .select("avatar_url")
+    .eq("user_id", session.userId!)
+    .maybeSingle();
+
+  const name = user?.name ?? session.email ?? "User";
+  const email = user?.email ?? session.email ?? "";
+  const avatarUrl = (profile as { avatar_url?: string | null } | null)?.avatar_url ?? null;
+  const initial = name.charAt(0).toUpperCase();
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Compact icon sidebar — full height, left edge */}
       <aside className="fixed inset-y-0 left-0 z-20 flex w-16 flex-col items-center border-r border-border bg-surface">
         {/* Brand dot */}
-        <div className="flex h-[57px] w-full shrink-0 items-center justify-center">
-          <span className="font-display text-xl font-semibold text-foreground">d<span className="text-accent mx-1">/</span></span>
+        <div className="flex h-[57px] w-full shrink-0 items-center justify-center border-b border-border">
+          <div className="h-7 w-7 rounded-lg bg-accent/20 flex items-center justify-center">
+            <span className="font-display text-xs font-bold text-accent">
+              {APP_NAME.charAt(0)}
+            </span>
+          </div>
         </div>
 
         {/* Nav icons */}
@@ -38,15 +60,12 @@ export default async function DashboardLayout({
           <span className="font-display text-sm font-semibold text-foreground tracking-tight">
             {APP_NAME}
           </span>
-          <div className="flex items-center gap-3">
-            <DashboardLogoutButton />
-            {/* Profile circle */}
-            <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center shrink-0 select-none">
-              <span className="font-display text-xs font-semibold text-accent-foreground">
-                {initial}
-              </span>
-            </div>
-          </div>
+          <ProfileDropdown
+            name={name}
+            email={email}
+            avatarUrl={avatarUrl}
+            initial={initial}
+          />
         </header>
 
         {/* Page content */}
