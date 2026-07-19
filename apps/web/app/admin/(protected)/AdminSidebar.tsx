@@ -11,7 +11,7 @@ const MASTER_DATA = [
   { href: "/admin/cities",            label: "Cities",            icon: MapPin    },
   { href: "/admin/sectors",           label: "Industry",          icon: Layers    },
   { href: "/admin/interests",         label: "Interests",         icon: Sparkles  },
-  { href: "/admin/experience-levels", label: "Experience Levels", icon: TrendingUp },
+  { href: "/admin/experience-levels", label: "Experience", icon: TrendingUp },
 ];
 
 export function AdminSidebar() {
