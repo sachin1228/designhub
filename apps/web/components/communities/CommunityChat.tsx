@@ -349,7 +349,7 @@ export function CommunityChat({
             {error && (
               <p className="font-body text-xs text-red-400 mb-2 pl-1">{error}</p>
             )}
-            <div className="flex items-center gap-2 bg-surface-raised border border-border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.18)] px-4 py-2.5">
+            <div className="flex items-center gap-2 bg-surface-raised border border-border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.18)] px-4 h-[52px]">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -358,7 +358,7 @@ export function CommunityChat({
                 placeholder={`Message ${community.name}…`}
                 rows={1}
                 className="flex-1 resize-none bg-transparent font-body text-sm text-foreground placeholder:text-foreground-muted outline-none max-h-32 overflow-y-auto"
-                style={{ lineHeight: "1.5", height: "52px" }}
+                style={{ lineHeight: "1.5" }}
               />
               {input.trim() && (
                 <button
