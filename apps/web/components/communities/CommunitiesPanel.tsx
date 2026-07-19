@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Users, MessageSquare } from "lucide-react";
+import { Users, MessageSquare, Search } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 
 interface LastMessage {
@@ -201,6 +202,22 @@ export function CommunitiesPanel() {
 
   return (
     <div className="flex flex-col h-full w-72 shrink-0 border-r border-border bg-surface">
+      {/* Find communities button */}
+      <Link
+        href="/dashboard/communities"
+        className={`flex items-center gap-2 mx-3 mt-3 mb-1 px-3 py-2 rounded-lg font-body text-xs font-medium transition-colors ${
+          pathname === "/dashboard/communities"
+            ? "bg-accent/10 text-accent"
+            : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
+        }`}
+      >
+        <Search size={13} />
+        Find &amp; all communities
+      </Link>
+
+      {/* Divider */}
+      <div className="mx-3 mb-1 border-t border-border" />
+
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
