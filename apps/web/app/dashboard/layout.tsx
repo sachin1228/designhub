@@ -22,11 +22,7 @@ export default async function DashboardLayout({
       <aside className="fixed inset-y-0 left-0 z-20 flex w-16 flex-col items-center border-r border-border bg-surface">
         {/* Brand dot */}
         <div className="flex h-[57px] w-full shrink-0 items-center justify-center">
-          <div className="h-7 w-7 rounded-lg bg-accent/20 flex items-center justify-center">
-            <span className="font-display text-xs font-bold text-accent">
-              {APP_NAME.charAt(0)}
-            </span>
-          </div>
+          <span className="font-display text-xl font-semibold text-foreground">d<span className="text-accent mx-1">/</span></span>
         </div>
 
         {/* Nav icons */}
