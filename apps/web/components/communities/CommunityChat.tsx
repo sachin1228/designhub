@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Send, Users, ArrowLeft, Clock, CheckCheck } from "lucide-react";
+import { Users, ArrowLeft, Clock, CheckCheck } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import { createBrowserClient } from "@/lib/supabase/browser";
 
@@ -344,12 +344,12 @@ export function CommunityChat({
             <div ref={bottomRef} />
           </div>
 
-          {/* Input */}
-          <div className="px-5 py-3 border-t border-border bg-surface shrink-0">
+          {/* Floating Input */}
+          <div className="px-4 pb-4 pt-2 shrink-0">
             {error && (
-              <p className="font-body text-xs text-red-400 mb-2">{error}</p>
+              <p className="font-body text-xs text-red-400 mb-2 pl-1">{error}</p>
             )}
-            <div className="relative flex items-end">
+            <div className="flex items-end gap-2 bg-surface-raised border border-border rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.35)] px-4 py-3">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -357,19 +357,24 @@ export function CommunityChat({
                 onKeyDown={handleKeyDown}
                 placeholder={`Message ${community.name}…`}
                 rows={1}
-                className="w-full resize-none rounded-xl border border-border bg-surface-raised px-4 py-2.5 font-body text-sm text-foreground placeholder:text-foreground-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors max-h-32 overflow-y-auto"
-                style={{ lineHeight: "1.5", paddingRight: input.trim() ? "3rem" : "1rem", transition: "padding 0.15s ease" }}
+                className="flex-1 resize-none bg-transparent font-body text-sm text-foreground placeholder:text-foreground-muted outline-none max-h-32 overflow-y-auto"
+                style={{ lineHeight: "1.6", minHeight: "1.6rem" }}
               />
-              {input.trim() && (
-                <button
-                  onClick={handleSend}
-                  disabled={sending}
-                  className="absolute right-2 bottom-1.5 h-7 w-7 flex items-center justify-center rounded-lg bg-accent text-accent-foreground hover:bg-accent-hover transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-                  aria-label="Send"
-                >
-                  <Send size={14} />
-                </button>
-              )}
+              <button
+                onClick={handleSend}
+                disabled={sending || !input.trim()}
+                className={`shrink-0 h-8 w-8 flex items-center justify-center rounded-full transition-all duration-150 ${
+                  input.trim()
+                    ? "bg-accent text-accent-foreground hover:bg-accent-hover"
+                    : "bg-accent/25 text-accent-foreground/30 cursor-not-allowed"
+                }`}
+                aria-label="Send"
+              >
+                {/* WhatsApp-style filled send arrow */}
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-[15px] h-[15px]" style={{ marginLeft: "1px" }}>
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              </button>
             </div>
             <p className="font-body text-[10px] text-foreground-muted mt-1.5 ml-1">
               Enter to send · Shift+Enter for new line
