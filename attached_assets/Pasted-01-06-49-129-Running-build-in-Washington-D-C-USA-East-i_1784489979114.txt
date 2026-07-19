@@ -1,0 +1,54 @@
+01:06:49.129 Running build in Washington, D.C., USA (East) – iad1
+01:06:49.129 Build machine configuration: 2 cores, 8 GB
+01:06:49.252 Cloning github.com/sachin1228/designhub (Branch: feature/whatsapp-chat-input, Commit: d444e23)
+01:06:52.356 Cloning completed: 3.104s
+01:06:52.447 Restored build cache from previous deployment (CmSLif2CuJVHU88W9S7kZMLaYcKT)
+01:06:52.713 Running "vercel build"
+01:06:52.729 Vercel CLI 56.2.0
+01:06:53.143 Installing dependencies...
+01:06:54.308 
+01:06:54.309 up to date in 1s
+01:06:54.309 
+01:06:54.310 168 packages are looking for funding
+01:06:54.310   run `npm fund` for details
+01:06:54.337 Detected Next.js version: 16.2.10
+01:06:54.343 Running "npm run build"
+01:06:54.497 
+01:06:54.497 > web@0.1.0 build
+01:06:54.498 > next build
+01:06:54.498 
+01:06:55.081   Applying modifyConfig from Vercel
+01:06:55.152 ▲ Next.js 16.2.10 (Turbopack)
+01:06:55.153 
+01:06:55.161 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+01:06:55.193   Creating an optimized production build ...
+01:07:08.365 
+01:07:08.366 > Build error occurred
+01:07:08.369 Error: Turbopack build failed with 1 errors:
+01:07:08.370 ./apps/web/app/dashboard/ProfileDropdown.tsx:104:6
+01:07:08.370 Unterminated regexp literal
+01:07:08.370   102 |         </div>
+01:07:08.371   103 |       </div>
+01:07:08.371 > 104 |     </div>
+01:07:08.371       |      ^^^^^
+01:07:08.371   105 |   );
+01:07:08.372   106 | }
+01:07:08.372   107 |
+01:07:08.372 
+01:07:08.372 Parsing ecmascript source code failed
+01:07:08.373 
+01:07:08.373 Import trace:
+01:07:08.373   Server Component:
+01:07:08.373     ./apps/web/app/dashboard/ProfileDropdown.tsx
+01:07:08.373     ./apps/web/app/dashboard/layout.tsx
+01:07:08.374 
+01:07:08.374 
+01:07:08.374     at <unknown> (./apps/web/app/dashboard/ProfileDropdown.tsx:104:6)
+01:07:08.419 npm error Lifecycle script `build` failed with error:
+01:07:08.419 npm error code 1
+01:07:08.420 npm error path /vercel/path0/apps/web
+01:07:08.420 npm error workspace web@0.1.0
+01:07:08.420 npm error location /vercel/path0/apps/web
+01:07:08.421 npm error command failed
+01:07:08.421 npm error command sh -c next build
+01:07:08.442 Error: Command "npm run build" exited with 1

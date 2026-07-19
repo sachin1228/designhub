@@ -100,7 +100,6 @@ export function ProfileDropdown({ name, email, avatarUrl, initial }: Props) {
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 }
