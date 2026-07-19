@@ -1,0 +1,47 @@
+22:13:13.835 Running build in Washington, D.C., USA (East) – iad1
+22:13:13.837 Build machine configuration: 2 cores, 8 GB
+22:13:14.032 Cloning github.com/sachin1228/designhub (Branch: feature/communities, Commit: 21d99ea)
+22:13:16.253 Cloning completed: 2.221s
+22:13:16.627 Restored build cache from previous deployment (4zmGbketjhyPEsx7G4JEJRbKEi4o)
+22:13:17.392 Running "vercel build"
+22:13:17.415 Vercel CLI 56.2.0
+22:13:18.043 Installing dependencies...
+22:13:19.601 
+22:13:19.601 up to date in 1s
+22:13:19.602 
+22:13:19.602 168 packages are looking for funding
+22:13:19.603   run `npm fund` for details
+22:13:19.631 Detected Next.js version: 16.2.10
+22:13:19.637 Running "npm run build"
+22:13:19.766 
+22:13:19.766 > web@0.1.0 build
+22:13:19.767 > next build
+22:13:19.767 
+22:13:20.380   Applying modifyConfig from Vercel
+22:13:20.472 ▲ Next.js 16.2.10 (Turbopack)
+22:13:20.473 
+22:13:20.481 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+22:13:20.517   Creating an optimized production build ...
+22:13:33.030 ✓ Compiled successfully in 12.1s
+22:13:33.045   Running TypeScript ...
+22:13:40.811 Failed to type check.
+22:13:40.812 
+22:13:40.812 ./app/api/communities/[id]/route.ts:55:20
+22:13:40.812 Type error: Property 'image_url' does not exist on type 'ParserError<`Expected identifier at \`${string}, image_url\``>'.
+22:13:40.812 
+22:13:40.812   53 |       .eq(lookup.idCol, community.reference_id)
+22:13:40.812   54 |       .maybeSingle();
+22:13:40.812 > 55 |     if (masterRow?.image_url) resolvedImageUrl = masterRow.image_url;
+22:13:40.813      |                    ^
+22:13:40.813   56 |   }
+22:13:40.813   57 |
+22:13:40.813   58 |   // Member count
+22:13:40.854 Next.js build worker exited with code: 1 and signal: null
+22:13:40.885 npm error Lifecycle script `build` failed with error:
+22:13:40.886 npm error code 1
+22:13:40.887 npm error path /vercel/path0/apps/web
+22:13:40.888 npm error workspace web@0.1.0
+22:13:40.888 npm error location /vercel/path0/apps/web
+22:13:40.889 npm error command failed
+22:13:40.889 npm error command sh -c next build
+22:13:40.910 Error: Command "npm run build" exited with 1
