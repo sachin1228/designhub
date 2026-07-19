@@ -46,7 +46,7 @@ function CommunityCard({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 w-full px-6 py-3 text-left border-b border-border hover:bg-surface-raised transition-colors group"
+      className="flex items-center gap-3 w-full px-6 py-3 text-left hover:bg-surface-raised transition-colors group"
     >
       {/* Avatar */}
       {c.image_url && !imgFailed ? (
@@ -178,14 +178,18 @@ export default function CommunitiesIndexPage() {
           </div>
         ) : (
           <div className="flex flex-col">
-            {filtered.map((c) => (
-              <CommunityCard
-                key={c.id}
-                c={c}
-                onClick={() => {
-                  if (c.joined) router.push(`/dashboard/communities/${c.id}`);
-                }}
-              />
+            {filtered.map((c, i) => (
+              <div key={c.id}>
+                <CommunityCard
+                  c={c}
+                  onClick={() => {
+                    if (c.joined) router.push(`/dashboard/communities/${c.id}`);
+                  }}
+                />
+                {i < filtered.length - 1 && (
+                  <div className="mx-6 h-px bg-border" />
+                )}
+              </div>
             ))}
           </div>
         )}
