@@ -4,21 +4,15 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Users, Clock, CheckCheck, ChevronDown } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import { createBrowserClient } from "@/lib/supabase/browser";
+import {
+  msgCache,
+  metaCache,
+  META_STALE_MS,
+  type CachedMessage,
+  type CachedMeta,
+} from "@/lib/communities/cache";
 
-interface Sender {
-  name: string;
-  avatar_url: string | null;
-}
-
-interface Message {
-  id: string;
-  content: string;
-  created_at: string;
-  user_id: string;
-  users: Sender | null;
-  // optimistic UI only — not stored in DB
-  status?: "sending" | "sent" | "failed";
-}
+type Message = CachedMessage;
 
 interface Community {
   id: string;
@@ -30,7 +24,7 @@ interface Community {
 
 interface Member {
   user_id: string;
-  users: Sender | null;
+  users: { name: string; avatar_url: string | null } | null;
 }
 
 const TYPE_EMOJI: Record<string, string> = { city: "📍", sector: "🏢", interest: "✦" };
@@ -42,7 +36,8 @@ function fmtTime(iso: string) {
 function fmtDate(iso: string) {
   const d = new Date(iso);
   const today = new Date();
-  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return "Today";
   if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -52,10 +47,20 @@ function Avatar({ name, url, size = 8 }: { name: string; url: string | null; siz
   const initials = name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   const px = size * 4;
   if (url) {
-    return <img src={url} alt={name} width={px} height={px} className={`rounded-full object-cover h-${size} w-${size} shrink-0`} />;
+    return (
+      <img
+        src={url}
+        alt={name}
+        width={px}
+        height={px}
+        className={`rounded-full object-cover h-${size} w-${size} shrink-0`}
+      />
+    );
   }
   return (
-    <div className={`h-${size} w-${size} shrink-0 rounded-full bg-accent/20 flex items-center justify-center font-body text-xs font-semibold text-accent select-none`}>
+    <div
+      className={`h-${size} w-${size} shrink-0 rounded-full bg-accent/20 flex items-center justify-center font-body text-xs font-semibold text-accent select-none`}
+    >
       {initials}
     </div>
   );
@@ -68,23 +73,32 @@ export function CommunityChat({
   communityId: string;
   currentUserId: string;
 }) {
-  const [community, setCommunity] = useState<Community | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Seed state from cache immediately — no spinner if we have data
+  const [community, setCommunity] = useState<Community | null>(
+    metaCache.get(communityId)?.community ?? null
+  );
+  const [members, setMembers] = useState<Member[]>(
+    metaCache.get(communityId)?.members ?? []
+  );
+  const [messages, setMessages] = useState<Message[]>(
+    msgCache.get(communityId) ?? []
+  );
+  const [loading, setLoading] = useState(!metaCache.has(communityId));
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showMembersDropdown, setShowMembersDropdown] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const membersDropdownRef = useRef<HTMLDivElement>(null);
-
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (membersDropdownRef.current && !membersDropdownRef.current.contains(e.target as Node)) {
+      if (
+        membersDropdownRef.current &&
+        !membersDropdownRef.current.contains(e.target as Node)
+      ) {
         setShowMembersDropdown(false);
       }
     }
@@ -92,40 +106,102 @@ export function CommunityChat({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Load community + messages
-  const fetchMessages = useCallback(async () => {
-    const [commRes, msgRes] = await Promise.all([
-      fetch(`/api/communities/${communityId}`),
-      fetch(`/api/communities/${communityId}/messages`),
-    ]);
-    if (commRes.ok) {
-      const d = await commRes.json();
-      setCommunity(d.community);
-      setMembers(d.members ?? []);
-    }
-    if (msgRes.ok) {
-      const d = await msgRes.json();
-      setMessages(d.messages ?? []);
-    }
-    setLoading(false);
+  // ─── Fetch community metadata only (header + members) ────────────────────
+  const fetchMeta = useCallback(async () => {
+    const res = await fetch(`/api/communities/${communityId}`);
+    if (!res.ok) return;
+    const d = await res.json();
+    const cached: CachedMeta = {
+      community: d.community,
+      members: d.members ?? [],
+      fetchedAt: Date.now(),
+    };
+    metaCache.set(communityId, cached);
+    setCommunity(d.community);
+    setMembers(d.members ?? []);
   }, [communityId]);
 
-  useEffect(() => {
-    setLoading(true);
-    setMessages([]);
-    setCommunity(null);
-    fetchMessages();
-  }, [fetchMessages]);
+  // ─── Fetch messages (full or incremental via ?after=ISO) ─────────────────
+  const fetchMessages = useCallback(
+    async (after?: string) => {
+      const url = after
+        ? `/api/communities/${communityId}/messages?after=${encodeURIComponent(after)}`
+        : `/api/communities/${communityId}/messages`;
 
-  // Scroll to bottom when messages change
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const d = await res.json();
+      const incoming: Message[] = d.messages ?? [];
+
+      if (after) {
+        // Incremental: merge new messages into existing cache
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const toAdd = incoming.filter((m) => !existingIds.has(m.id));
+          if (toAdd.length === 0) return prev;
+          const merged = [
+            ...prev.filter((m) => !m.id.startsWith("temp-")),
+            ...toAdd,
+          ].sort(
+            (a, b) =>
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+          msgCache.set(communityId, merged);
+          return merged;
+        });
+      } else {
+        // Full replace
+        msgCache.set(communityId, incoming);
+        setMessages(incoming);
+      }
+    },
+    [communityId]
+  );
+
+  // ─── On communityId change: show cache instantly, fetch in background ─────
+  useEffect(() => {
+    const cachedMsgs = msgCache.get(communityId);
+    const cachedMeta = metaCache.get(communityId);
+
+    // Immediately restore whatever we have (no waiting, no spinner if cached)
+    setMessages(cachedMsgs ?? []);
+    if (cachedMeta) {
+      setCommunity(cachedMeta.community);
+      setMembers(cachedMeta.members);
+      setLoading(false);
+    } else {
+      setCommunity(null);
+      setMembers([]);
+      setLoading(true);
+    }
+
+    const metaIsStale =
+      !cachedMeta || Date.now() - cachedMeta.fetchedAt > META_STALE_MS;
+
+    // Background refresh — meta only when stale/missing, messages always
+    (async () => {
+      await Promise.all([
+        fetchMessages(), // always refresh messages in background
+        metaIsStale ? fetchMeta() : Promise.resolve(),
+      ]);
+      setLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communityId]);
+
+  // ─── Scroll to bottom on new messages ────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Supabase Realtime subscription
+  // ─── Supabase Realtime — append instead of full refetch ──────────────────
   useEffect(() => {
     let supabase: ReturnType<typeof createBrowserClient>;
-    try { supabase = createBrowserClient(); } catch { return; }
+    try {
+      supabase = createBrowserClient();
+    } catch {
+      return;
+    }
 
     const channel = supabase
       .channel(`community:${communityId}`)
@@ -137,23 +213,38 @@ export function CommunityChat({
           table: "community_messages",
           filter: `community_id=eq.${communityId}`,
         },
-        () => {
-          // Refetch messages on new insert so we get full user info
-          fetchMessages();
+        (payload) => {
+          const newRow = payload.new as {
+            id: string;
+            user_id: string;
+            created_at: string;
+          };
+
+          // Check the module-level cache (always current) for duplicates
+          const cached = msgCache.get(communityId) ?? [];
+          if (cached.some((m) => m.id === newRow.id)) return;
+
+          // Fetch only the new messages since the last one we have
+          const lastReal = cached
+            .filter((m) => !m.id.startsWith("temp-"))
+            .at(-1);
+          fetchMessages(lastReal?.created_at ?? undefined);
         }
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [communityId, fetchMessages]);
 
+  // ─── Send a message ───────────────────────────────────────────────────────
   async function handleSend() {
     const content = input.trim();
     if (!content || sending) return;
     setSending(true);
     setError(null);
 
-    // Optimistic message — shown immediately with clock icon
     const tempId = `temp-${Date.now()}`;
     const optimistic: Message = {
       id: tempId,
@@ -163,12 +254,14 @@ export function CommunityChat({
       users: null,
       status: "sending",
     };
-    setMessages((prev) => [...prev, optimistic]);
+
+    setMessages((prev) => {
+      const next = [...prev, optimistic];
+      msgCache.set(communityId, next);
+      return next;
+    });
     setInput("");
-    // Reset textarea height back to single line
-    if (inputRef.current) {
-      inputRef.current.style.height = "24px";
-    }
+    if (inputRef.current) inputRef.current.style.height = "24px";
     inputRef.current?.focus();
 
     try {
@@ -177,23 +270,41 @@ export function CommunityChat({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
       });
+
       if (res.ok) {
         const { message } = await res.json();
-        // Replace optimistic with real message (gets double-tick)
-        setMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? { ...message, status: "sent" } : m))
-        );
+        setMessages((prev) => {
+          // Realtime may have already added the real message — avoid duplicate
+          if (prev.some((m) => m.id === message.id)) {
+            const next = prev.filter((m) => m.id !== tempId);
+            msgCache.set(communityId, next);
+            return next;
+          }
+          const next = prev.map((m) =>
+            m.id === tempId ? { ...message, status: "sent" as const } : m
+          );
+          msgCache.set(communityId, next);
+          return next;
+        });
       } else {
         const d = await res.json();
-        setMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m))
-        );
+        setMessages((prev) => {
+          const next = prev.map((m) =>
+            m.id === tempId ? { ...m, status: "failed" as const } : m
+          );
+          msgCache.set(communityId, next);
+          return next;
+        });
         setError(d.error ?? "Failed to send.");
       }
     } catch {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m))
-      );
+      setMessages((prev) => {
+        const next = prev.map((m) =>
+          m.id === tempId ? { ...m, status: "failed" as const } : m
+        );
+        msgCache.set(communityId, next);
+        return next;
+      });
       setError("Network error.");
     } finally {
       setSending(false);
@@ -207,13 +318,16 @@ export function CommunityChat({
     }
   }
 
-  // Group messages by date
+  // ─── Group messages by date ───────────────────────────────────────────────
   type Group = { date: string; messages: Message[] };
   const grouped = messages.reduce<Group[]>((acc, msg) => {
     const date = fmtDate(msg.created_at);
     const last = acc[acc.length - 1];
-    if (last?.date === date) { last.messages.push(msg); }
-    else { acc.push({ date, messages: [msg] }); }
+    if (last?.date === date) {
+      last.messages.push(msg);
+    } else {
+      acc.push({ date, messages: [msg] });
+    }
     return acc;
   }, []);
 
@@ -228,7 +342,9 @@ export function CommunityChat({
   if (!community) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="font-body text-sm text-foreground-muted">Community not found.</p>
+        <p className="font-body text-sm text-foreground-muted">
+          Community not found.
+        </p>
       </div>
     );
   }
@@ -239,33 +355,42 @@ export function CommunityChat({
       <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-surface shrink-0">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-surface-raised flex items-center justify-center text-sm shrink-0 overflow-hidden">
-            {community.image_url
-              ? <img
-                  src={community.image_url}
-                  alt={community.name}
-                  className="h-9 w-9 rounded-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    e.currentTarget.parentElement!.textContent = TYPE_EMOJI[community.type] ?? "💬";
-                  }}
-                />
-              : TYPE_EMOJI[community.type] ?? "💬"}
+            {community.image_url ? (
+              <img
+                src={community.image_url}
+                alt={community.name}
+                className="h-9 w-9 rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.parentElement!.textContent =
+                    TYPE_EMOJI[community.type] ?? "💬";
+                }}
+              />
+            ) : (
+              TYPE_EMOJI[community.type] ?? "💬"
+            )}
           </div>
           <div>
-            <h3 className="font-display text-sm font-semibold text-foreground leading-none">{community.name}</h3>
+            <h3 className="font-display text-sm font-semibold text-foreground leading-none">
+              {community.name}
+            </h3>
             <p className="font-body text-[11px] text-foreground-muted mt-0.5 flex items-center gap-1">
-              <Users size={10} /> {community.member_count} member{community.member_count !== 1 ? "s" : ""}
+              <Users size={10} /> {community.member_count} member
+              {community.member_count !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <Users size={14} className="text-foreground-muted" />
-          <span className="font-body text-xs text-foreground-muted">{community.member_count} member{community.member_count !== 1 ? "s" : ""}</span>
+          <span className="font-body text-xs text-foreground-muted">
+            {community.member_count} member
+            {community.member_count !== 1 ? "s" : ""}
+          </span>
         </div>
       </div>
 
-      {/* Body: messages + optional members panel */}
+      {/* Body: messages + members panel */}
       <div className="flex-1 flex overflow-hidden">
         {/* Messages */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -276,7 +401,12 @@ export function CommunityChat({
                   {TYPE_EMOJI[community.type] ?? "💬"}
                 </div>
                 <p className="font-body text-sm text-foreground-muted text-center">
-                  Welcome to <span className="font-medium text-foreground">{community.name}</span>!<br />
+                  Welcome to{" "}
+                  <span className="font-medium text-foreground">
+                    {community.name}
+                  </span>
+                  !
+                  <br />
                   <span className="text-xs">Be the first to say something.</span>
                 </p>
               </div>
@@ -299,21 +429,33 @@ export function CommunityChat({
 
                   if (isMe) {
                     return (
-                      <div key={msg.id} className={`flex justify-end ${isSameAuthor ? "mt-0.5" : "mt-3"}`}>
+                      <div
+                        key={msg.id}
+                        className={`flex justify-end ${isSameAuthor ? "mt-0.5" : "mt-3"}`}
+                      >
                         <div className="max-w-[65%]">
-                          <div className={`rounded-2xl rounded-tr-sm px-3 py-2 transition-opacity ${
-                            msg.status === "sending" ? "bg-accent opacity-70" :
-                            msg.status === "failed"  ? "bg-red-500/80" :
-                            "bg-accent"
-                          }`}>
-                            <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">{msg.content}</p>
+                          <div
+                            className={`rounded-2xl rounded-tr-sm px-3 py-2 transition-opacity ${
+                              msg.status === "sending"
+                                ? "bg-accent opacity-70"
+                                : msg.status === "failed"
+                                ? "bg-red-500/80"
+                                : "bg-accent"
+                            }`}
+                          >
+                            <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
+                              {msg.content}
+                            </p>
                           </div>
                           <div className="flex items-center justify-end gap-1 mt-0.5 pr-1">
                             <span className="font-mono text-[10px] text-foreground-muted">
                               {fmtTime(msg.created_at)}
                             </span>
                             {msg.status === "sending" && (
-                              <Clock size={10} className="text-foreground-muted animate-pulse" />
+                              <Clock
+                                size={10}
+                                className="text-foreground-muted animate-pulse"
+                              />
                             )}
                             {(msg.status === "sent" || !msg.status) && (
                               <CheckCheck size={11} className="text-accent" />
@@ -328,11 +470,17 @@ export function CommunityChat({
                   }
 
                   return (
-                    <div key={msg.id} className={`flex items-start gap-2 ${isSameAuthor ? "mt-0.5" : "mt-3"}`}>
-                      {/* Avatar — only for first in a run */}
+                    <div
+                      key={msg.id}
+                      className={`flex items-start gap-2 ${isSameAuthor ? "mt-0.5" : "mt-3"}`}
+                    >
                       <div className="w-7 shrink-0">
                         {!isSameAuthor && sender && (
-                          <Avatar name={sender.name} url={sender.avatar_url} size={7} />
+                          <Avatar
+                            name={sender.name}
+                            url={sender.avatar_url}
+                            size={7}
+                          />
                         )}
                       </div>
                       <div className="max-w-[65%]">
@@ -342,7 +490,9 @@ export function CommunityChat({
                           </p>
                         )}
                         <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 py-2">
-                          <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">{msg.content}</p>
+                          <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
+                            {msg.content}
+                          </p>
                         </div>
                         <p className="font-mono text-[10px] text-foreground-muted mt-0.5 ml-0.5">
                           {fmtTime(msg.created_at)}
@@ -367,7 +517,6 @@ export function CommunityChat({
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
-                  // Auto-resize: reset height first so shrinking works
                   e.target.style.height = "auto";
                   e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
                 }}
@@ -384,7 +533,12 @@ export function CommunityChat({
                   className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-accent text-accent-foreground hover:bg-accent-hover transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
                   aria-label="Send"
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-[15px] h-[15px]" style={{ marginLeft: "1px" }}>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="w-[15px] h-[15px]"
+                    style={{ marginLeft: "1px" }}
+                  >
                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                   </svg>
                 </button>
@@ -395,8 +549,10 @@ export function CommunityChat({
 
         {/* Members panel — always visible */}
         <div className="w-56 shrink-0 border-l border-border bg-surface flex flex-col overflow-hidden">
-          <div className="px-4 py-3 border-b border-border relative" ref={membersDropdownRef}>
-            {/* Clickable Members title with chevron */}
+          <div
+            className="px-4 py-3 border-b border-border relative"
+            ref={membersDropdownRef}
+          >
             <button
               onClick={() => setShowMembersDropdown((v) => !v)}
               className="flex items-center gap-1.5 group"
@@ -406,11 +562,12 @@ export function CommunityChat({
               </span>
               <ChevronDown
                 size={14}
-                className={`text-foreground-muted group-hover:text-foreground transition-transform duration-200 ${showMembersDropdown ? "rotate-180" : ""}`}
+                className={`text-foreground-muted group-hover:text-foreground transition-transform duration-200 ${
+                  showMembersDropdown ? "rotate-180" : ""
+                }`}
               />
             </button>
 
-            {/* Dropdown */}
             {showMembersDropdown && (
               <div className="absolute left-4 top-full mt-1 z-50 w-40 rounded-lg border border-border bg-surface shadow-lg py-1 overflow-hidden">
                 <button
@@ -432,8 +589,14 @@ export function CommunityChat({
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
             {members.map((m) => (
               <div key={m.user_id} className="flex items-center gap-2 py-1.5">
-                <Avatar name={m.users?.name ?? "?"} url={m.users?.avatar_url ?? null} size={7} />
-                <span className="font-body text-xs text-foreground truncate">{m.users?.name}</span>
+                <Avatar
+                  name={m.users?.name ?? "?"}
+                  url={m.users?.avatar_url ?? null}
+                  size={7}
+                />
+                <span className="font-body text-xs text-foreground truncate">
+                  {m.users?.name}
+                </span>
               </div>
             ))}
           </div>
