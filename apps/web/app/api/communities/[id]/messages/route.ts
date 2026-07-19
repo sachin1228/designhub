@@ -27,12 +27,11 @@ export async function GET(
     return NextResponse.json({ error: "Not a member of this community." }, { status: 403 });
   }
 
-  // Optional cursor for older messages
   const before = req.nextUrl.searchParams.get("before");
 
   let query = db
     .from("community_messages")
-    .select("id, content, created_at, user_id, users!inner(name, avatar_url)")
+    .select("id, content, created_at, user_id, users(name, avatar_url)")
     .eq("community_id", communityId)
     .order("created_at", { ascending: false })
     .limit(PAGE_SIZE);
@@ -41,11 +40,13 @@ export async function GET(
 
   const { data, error } = await query;
 
-  if (error) return NextResponse.json({ error: "Failed to fetch messages." }, { status: 500 });
+  if (error) {
+    console.error("[GET messages] Supabase error:", error);
+    return NextResponse.json({ error: "Failed to fetch messages." }, { status: 500 });
+  }
 
   // Return oldest-first for display
   const messages = (data ?? []).reverse();
-
   return NextResponse.json({ messages });
 }
 
@@ -83,13 +84,27 @@ export async function POST(
   if (!content) return NextResponse.json({ error: "Message cannot be empty." }, { status: 422 });
   if (content.length > 2000) return NextResponse.json({ error: "Message too long." }, { status: 422 });
 
-  const { data: message, error } = await db
+  // Step 1: insert the message
+  const { data: inserted, error: insertErr } = await db
     .from("community_messages")
     .insert({ community_id: communityId, user_id: userId, content })
-    .select("id, content, created_at, user_id, users!inner(name, avatar_url)")
+    .select("id, content, created_at, user_id")
     .single();
 
-  if (error) return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
+  if (insertErr || !inserted) {
+    console.error("[POST message] insert error:", insertErr);
+    return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
+  }
 
-  return NextResponse.json({ message }, { status: 201 });
+  // Step 2: fetch sender info separately (avoids !inner join issues)
+  const { data: user } = await db
+    .from("users")
+    .select("name, avatar_url")
+    .eq("id", userId)
+    .single();
+
+  return NextResponse.json(
+    { message: { ...inserted, users: user ?? null } },
+    { status: 201 }
+  );
 }

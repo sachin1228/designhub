@@ -41,16 +41,27 @@ export async function GET(
     .select("*", { count: "exact", head: true })
     .eq("community_id", id);
 
-  // Recent members (avatars for header display)
-  const { data: members } = await db
+  // Recent members — fetch user info separately to avoid !inner join issues
+  const { data: memberRows } = await db
     .from("community_members")
-    .select("user_id, joined_at, users!inner(name, avatar_url)")
+    .select("user_id, joined_at")
     .eq("community_id", id)
     .order("joined_at", { ascending: false })
     .limit(10);
 
+  const members = await Promise.all(
+    (memberRows ?? []).map(async (m) => {
+      const { data: user } = await db
+        .from("users")
+        .select("name, avatar_url")
+        .eq("id", m.user_id)
+        .single();
+      return { ...m, users: user ?? null };
+    })
+  );
+
   return NextResponse.json({
     community: { ...community, member_count: member_count ?? 0 },
-    members: members ?? [],
+    members,
   });
 }

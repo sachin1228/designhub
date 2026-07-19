@@ -28,7 +28,7 @@ export async function GET() {
 
   if (cErr) return NextResponse.json({ error: "Failed to fetch communities." }, { status: 500 });
 
-  // 3. Member counts (one query per community — PostgREST count)
+  // 3. Member counts
   const countResults = await Promise.all(
     ids.map((id) =>
       db
@@ -40,18 +40,27 @@ export async function GET() {
   );
   const countMap = Object.fromEntries(countResults.map((r) => [r.id, r.count]));
 
-  // 4. Last message per community
+  // 4. Last message per community — no join, fetch user name separately
   const lastMsgResults = await Promise.all(
-    ids.map((id) =>
-      db
+    ids.map(async (id) => {
+      const { data: msg } = await db
         .from("community_messages")
-        .select("content, created_at, user:users!inner(name)")
+        .select("content, created_at, user_id")
         .eq("community_id", id)
         .order("created_at", { ascending: false })
         .limit(1)
-        .maybeSingle()
-        .then(({ data }) => ({ id, last: data }))
-    )
+        .maybeSingle();
+
+      if (!msg) return { id, last: null };
+
+      const { data: user } = await db
+        .from("users")
+        .select("name")
+        .eq("id", msg.user_id)
+        .single();
+
+      return { id, last: { ...msg, user: user ?? null } };
+    })
   );
   const lastMsgMap = Object.fromEntries(lastMsgResults.map((r) => [r.id, r.last]));
 
@@ -63,8 +72,8 @@ export async function GET() {
       last_message: lastMsgMap[c.id] ?? null,
     }))
     .sort((a, b) => {
-      const ta = a.last_message?.created_at ?? a.reference_id;
-      const tb = b.last_message?.created_at ?? b.reference_id;
+      const ta = a.last_message?.created_at ?? "";
+      const tb = b.last_message?.created_at ?? "";
       return tb > ta ? 1 : -1;
     });
 
