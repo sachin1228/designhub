@@ -311,7 +311,7 @@ const INTEREST_EMOJIS: Record<string, string> = {
 
 // ─── InterestsMultiSelect ─────────────────────────────────────
 
-interface InterestOption { id: string; name: string }
+interface InterestOption { id: string; name: string; image_url?: string | null }
 
 function InterestsMultiSelect({
   options,
@@ -396,7 +396,10 @@ function InterestsMultiSelect({
                   onClick={() => toggle(option.id)}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-overlay-elevated transition-colors"
                 >
-                  <span className="text-base leading-none">{emoji}</span>
+                  {option.image_url
+                    ? <img src={option.image_url} alt="" className="h-5 w-5 rounded object-cover shrink-0" />
+                    : <span className="text-base leading-none">{emoji}</span>
+                  }
                   <span className="flex-1 font-body text-sm text-overlay-foreground">
                     {option.name}
                   </span>
@@ -448,6 +451,7 @@ function SignupInner() {
   const [companies, setCompanies] = useState<MasterItem[]>([]);
   const [cities,    setCities]    = useState<MasterItem[]>([]);
   const [sectors,   setSectors]   = useState<MasterItem[]>([]);
+  const [experienceLevels, setExperienceLevels] = useState<{ id: string; slug: string; label: string; image_url: string | null }[]>([]);
   const [step2, setStep2] = useState({ company_id: "", city_id: "", sector_id: "", experience_level: "" });
   const [step2Loading, setStep2Loading] = useState(false);
   const [step2Error,   setStep2Error]   = useState<string | null>(null);
@@ -509,6 +513,7 @@ function SignupInner() {
       fetch("/api/data/companies").then((r) => r.json()).then((d) => setCompanies(d.companies ?? [])),
       fetch("/api/data/cities")   .then((r) => r.json()).then((d) => setCities(d.cities ?? [])),
       fetch("/api/data/sectors")  .then((r) => r.json()).then((d) => setSectors(d.sectors ?? [])),
+      fetch("/api/data/experience-levels").then((r) => r.json()).then((d) => setExperienceLevels(d.experience_levels ?? [])),
     ]).catch(() => {});
   }, [step]);
 
@@ -868,7 +873,8 @@ function SignupInner() {
                   <span className="font-body text-xs font-medium text-overlay-foreground">
                     Experience Level <span className="text-red-400">*</span>
                   </span>
-                  <SearchableSelect options={EXPERIENCE_LEVELS.map((l) => ({ value: l.value, label: l.label }))}
+                  <SearchableSelect
+                    options={experienceLevels.map((l) => ({ value: l.slug, label: l.label, imageUrl: l.image_url }))}
                     value={step2.experience_level} onChange={(v) => setStep2((p) => ({ ...p, experience_level: v }))}
                     placeholder="Select your level" />
                 </div>
