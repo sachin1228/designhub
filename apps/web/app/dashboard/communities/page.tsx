@@ -46,7 +46,7 @@ function CommunityCard({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 w-full px-6 py-3 text-left hover:bg-surface-raised/50 transition-colors group"
+      className="flex items-center gap-3 w-full px-6 py-3 text-left hover:bg-surface-raised transition-colors group"
     >
       {/* Avatar */}
       {c.image_url && !imgFailed ? (
