@@ -100,7 +100,7 @@ export async function POST() {
   }
 
   for (const row of interests ?? []) {
-    const interest = row.design_interests as { name: string; image_url: string | null } | null;
+    const interest = row.design_interests as unknown as { name: string; image_url: string | null } | null;
     if (row.interest_id && interest?.name) {
       specs.push({
         type: "interest",
