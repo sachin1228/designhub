@@ -1,0 +1,293 @@
+I need you to investigate and fix slow community/chat switching in my DesignHub/DraftHub application, then create a Pull Request with the changes.
+
+
+
+Current problem:
+
+When I click between communities in the Communities page, switching does not feel instant. The app makes multiple API requests and waits for data before the new community/chat is fully displayed.
+
+
+
+From my terminal logs, I see repeated requests such as:
+
+
+
+- GET /api/communities/all
+
+- GET /api/communities/:communityId
+
+- GET /api/communities/:communityId/messages
+
+- GET /dashboard/communities/:communityId
+
+
+
+Some `/api/communities/:id` and `/api/communities/all` requests take around 1.4–2.3 seconds, and the same endpoints appear to be called multiple times.
+
+
+
+I want community switching to feel similar to WhatsApp, Slack, or Discord:
+
+- Clicking a community should switch the UI immediately.
+
+- Previously loaded messages should appear instantly from cache/local state.
+
+- Fresh data should sync in the background.
+
+- The app should not unnecessarily refetch the entire community list or community metadata every time I switch chats.
+
+
+
+Please investigate the existing implementation before making changes. Pay particular attention to:
+
+
+
+- `CommunityChat.tsx`
+
+- `CommunitiesPanel.tsx`
+
+- Communities page/layout components
+
+- `/api/communities/all`
+
+- `/api/communities/[id]`
+
+- `/api/communities/[id]/messages`
+
+- Supabase queries
+
+- Supabase Realtime subscriptions
+
+- Any `useEffect` hooks that may trigger duplicate requests
+
+
+
+Requirements:
+
+
+
+1. Identify duplicate/unnecessary API requests.
+
+   - Find exactly why the same community/message endpoints are being called multiple times.
+
+   - Remove redundant fetches.
+
+   - Make sure Realtime events do not cause unnecessary full message refetches.
+
+
+
+2. Community list optimization.
+
+   - Do not refetch `/api/communities/all` every time the selected community changes.
+
+   - Fetch communities once and reuse/cache the result.
+
+   - Revalidate only when necessary.
+
+
+
+3. Instant community switching.
+
+   - When a community is clicked, update the selected community UI immediately.
+
+   - Do not wait for the community API or messages API before changing the header/selected state.
+
+   - Navigation/URL updates should not block the visual chat switch.
+
+
+
+4. Message caching.
+
+   - Cache messages separately by `communityId`.
+
+   - When returning to a previously opened community, show cached messages immediately.
+
+   - Fetch/revalidate newer messages in the background.
+
+   - Use the project's existing data-fetching solution if one already exists.
+
+   - If the project does not use TanStack Query/SWR, avoid adding a large dependency unnecessarily; implement an appropriate lightweight cache or use Next.js/React patterns already present in the project.
+
+
+
+5. Prefetching.
+
+   - Where appropriate, prefetch a community's messages on hover/focus of a community item so first-time opening feels faster.
+
+   - Avoid excessive API requests when the user quickly moves over multiple items.
+
+
+
+6. Optimize slow backend queries.
+
+   - Investigate why `/api/communities/:id` and `/api/communities/all` can take 1.4–2.3 seconds.
+
+   - Check Supabase queries for over-fetching, nested relations, N+1 queries, unnecessary counts, or missing indexes.
+
+   - Only select fields required by the UI.
+
+   - Do not fetch messages as part of community metadata if messages already have their own endpoint.
+
+   - Add safe database indexes/migrations only if the existing query patterns clearly require them.
+
+
+
+7. Realtime behavior.
+
+   - Keep Supabase Realtime working.
+
+   - New messages should ideally be appended/merged into the relevant community's message cache rather than triggering a full refetch.
+
+   - Prevent duplicate messages when the sender receives their own Realtime event.
+
+   - Make sure subscriptions are cleaned up correctly when necessary.
+
+
+
+8. Preserve functionality.
+
+   - Sending messages must continue working.
+
+   - Community member information must continue working.
+
+   - Selected community URL routing must continue working.
+
+   - Browser back/forward navigation must continue selecting the correct community.
+
+   - Empty chat states must continue working.
+
+   - Do not introduce stale data bugs.
+
+
+
+Target architecture/behavior:
+
+
+
+Communities page loads
+
+    ↓
+
+Fetch community list once
+
+    ↓
+
+User clicks Community A
+
+    ↓
+
+Switch UI immediately
+
+    ↓
+
+Show cached A messages if available
+
+    ↓
+
+Fetch latest messages in background if needed
+
+
+
+User clicks Community B
+
+    ↓
+
+Switch UI immediately
+
+    ↓
+
+Show cached B messages if available
+
+    ↓
+
+Fetch latest in background
+
+
+
+User returns to Community A
+
+    ↓
+
+Show cached A messages instantly
+
+    ↓
+
+Background revalidation if needed
+
+
+
+Realtime new message
+
+    ↓
+
+Update the appropriate community message cache
+
+    ↓
+
+Do NOT refetch all communities/messages unnecessarily
+
+
+
+Important:
+
+Do not blindly rewrite the entire communities feature. First trace the current data flow and network requests, identify the actual causes of the repeated/slow requests, and make the smallest clean architectural changes necessary.
+
+
+
+After implementation:
+
+
+
+1. Run TypeScript/type checking.
+
+2. Run linting if configured.
+
+3. Run relevant tests if available.
+
+4. Run the production build.
+
+5. Fix any errors introduced by your changes.
+
+6. Review the diff for regressions.
+
+7. Verify that duplicate API calls have been reduced.
+
+8. Verify that rapid switching between multiple communities works correctly.
+
+9. Verify switching back to an already visited community displays cached messages immediately.
+
+10. Verify Supabase Realtime still works.
+
+
+
+Then:
+
+- Create a new branch with an appropriate name, such as `fix/instant-community-switching`.
+
+- Commit the changes with a clear commit message.
+
+- Push the branch.
+
+- Create a Pull Request against the appropriate base branch.
+
+- In the PR description, explain:
+
+  - Root cause of the slow switching
+
+  - Duplicate API requests that were found
+
+  - Changes made
+
+  - Caching/prefetching strategy
+
+  - Backend/Supabase optimizations
+
+  - Realtime changes
+
+  - How the fix was tested
+
+  - Any remaining performance concerns
+
+
+
+Do not merge the PR. Create it for review.
