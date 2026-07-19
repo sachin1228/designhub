@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home } from "lucide-react";
+import { Home, MessageSquare } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Home", icon: Home },
+  { href: "/dashboard/communities", label: "Communities", icon: MessageSquare },
 ];
 
 export function DashboardSidebar() {
@@ -14,7 +15,11 @@ export function DashboardSidebar() {
   return (
     <nav className="flex flex-col gap-1">
       {NAV.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href;
+        // "Communities" is active for the section and all its children
+        const active =
+          href === "/dashboard"
+            ? pathname === href
+            : pathname === href || pathname.startsWith(href + "/");
         return (
           <Link
             key={href}

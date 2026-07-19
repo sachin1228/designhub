@@ -686,6 +686,8 @@ function SignupInner() {
           return;
         }
       }
+      // Auto-join communities based on city / sector / interests (fire-and-forget)
+      fetch("/api/communities/auto-join", { method: "POST" }).catch(() => {});
       router.push("/dashboard");
     } catch {
       setStep4Error("Network error. Please try again.");
