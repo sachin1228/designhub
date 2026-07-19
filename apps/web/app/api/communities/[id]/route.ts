@@ -35,6 +35,26 @@ export async function GET(
     return NextResponse.json({ error: "Community not found." }, { status: 404 });
   }
 
+  // Resolve image_url from master table (same logic as the list API)
+  // so the chat header always shows the same logo as the sidebar.
+  const tableLookup: Record<string, { table: string; idCol: string }> = {
+    city:             { table: "cities",            idCol: "id" },
+    sector:           { table: "design_sectors",    idCol: "id" },
+    interest:         { table: "design_interests",  idCol: "id" },
+    company:          { table: "companies",         idCol: "id" },
+    experience_level: { table: "experience_levels", idCol: "id" },
+  };
+  let resolvedImageUrl: string | null = community.image_url ?? null;
+  const lookup = tableLookup[community.type];
+  if (lookup && community.reference_id) {
+    const { data: masterRow } = await db
+      .from(lookup.table as any)
+      .select(`${lookup.idCol}, image_url`)
+      .eq(lookup.idCol, community.reference_id)
+      .maybeSingle();
+    if (masterRow?.image_url) resolvedImageUrl = masterRow.image_url;
+  }
+
   // Member count
   const { count: member_count } = await db
     .from("community_members")
@@ -61,7 +81,7 @@ export async function GET(
   );
 
   return NextResponse.json({
-    community: { ...community, member_count: member_count ?? 0 },
+    community: { ...community, image_url: resolvedImageUrl, member_count: member_count ?? 0 },
     members,
   });
 }
