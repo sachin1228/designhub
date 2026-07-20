@@ -41,11 +41,11 @@ const TYPE_EMOJI: Record<string, string> = {
 };
 
 const SECTIONS: { label: string; type: Community["type"] }[] = [
-  { label: "Company",    type: "company"          },
-  { label: "Industry",   type: "sector"            },
-  { label: "Interest",   type: "interest"          },
-  { label: "Experience", type: "experience_level"  },
   { label: "City",       type: "city"              },
+  { label: "Company",    type: "company"           },
+  { label: "Industry",   type: "sector"            },
+  { label: "Experience", type: "experience_level"  },
+  { label: "Interest",   type: "interest"          },
 ];
 
 function timeAgo(iso: string) {
@@ -76,14 +76,14 @@ function CommunityAvatar({
       <img
         src={imageUrl}
         alt={name}
-        className="h-12 w-12 rounded-full object-cover shrink-0"
+        className="h-10 w-10 rounded-full object-cover shrink-0"
         onError={() => setFailed(true)}
       />
     );
   }
   return (
     <div
-      className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 text-lg font-medium select-none ${
+      className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-lg font-medium select-none ${
         active ? "bg-accent/20" : "bg-surface-raised"
       }`}
     >
