@@ -132,6 +132,14 @@ export function CommunityChat({
    */
   const communityIdRef = useRef(communityId);
 
+  /**
+   * Tracks the current members list so the realtime callback can resolve sender
+   * info without closing over a stale snapshot and without re-subscribing on
+   * every members update.
+   */
+  const membersRef = useRef(members);
+  useEffect(() => { membersRef.current = members; }, [members]);
+
   // ─── Seed state from cache or SSR props — client-only, before first paint ──
   //
   // useLayoutEffect runs synchronously after DOM commit but before the browser
@@ -314,7 +322,16 @@ export function CommunityChat({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ─── Supabase Realtime — append instead of full refetch ──────────────────
+  // ─── Supabase Realtime — instant append from payload (zero HTTP round-trip) ─
+  //
+  // Previous approach: on every INSERT event, fire fetchMessages(after=...) —
+  // a full HTTP request — causing a visible delay before the message appeared.
+  //
+  // New approach: the postgres_changes payload already contains all columns
+  // (id, community_id, user_id, content, created_at).  We resolve the sender's
+  // display info from membersRef (always current, no re-subscription needed)
+  // and append the message directly to state.  The polling fallback below still
+  // catches any events Realtime misses.
   useEffect(() => {
     let supabase: ReturnType<typeof createBrowserClient>;
     try {
@@ -336,17 +353,46 @@ export function CommunityChat({
         (payload) => {
           const newRow = payload.new as {
             id: string;
+            community_id: string;
             user_id: string;
+            content: string;
             created_at: string;
           };
 
-          const cached = msgCache.get(communityId) ?? [];
-          if (cached.some((m) => m.id === newRow.id)) return;
+          setMessages((prev) => {
+            // Already in state (optimistic send or duplicate event) — skip.
+            if (prev.some((m) => m.id === newRow.id)) return prev;
 
-          const lastReal = cached
-            .filter((m) => !m.id.startsWith("temp-"))
-            .at(-1);
-          fetchMessages(lastReal?.created_at ?? undefined);
+            // Remove the optimistic temp bubble if this is our own message
+            // (the real row just landed from the DB).
+            const withoutTemp = prev.filter(
+              (m) => !(m.id.startsWith("temp-") && m.user_id === newRow.user_id)
+            );
+
+            // Resolve sender info from the members list we already have.
+            // Falls back to null — the UI handles null gracefully.
+            const senderMember = membersRef.current.find(
+              (m) => m.user_id === newRow.user_id
+            );
+            const users = senderMember?.users ?? null;
+
+            const incoming: Message = {
+              id: newRow.id,
+              content: newRow.content,
+              created_at: newRow.created_at,
+              user_id: newRow.user_id,
+              users,
+              status: "sent",
+            };
+
+            const next = [...withoutTemp, incoming].sort(
+              (a, b) =>
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime()
+            );
+            msgCache.set(communityId, next);
+            return next;
+          });
         }
       )
       .subscribe();
@@ -354,7 +400,9 @@ export function CommunityChat({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [communityId, fetchMessages]);
+  // fetchMessages intentionally excluded — we no longer call it from here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communityId]);
 
   // ─── Polling fallback ─────────────────────────────────────────────────────
   // Catches messages that Supabase Realtime may miss (e.g. if the table is not
