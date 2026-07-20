@@ -30,7 +30,9 @@ export function DashboardSidebar() {
   return (
     <nav className="flex flex-col items-center gap-1 py-2">
       {NAV.map(({ href, label, icon: Icon }) => {
-        const active = isMatch(href, pathname) || pendingHref === href;
+        // While a navigation is pending, only the destination is active —
+        // the previous route loses its highlight immediately on click.
+        const active = pendingHref ? pendingHref === href : isMatch(href, pathname);
         return (
           <Link
             key={href}
