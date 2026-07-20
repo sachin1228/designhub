@@ -100,22 +100,23 @@ export function CommunityChat({
   /** Provided only on hard browser refresh (SSR). Undefined on client navigation. */
   initialMessages?: CachedMessage[];
 }) {
-  // ─── Initial state from module-level cache (empty on hard refresh) ────────
-  // We intentionally do NOT use initialMeta/initialMessages here to avoid
-  // hydration mismatches: the server renders the same empty-cache state as the
-  // client sees on first hydration.  SSR data is applied in the layout effect
-  // below (client-only, before first paint), which is transparent to React's
-  // hydration reconciler.
-  const [community, setCommunity] = useState<Community | null>(
-    metaCache.get(communityId)?.community ?? null
-  );
-  const [members, setMembers] = useState<Member[]>(
-    metaCache.get(communityId)?.members ?? []
-  );
-  const [messages, setMessages] = useState<Message[]>(
-    msgCache.get(communityId) ?? []
-  );
-  const [loading, setLoading] = useState(!metaCache.has(communityId));
+  // ─── Initial state — always start empty to avoid SSR/client hydration mismatch ──
+  //
+  // "use client" components STILL run on the server for SSR. Module-level caches
+  // (metaCache, sidebarStore, msgCache) can hold stale data from a previous
+  // server-side request within the same Node.js process.  If we read them here,
+  // the server may render actual content while a fresh browser renders a skeleton
+  // (or vice-versa) → React throws a hydration error and enters an infinite
+  // re-render loop that resets state and drops messages.
+  //
+  // Solution: always render null/empty/loading on both server and client for
+  // the initial render pass.  The layout effect below (client-only) then seeds
+  // state from cache or SSR props before the first browser paint — so the user
+  // never sees a flash.
+  const [community, setCommunity] = useState<Community | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showMembersDropdown, setShowMembersDropdown] = useState(false);
@@ -131,33 +132,47 @@ export function CommunityChat({
    */
   const communityIdRef = useRef(communityId);
 
-  // ─── Seed cache from SSR props (hard refresh only, before first paint) ────
+  // ─── Seed state from cache or SSR props — client-only, before first paint ──
   //
-  // This runs client-side only (layout effects don't execute during SSR) and
-  // fires synchronously before the browser paints — so the user sees the chat
-  // immediately without a spinner flash on hard refresh.
+  // useLayoutEffect runs synchronously after DOM commit but before the browser
+  // paints, so the user never sees the empty/loading state that the initial
+  // render produces.  It does NOT run during SSR, which is exactly what we want:
+  // both server and client render the same empty/loading initial pass (no
+  // hydration mismatch), then this effect immediately fills in the right data
+  // before the first pixel is shown.
   //
-  // On client-side navigation, initialMeta and initialMessages are undefined
-  // (page.tsx skips the server fetch), so this is a no-op and the existing
-  // module-level cache handles rendering as before.
+  // Two cases:
+  //   1. Client-side navigation  → module-level caches are warm; read directly.
+  //   2. Hard browser refresh    → caches are empty; initialMeta/initialMessages
+  //      come from the server and are used to seed both the cache and state.
   useIsomorphicLayoutEffect(() => {
-    if (!initialMeta && !initialMessages?.length) return;
+    const cachedMeta = metaCache.get(communityId);
+    const cachedMsgs = msgCache.get(communityId);
 
-    if (initialMeta && !metaCache.has(communityId)) {
-      // Use client clock so subsequent stale checks are consistent.
+    if (cachedMeta) {
+      // Case 1: client-nav — cache is warm.
+      setCommunity(cachedMeta.community);
+      setMembers(cachedMeta.members);
+    } else if (initialMeta) {
+      // Case 2: hard refresh — seed cache from SSR props.
       metaCache.set(communityId, { ...initialMeta, fetchedAt: Date.now() });
       setCommunity(initialMeta.community);
       setMembers(initialMeta.members);
     }
-    if (initialMessages?.length && !msgCache.has(communityId)) {
+
+    if (cachedMsgs?.length) {
+      setMessages(cachedMsgs);
+    } else if (initialMessages?.length) {
       msgCache.set(communityId, initialMessages);
       msgFetchedAt.set(communityId, Date.now());
       evictIfNeeded();
       setMessages(initialMessages);
     }
-    setLoading(false);
-    // communityId is stable for the lifetime of this component instance.
-    // initialMeta/initialMessages are never updated after mount.
+
+    if (cachedMeta || initialMeta) setLoading(false);
+
+    // communityId, initialMeta, initialMessages are stable for this component
+    // instance (they come from the page params and never change after mount).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
