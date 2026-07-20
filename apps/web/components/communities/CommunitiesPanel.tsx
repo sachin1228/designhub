@@ -249,7 +249,7 @@ function SectionGroup({
   return (
     <div>
       <div className="px-3 pt-2 pb-0.5">
-        <span className="font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
+        <span className="font-body text-[8px] font-semibold uppercase tracking-widest text-foreground-muted">
           {label}
         </span>
       </div>
