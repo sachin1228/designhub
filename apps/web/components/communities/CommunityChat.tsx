@@ -532,8 +532,16 @@ export function CommunityChat({
               <>
             {grouped.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full gap-3 py-16">
-                <div className="h-12 w-12 rounded-full bg-surface-raised flex items-center justify-center text-2xl">
-                  {TYPE_EMOJI[displayCommunity?.type ?? ""] ?? "💬"}
+                <div className="h-12 w-12 rounded-full bg-surface-raised flex items-center justify-center text-2xl overflow-hidden shrink-0">
+                  {displayCommunity?.image_url ? (
+                    <img
+                      src={displayCommunity.image_url}
+                      alt={displayCommunity.name}
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    TYPE_EMOJI[displayCommunity?.type ?? ""] ?? "💬"
+                  )}
                 </div>
                 <p className="font-body text-sm text-foreground-muted text-center">
                   Welcome to{" "}
