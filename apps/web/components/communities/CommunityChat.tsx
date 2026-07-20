@@ -918,7 +918,7 @@ export function CommunityChat({
             {error && (
               <p className="font-body text-xs text-red-400 mb-2 pl-1">{error}</p>
             )}
-            <div className="flex items-center gap-2 bg-surface-raised rounded-2xl shadow-md px-4 py-3 min-h-[52px]">
+            <div className="flex items-center gap-2 bg-surface-raised rounded-2xl shadow-md px-4 py-3 min-h-[56px]">
               <textarea
                 ref={inputRef}
                 value={input}
