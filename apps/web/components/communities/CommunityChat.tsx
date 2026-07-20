@@ -248,18 +248,51 @@ export function CommunityChat({
           const incoming: Message[] = d.messages ?? [];
 
           if (after) {
-            setMessages((prev) => {
-              if (communityIdRef.current !== targetId) return prev;
-              const existingIds = new Set(prev.map((m) => m.id));
-              const toAdd = incoming.filter((m) => !existingIds.has(m.id));
-              if (toAdd.length === 0) return prev;
-              const merged = [
-                ...prev.filter((m) => !m.id.startsWith("temp-")),
+            // ── Update the cache FIRST, unconditionally ───────────────────
+            // The full-fetch path already does this (msgCache.set is outside
+            // setMessages). The incremental path must do the same: if the
+            // component unmounts between when the fetch was fired and when
+            // React would run the updater, React silently skips the updater —
+            // meaning msgCache would never be written and the next mount would
+            // read stale data, causing the "needs two navigations" bug.
+            //
+            // By writing to msgCache here (before setMessages), we guarantee
+            // the cache is always current regardless of mount status. The next
+            // mount's layout effect will read the fresh cache and display new
+            // messages immediately.
+            const existing = msgCache.get(targetId) ?? [];
+            const existingIds = new Set(existing.map((m) => m.id));
+            const toAdd = incoming.filter((m) => !existingIds.has(m.id));
+            if (toAdd.length > 0) {
+              const cacheSnapshot = [
+                ...existing.filter((m) => !m.id.startsWith("temp-")),
                 ...toAdd,
               ].sort(
                 (a, b) =>
                   new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
               );
+              msgCache.set(targetId, cacheSnapshot);
+            }
+
+            // ── Then sync React state via functional updater ───────────────
+            // Uses `prev` (not the cache snapshot) so we correctly incorporate
+            // any optimistic messages that are in flight in state but have not
+            // yet been confirmed by Realtime. Guarded by communityIdRef to
+            // prevent a stale fetch from updating the wrong community's UI.
+            setMessages((prev) => {
+              if (communityIdRef.current !== targetId) return prev;
+              const prevIds = new Set(prev.map((m) => m.id));
+              const toAddToPrev = incoming.filter((m) => !prevIds.has(m.id));
+              if (toAddToPrev.length === 0) return prev;
+              const merged = [
+                ...prev.filter((m) => !m.id.startsWith("temp-")),
+                ...toAddToPrev,
+              ].sort(
+                (a, b) =>
+                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
+              // Keep cache in sync with actual state (which may include
+              // resolved optimistic messages that weren't in cacheSnapshot).
               msgCache.set(targetId, merged);
               return merged;
             });
