@@ -25,7 +25,7 @@ export async function GET() {
 
   let { data, error } = await db
     .from("experience_levels")
-    .select("id, slug, name, image_url, created_at")
+    .select("id, slug, name, image_url, is_active, created_at, updated_at")
     .order("name");
 
   if (error) return NextResponse.json({ error: "Failed to fetch experience levels." }, { status: 500 });
@@ -38,11 +38,17 @@ export async function GET() {
     );
     const refetch = await db
       .from("experience_levels")
-      .select("id, slug, name, image_url, created_at")
+      .select("id, slug, name, image_url, is_active, created_at, updated_at")
       .order("name");
     data = refetch.data ?? [];
   }
 
-  // Wrap with is_active: true so MasterDataPage renders correctly (experience levels are always active)
-  return NextResponse.json({ experience_levels: (data ?? []).map((r) => ({ ...r, is_active: true, updated_at: r.created_at })) });
+  return NextResponse.json({
+    experience_levels: (data ?? []).map((r) => ({
+      ...r,
+      // Graceful fallback if migration hasn't been applied yet
+      is_active: r.is_active ?? true,
+      updated_at: r.updated_at ?? r.created_at,
+    })),
+  });
 }
