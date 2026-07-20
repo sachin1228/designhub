@@ -76,14 +76,14 @@ function CommunityAvatar({
       <img
         src={imageUrl}
         alt={name}
-        className="h-10 w-10 rounded-full object-cover shrink-0"
+        className="h-12 w-12 rounded-full object-cover shrink-0"
         onError={() => setFailed(true)}
       />
     );
   }
   return (
     <div
-      className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-base font-medium select-none ${
+      className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 text-lg font-medium select-none ${
         active ? "bg-accent/20" : "bg-surface-raised"
       }`}
     >
@@ -187,7 +187,7 @@ function CommunityRow({
         onClick={onClick}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors ${
+        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
           active
             ? "bg-accent/10 border-l-2 border-l-accent"
             : "hover:bg-surface-raised border-l-2 border-l-transparent"
@@ -202,11 +202,11 @@ function CommunityRow({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-1 mb-0.5">
-            <span className="font-body text-xs font-medium truncate text-foreground">
+            <span className="font-body text-sm font-medium truncate text-foreground">
               {c.name}
             </span>
             {c.last_message && (
-              <span className="font-mono text-[10px] text-foreground-muted shrink-0">
+              <span className="font-mono text-xs text-foreground-muted shrink-0">
                 {timeAgo(c.last_message.created_at)}
               </span>
             )}
@@ -214,7 +214,7 @@ function CommunityRow({
 
           <div className="flex items-center gap-1.5">
             {c.last_message ? (
-              <p className="font-body text-[11px] text-foreground-muted truncate flex-1">
+              <p className="font-body text-xs text-foreground-muted truncate flex-1">
                 {c.last_message.user && (
                   <span className="font-medium">
                     {c.last_message.user.name.split(" ")[0]}:
@@ -223,12 +223,12 @@ function CommunityRow({
                 {c.last_message.content}
               </p>
             ) : (
-              <p className="font-body text-[11px] text-foreground-muted/60 italic flex-1">
+              <p className="font-body text-xs text-foreground-muted/60 italic flex-1">
                 No messages yet
               </p>
             )}
             {c.message_count > 0 && (
-              <span className="flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-green-500 text-white font-mono text-[10px] font-semibold shrink-0">
+              <span className="flex items-center justify-center min-w-[18px] h-5 px-1 rounded-full bg-green-500 text-white font-mono text-[11px] font-semibold shrink-0">
                 {c.message_count > 99 ? "99+" : c.message_count}
               </span>
             )}
@@ -263,7 +263,7 @@ function SectionGroup({
           {label}
         </span>
       </div>
-      <ul>
+      <ul className="space-y-px">
         {communities.map((c) => (
           <CommunityRow
             key={c.id}
