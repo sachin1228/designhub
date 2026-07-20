@@ -234,7 +234,22 @@ export function CommunityChat({
 
       if (!after) {
         const inflight = inFlightMsgFetch.get(targetId);
-        if (inflight) return inflight;
+        if (inflight) {
+          // The in-flight promise was most likely started by the hover prefetch
+          // in CommunitiesPanel. That prefetch writes to msgCache but never calls
+          // setMessages — it has no reference to React state. If we return the
+          // bare promise the IIFE will await it, see it resolved, then call
+          // setLoading(false) while messages is still [] → empty chat after Lottie.
+          //
+          // Fix: chain a .then() so that once the prefetch resolves (and msgCache
+          // is populated) we immediately sync the cached messages into React state.
+          return inflight.then(() => {
+            const cached = msgCache.get(targetId);
+            if (communityIdRef.current === targetId && cached?.length) {
+              setMessages(cached);
+            }
+          });
+        }
       }
 
       const url = after
