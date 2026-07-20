@@ -268,8 +268,9 @@ export function CommunityChat({
       setMembers(cachedMeta.members);
       setLoading(false);
     } else {
-      setCommunity(null);
-      setMembers([]);
+      // Keep the previous community/members in state so the header and members
+      // panel stay frozen (showing the old community) while the new one loads.
+      // Only clear them on a truly fresh mount where there is no prior state.
       setLoading(true);
     }
 
@@ -432,12 +433,10 @@ export function CommunityChat({
     return acc;
   }, []);
 
-  if (loading) {
-    // Resolve community type from sidebar cache (populated when navigating from sidebar)
-    // so the type-level Lottie animation can be applied even before meta fetch completes.
+  // First-ever load with no previous state to freeze: show full-area loader.
+  if (loading && !community) {
     const sidebarType =
       sidebarStore.data?.communities.find((c) => c.id === communityId)?.type ?? "";
-
     return (
       <div className="flex-1 flex items-center justify-center">
         <LottieLoader
@@ -459,6 +458,11 @@ export function CommunityChat({
       </div>
     );
   }
+
+  // Resolve type once here; used by the inline messages-area loader below.
+  const sidebarType =
+    sidebarStore.data?.communities.find((c) => c.id === communityId)?.type ??
+    community.type;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -506,6 +510,20 @@ export function CommunityChat({
         {/* Messages */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1">
+            {/* Loading: show Lottie only inside the messages area.
+                The header, members panel, and input stay frozen from the
+                previous community so the outer frame never disappears. */}
+            {loading ? (
+              <div className="flex items-center justify-center h-full">
+                <LottieLoader
+                  communityId={communityId}
+                  communityType={sidebarType}
+                  size={120}
+                  spinnerClassName="h-5 w-5 text-foreground-muted"
+                />
+              </div>
+            ) : (
+              <>
             {grouped.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full gap-3 py-16">
                 <div className="h-12 w-12 rounded-full bg-surface-raised flex items-center justify-center text-2xl">
@@ -614,6 +632,8 @@ export function CommunityChat({
               </div>
             ))}
             <div ref={bottomRef} />
+              </>
+            )}
           </div>
 
           {/* Floating Input */}
