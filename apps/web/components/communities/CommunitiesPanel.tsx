@@ -357,9 +357,96 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
     if (sidebarStore.data) setLoading(false);
   }, []);
 
+  /**
+   * Tracks whether a background unread-count revalidation is already in
+   * progress. Prevents duplicate concurrent requests on rapid navigations.
+   */
+  const revalidateInFlight = useRef(false);
+
+  /**
+   * Background unread-count reconciliation.
+   *
+   * Called on every CommunitiesPanel mount when load() short-circuits because
+   * the sidebar cache is still "fresh" (< SIDEBAR_STALE_MS). During that
+   * window the user may have been on another page and messages arrived that
+   * never triggered the panel's realtime handlers (those are only active while
+   * this component is mounted). The cached message_count values are therefore
+   * stale, causing realtime increments to build on the wrong baseline.
+   *
+   * This fetch re-asks the server for authoritative unread counts and merges
+   * them into state using Math.max so that any counts already incremented by
+   * realtime during the request are never rolled back.
+   *
+   * Race-condition safety:
+   *   fetch starts → server count = 8
+   *   realtime fires → UI count becomes 9
+   *   fetch resolves → Math.max(8, 9) = 9  ✓  (no rollback)
+   */
+  const revalidateUnreadCounts = useCallback(() => {
+    if (revalidateInFlight.current) return;
+    revalidateInFlight.current = true;
+
+    fetch("/api/communities")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (!d?.communities) return;
+        const fresh: CachedSidebarCommunity[] = d.communities;
+
+        setCommunities((prev) => {
+          const prevMap = new Map(prev.map((c) => [c.id, c]));
+          const merged = fresh.map((server) => {
+            const local = prevMap.get(server.id);
+            return {
+              ...server,
+              // Never roll back a count that realtime already incremented
+              // while this fetch was in-flight.
+              message_count: Math.max(
+                server.message_count,
+                local?.message_count ?? 0
+              ),
+            };
+          });
+          // Keep sidebarStore in sync so subsequent realtime increments and
+          // the next navigation both start from the reconciled baseline.
+          if (sidebarStore.data) {
+            sidebarStore.data = {
+              ...sidebarStore.data,
+              communities: merged,
+              fetchedAt: Date.now(),
+            };
+          }
+          return merged;
+        });
+      })
+      .catch(() => {})
+      .finally(() => {
+        revalidateInFlight.current = false;
+      });
+  }, []);
+
   useEffect(() => {
+    // Remember whether the cache was already fresh before load() runs so we
+    // can decide whether a separate unread-count revalidation is needed.
+    const cacheWasFresh =
+      !!sidebarStore.data &&
+      Date.now() - sidebarStore.data.fetchedAt < SIDEBAR_STALE_MS;
+
     load();
-  }, [load]);
+
+    // If load() short-circuited (cache was fresh), the sidebar data renders
+    // instantly from the module-level cache — but that cache may contain stale
+    // unread counts from before the user left the Communities page. Messages
+    // that arrived while Communities was unmounted were never handled by the
+    // panel's realtime subscriptions, so those counts were never incremented.
+    //
+    // Fix: always run a background revalidation on mount so the authoritative
+    // server counts replace the stale cached ones. If load() already fired a
+    // fresh fetch (cache was stale/missing), that fetch already returns correct
+    // counts — no need to double-fetch.
+    if (cacheWasFresh) {
+      revalidateUnreadCounts();
+    }
+  }, [load, revalidateUnreadCounts]);
 
   /**
    * Keep a ref to activeCommunityId so realtime callbacks always read the
