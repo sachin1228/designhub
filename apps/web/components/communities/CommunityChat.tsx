@@ -350,16 +350,29 @@ export function CommunityChat({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ─── Supabase Realtime — instant append from payload (zero HTTP round-trip) ─
+  /**
+   * Tracks user IDs whose profiles are currently being fetched lazily so we
+   * never fire more than one request per unknown sender across rapid Realtime
+   * events.  Keyed by userId, value is the in-flight Promise.
+   */
+  const pendingProfileFetchRef = useRef<Map<string, Promise<void>>>(new Map());
+
+  // ─── Supabase Realtime — instant append + reconnect catch-up ─────────────
   //
-  // Previous approach: on every INSERT event, fire fetchMessages(after=...) —
-  // a full HTTP request — causing a visible delay before the message appeared.
+  // Two responsibilities in one channel:
   //
-  // New approach: the postgres_changes payload already contains all columns
-  // (id, community_id, user_id, content, created_at).  We resolve the sender's
-  // display info from membersRef (always current, no re-subscription needed)
-  // and append the message directly to state.  The polling fallback below still
-  // catches any events Realtime misses.
+  // 1. MESSAGE INSERT — append immediately from the payload (zero HTTP round-trip).
+  //    Sender info is resolved from membersRef. If the sender is NOT yet in
+  //    membersRef (e.g. they just joined), the message is appended immediately
+  //    with users:null (gracefully rendered by the UI), and a background fetch
+  //    to /api/communities/[id]/members/[userId] patches the sender's name +
+  //    avatar into state + membersRef without any full refetch.
+  //
+  // 2. RECONNECT CATCH-UP — the subscribe status callback fires "SUBSCRIBED"
+  //    on every successful (re)connection.  After the first connection we track
+  //    this with hasSubscribedRef; on subsequent "SUBSCRIBED" events we do an
+  //    incremental fetch from the latest cached message so no messages are
+  //    missed during the websocket gap.
   useEffect(() => {
     let supabase: ReturnType<typeof createBrowserClient>;
     try {
@@ -367,6 +380,9 @@ export function CommunityChat({
     } catch {
       return;
     }
+
+    /** True after the very first SUBSCRIBED ack — used to detect reconnects. */
+    const hasSubscribedRef = { current: false };
 
     const channel = supabase
       .channel(`community:${communityId}`)
@@ -398,7 +414,6 @@ export function CommunityChat({
             );
 
             // Resolve sender info from the members list we already have.
-            // Falls back to null — the UI handles null gracefully.
             const senderMember = membersRef.current.find(
               (m) => m.user_id === newRow.user_id
             );
@@ -419,18 +434,82 @@ export function CommunityChat({
                 new Date(b.created_at).getTime()
             );
             msgCache.set(communityId, next);
+
+            // ── Lazy sender profile fetch ─────────────────────────────────
+            // If the sender is unknown (not in membersRef yet — e.g. they just
+            // joined), fire a single background request to fetch their profile.
+            // Deduplicated by pendingProfileFetchRef so rapid events for the
+            // same unknown user only trigger one HTTP call.
+            if (!senderMember && !pendingProfileFetchRef.current.has(newRow.user_id)) {
+              const targetCommunityId = communityId;
+              const targetUserId = newRow.user_id;
+              const targetMsgId = newRow.id;
+
+              const p: Promise<void> = fetch(
+                `/api/communities/${targetCommunityId}/members/${targetUserId}`
+              )
+                .then((r) => (r.ok ? r.json() : null))
+                .then((profile: { name: string; avatar_url: string | null } | null) => {
+                  if (!profile) return;
+
+                  const resolvedUsers = {
+                    name: profile.name,
+                    avatar_url: profile.avatar_url,
+                  };
+
+                  // Add to membersRef so future messages from this user resolve instantly.
+                  membersRef.current = [
+                    ...membersRef.current,
+                    { user_id: targetUserId, users: resolvedUsers },
+                  ];
+
+                  // Patch the already-appended message with the now-known sender info.
+                  setMessages((prev) => {
+                    const next = prev.map((m) =>
+                      m.id === targetMsgId && m.users === null
+                        ? { ...m, users: resolvedUsers }
+                        : m
+                    );
+                    msgCache.set(targetCommunityId, next);
+                    return next;
+                  });
+                })
+                .catch(() => {})
+                .finally(() => {
+                  pendingProfileFetchRef.current.delete(targetUserId);
+                });
+
+              pendingProfileFetchRef.current.set(targetUserId, p);
+            }
+
             return next;
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // ── Reconnect catch-up ────────────────────────────────────────────
+        // "SUBSCRIBED" fires both on the initial connection and on every
+        // reconnect after a websocket drop.  Skip the first one (the
+        // communityId effect already runs an incremental fetch on mount/switch).
+        // On subsequent "SUBSCRIBED" events, do an incremental catch-up to
+        // recover any messages that arrived during the gap.
+        if (status === "SUBSCRIBED") {
+          if (!hasSubscribedRef.current) {
+            hasSubscribedRef.current = true;
+          } else {
+            // Reconnect — catch up from the latest cached message.
+            const cached = msgCache.get(communityId) ?? [];
+            const lastReal = cached.filter((m) => !m.id.startsWith("temp-")).at(-1);
+            fetchMessages(lastReal?.created_at ?? undefined);
+          }
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  // fetchMessages intentionally excluded — we no longer call it from here.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [communityId]);
+  }, [communityId, fetchMessages]);
 
   // ─── Polling fallback ─────────────────────────────────────────────────────
   // Catches messages that Supabase Realtime may miss (e.g. if the table is not
