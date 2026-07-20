@@ -23,41 +23,13 @@ import {
 
 type Community = CachedSidebarCommunity;
 
-// ── Per-community "last read" timestamps stored in localStorage ───────────────
-const LAST_READ_KEY = "communities:lastRead";
-
-function getLastReadMap(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(LAST_READ_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-}
-
-function markRead(communityId: string) {
-  try {
-    const map = getLastReadMap();
-    map[communityId] = new Date().toISOString();
-    localStorage.setItem(LAST_READ_KEY, JSON.stringify(map));
-  } catch {}
-}
-
 /**
- * Given a raw list from the API, zero out message_count for communities the
- * user has already read (i.e. their last_message is not newer than lastReadAt).
+ * Fire-and-forget: update last_read_at for this community on the server.
+ * The server uses this to compute accurate unread counts on the next sidebar fetch.
+ * Runs silently — UI badge is already zeroed client-side before this resolves.
  */
-function applyLastRead(communities: Community[]): Community[] {
-  const map = getLastReadMap();
-  return communities.map((c) => {
-    const lastRead = map[c.id];
-    if (!lastRead) return c;
-    const lastMsgAt = c.last_message?.created_at;
-    // If we've read at or after the last message, badge → 0
-    if (!lastMsgAt || lastRead >= lastMsgAt) {
-      return { ...c, message_count: 0 };
-    }
-    return c;
-  });
+function markReadOnServer(communityId: string) {
+  fetch(`/api/communities/${communityId}/read`, { method: "PATCH" }).catch(() => {});
 }
 
 const TYPE_EMOJI: Record<string, string> = {
@@ -369,7 +341,7 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
       .then((res) => (res.ok ? res.json() : null))
       .then((d) => {
         if (!d) return;
-        const fresh = applyLastRead(d.communities ?? []);
+        const fresh = d.communities ?? [];
         sidebarStore.data = { communities: fresh, fetchedAt: Date.now() };
         setCommunities(fresh);
       })
@@ -399,7 +371,7 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
   useEffect(() => {
     activeCommunityIdRef.current = activeCommunityId;
     if (!activeCommunityId) return;
-    markRead(activeCommunityId);
+    markReadOnServer(activeCommunityId);
     setCommunities((prev) => {
       const updated = prev.map((c) =>
         c.id === activeCommunityId ? { ...c, message_count: 0 } : c
@@ -500,7 +472,7 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
 
   function handleNavigate(id: string) {
     // Persist read timestamp so the next load won't re-show old messages
-    markRead(id);
+    markReadOnServer(id);
     // Clear badge immediately on click, before navigation completes
     setCommunities((prev) => {
       const updated = prev.map((c) =>
