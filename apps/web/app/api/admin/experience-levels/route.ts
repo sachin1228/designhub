@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
+import { masterDataSchema } from "@/lib/validations";
 
 const DEFAULT_LEVELS = [
   { slug: "student",        name: "Students" },
@@ -19,7 +20,7 @@ const DEFAULT_LEVELS = [
   { slug: "freelancer",     name: "Freelancers" },
 ];
 
-export async function GET() {
+export async function GET(_request: NextRequest) {
   try { await requireSession("admin"); } catch (e) { return e as Response; }
   const db = createServiceClient();
 
@@ -51,4 +52,32 @@ export async function GET() {
       updated_at: r.updated_at ?? r.created_at,
     })),
   });
+}
+
+export async function POST(request: NextRequest) {
+  try { await requireSession("admin"); } catch (e) { return e as Response; }
+
+  const parsed = masterDataSchema.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Validation failed", issues: parsed.error.flatten().fieldErrors },
+      { status: 422 }
+    );
+  }
+
+  const db = createServiceClient();
+  const { data, error } = await db
+    .from("experience_levels")
+    .insert({ name: parsed.data.name, image_url: parsed.data.image_url ?? null })
+    .select("id, slug, name, image_url, is_active, created_at, updated_at")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      return NextResponse.json({ error: "An experience level with this name already exists." }, { status: 409 });
+    }
+    return NextResponse.json({ error: "Failed to create experience level." }, { status: 500 });
+  }
+
+  return NextResponse.json({ experience_level: data }, { status: 201 });
 }
