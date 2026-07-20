@@ -524,7 +524,7 @@ export function CommunityChat({
                 <LottieLoader
                   communityId={communityId}
                   communityType={sidebarType}
-                  size={150}
+                  size={200}
                   spinnerClassName="h-5 w-5 text-foreground-muted"
                 />
               </div>
