@@ -180,10 +180,10 @@ export const msgFetchedAt = new Map<string, number>();
 export const inFlightMsgFetch = new Map<string, Promise<void>>();
 
 /** How long before community metadata is considered stale (ms) */
-export const META_STALE_MS = 60_000; // 1 minute
+export const META_STALE_MS = 5 * 60_000; // 5 minutes
 
 /** How long before cached messages are considered stale (ms) */
-export const MSG_STALE_MS = 30_000; // 30 seconds
+export const MSG_STALE_MS = 3 * 60_000; // 3 minutes
 
 /** Maximum number of communities to keep in each cache (FIFO eviction) */
 export const MAX_CACHE_ENTRIES = 25;

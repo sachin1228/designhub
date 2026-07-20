@@ -23,7 +23,7 @@ export function DashboardSidebar() {
           <Link
             key={href}
             href={href}
-            prefetch={false}
+            prefetch={true}
             title={label}
             className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
               active
