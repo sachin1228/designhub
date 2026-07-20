@@ -341,6 +341,22 @@ export function CommunityChat({
     };
   }, [communityId, fetchMessages]);
 
+  // ─── Polling fallback ─────────────────────────────────────────────────────
+  // Catches messages that Supabase Realtime may miss (e.g. if the table is not
+  // yet in the realtime publication, or on a flaky connection). Runs every 5 s
+  // only when the tab is visible to avoid unnecessary load.
+  useEffect(() => {
+    const poll = () => {
+      if (document.visibilityState !== "visible") return;
+      const cached = msgCache.get(communityId) ?? [];
+      const lastReal = cached.filter((m) => !m.id.startsWith("temp-")).at(-1);
+      fetchMessages(lastReal?.created_at ?? undefined);
+    };
+
+    const id = setInterval(poll, 5000);
+    return () => clearInterval(id);
+  }, [communityId, fetchMessages]);
+
   // ─── Send a message ───────────────────────────────────────────────────────
   async function handleSend() {
     const content = input.trim();

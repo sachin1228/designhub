@@ -353,21 +353,40 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
   }, [load]);
 
   /**
-   * Realtime subscription — scoped to the ACTIVE community only.
-   *
-   * Subscribing to every joined community (N channels) caused high WebSocket
-   * traffic and cascading re-renders on every incoming message. Now we open
-   * exactly one channel that follows the user as they switch communities.
-   *
-   * Responsibilities:
-   * 1. Update the sidebar last_message preview for the active community in real time.
-   * 2. Keep sidebarStore.data in sync so the next mount reflects live data.
-   *
-   * CommunityChat has its own subscription that handles full message updates
-   * for the selected community, so we don't need to duplicate that here.
+   * Keep a ref to activeCommunityId so realtime callbacks always read the
+   * latest value without needing to be recreated on every navigation.
    */
+  const activeCommunityIdRef = useRef(activeCommunityId);
+
+  // Sync the ref AND clear the unread badge whenever the active community changes.
   useEffect(() => {
+    activeCommunityIdRef.current = activeCommunityId;
     if (!activeCommunityId) return;
+    setCommunities((prev) => {
+      const updated = prev.map((c) =>
+        c.id === activeCommunityId ? { ...c, message_count: 0 } : c
+      );
+      if (sidebarStore.data) {
+        sidebarStore.data = { ...sidebarStore.data, communities: updated };
+      }
+      return updated;
+    });
+  }, [activeCommunityId]);
+
+  /**
+   * Realtime subscriptions — one channel per joined community.
+   *
+   * Each channel handles two jobs:
+   *   1. Update the last_message preview in the sidebar in real time.
+   *   2. Increment the unread badge for communities the user is NOT currently
+   *      viewing, counting only messages from other users.
+   *
+   * Channels are torn down and re-created only when the list of joined
+   * community IDs changes (not on every message or navigation).
+   */
+  const communityIds = communities.map((c) => c.id).join(",");
+  useEffect(() => {
+    if (!communities.length) return;
 
     let supabase: ReturnType<typeof createBrowserClient>;
     try {
@@ -376,64 +395,82 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
       return;
     }
 
-    const channel = supabase
-      .channel(`panel:${activeCommunityId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "community_messages",
-          filter: `community_id=eq.${activeCommunityId}`,
-        },
-        (payload) => {
-          const row = payload.new as {
-            id: string;
-            community_id: string;
-            content: string;
-            created_at: string;
-            user_id: string;
-          };
+    const channels = communities.map((comm) =>
+      supabase
+        .channel(`panel:${comm.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "community_messages",
+            filter: `community_id=eq.${comm.id}`,
+          },
+          (payload) => {
+            const row = payload.new as {
+              id: string;
+              community_id: string;
+              content: string;
+              created_at: string;
+              user_id: string;
+            };
 
-          // Update sidebar last_message for the active community, re-sort by
-          // recency, and keep sidebarStore.data in sync for the next mount.
-          setCommunities((prev) => {
-            const updated = [...prev]
-              .map((comm) =>
-                comm.id === row.community_id
-                  ? {
-                      ...comm,
-                      last_message: {
-                        content: row.content,
-                        created_at: row.created_at,
-                        user: comm.last_message?.user ?? null,
-                      },
-                    }
-                  : comm
-              )
-              .sort((a, b) => {
-                const ta = a.last_message?.created_at ?? "";
-                const tb = b.last_message?.created_at ?? "";
-                return tb > ta ? 1 : -1;
-              });
+            const isOwn = row.user_id === userId;
+            const isActive = row.community_id === activeCommunityIdRef.current;
 
-            if (sidebarStore.data) {
-              sidebarStore.data = { ...sidebarStore.data, communities: updated };
-            }
+            setCommunities((prev) => {
+              const updated = prev
+                .map((c) =>
+                  c.id === row.community_id
+                    ? {
+                        ...c,
+                        last_message: {
+                          content: row.content,
+                          created_at: row.created_at,
+                          user: c.last_message?.user ?? null,
+                        },
+                        // Increment unread only for messages from others in non-active communities
+                        message_count:
+                          !isOwn && !isActive
+                            ? c.message_count + 1
+                            : c.message_count,
+                      }
+                    : c
+                )
+                .sort((a, b) => {
+                  const ta = a.last_message?.created_at ?? "";
+                  const tb = b.last_message?.created_at ?? "";
+                  return tb > ta ? 1 : -1;
+                });
 
-            return updated;
-          });
-        }
-      )
-      .subscribe();
+              if (sidebarStore.data) {
+                sidebarStore.data = { ...sidebarStore.data, communities: updated };
+              }
+
+              return updated;
+            });
+          }
+        )
+        .subscribe()
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      channels.forEach((ch) => supabase.removeChannel(ch));
     };
-  }, [activeCommunityId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communityIds, userId]);
 
   function handleNavigate(id: string) {
-    // Navigate immediately — CommunityChat will show cached data right away
+    // Clear badge immediately on click, before navigation completes
+    setCommunities((prev) => {
+      const updated = prev.map((c) =>
+        c.id === id ? { ...c, message_count: 0 } : c
+      );
+      if (sidebarStore.data) {
+        sidebarStore.data = { ...sidebarStore.data, communities: updated };
+      }
+      return updated;
+    });
     router.push(`/dashboard/communities/${id}`);
   }
 
