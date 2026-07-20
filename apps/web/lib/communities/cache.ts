@@ -179,6 +179,13 @@ export const msgFetchedAt = new Map<string, number>();
  */
 export const inFlightMsgFetch = new Map<string, Promise<void>>();
 
+/**
+ * In-flight metadata-fetch promises keyed by communityId.
+ * Prevents duplicate /api/communities/[id] calls when hover prefetch and
+ * the CommunityChat mount both fire at the same time.
+ */
+export const inFlightMetaFetch = new Map<string, Promise<void>>();
+
 /** How long before community metadata is considered stale (ms) */
 export const META_STALE_MS = 5 * 60_000; // 5 minutes
 
