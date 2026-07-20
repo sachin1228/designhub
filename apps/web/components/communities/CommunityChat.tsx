@@ -9,6 +9,7 @@ import {
 } from "react";
 import { Users, Clock, CheckCheck, ChevronDown } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
+import { LottieLoader } from "@/components/ui/LottieLoader";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import {
   msgCache,
@@ -18,6 +19,7 @@ import {
   evictIfNeeded,
   META_STALE_MS,
   MSG_STALE_MS,
+  sidebarStore,
   type CachedMessage,
   type CachedMeta,
 } from "@/lib/communities/cache";
@@ -431,9 +433,19 @@ export function CommunityChat({
   }, []);
 
   if (loading) {
+    // Resolve community type from sidebar cache (populated when navigating from sidebar)
+    // so the type-level Lottie animation can be applied even before meta fetch completes.
+    const sidebarType =
+      sidebarStore.data?.communities.find((c) => c.id === communityId)?.type ?? "";
+
     return (
       <div className="flex-1 flex items-center justify-center">
-        <Spinner className="h-5 w-5 text-foreground-muted" />
+        <LottieLoader
+          communityId={communityId}
+          communityType={sidebarType}
+          size={120}
+          spinnerClassName="h-5 w-5 text-foreground-muted"
+        />
       </div>
     );
   }
