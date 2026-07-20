@@ -40,13 +40,6 @@ const TYPE_EMOJI: Record<string, string> = {
   experience_level: "🎯",
 };
 
-const SECTIONS: { label: string; type: Community["type"] }[] = [
-  { label: "City",       type: "city"              },
-  { label: "Company",    type: "company"           },
-  { label: "Industry",   type: "sector"            },
-  { label: "Experience", type: "experience_level"  },
-  { label: "Interest",   type: "interest"          },
-];
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -608,20 +601,29 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
           </div>
         ) : (
           <div className="py-0.5">
-            {SECTIONS.map((section) => {
-              const group = communities.filter((c) => c.type === section.type);
-              return (
-                <SectionGroup
-                  key={section.type}
-                  label={section.label}
-                  communities={group}
-                  activeCommunityId={activeCommunityId}
-                  onNavigate={handleNavigate}
-                  onPrefetchEnter={onEnter}
-                  onPrefetchLeave={onLeave}
-                />
-              );
-            })}
+            <div className="px-3 pt-2 pb-0.5">
+              <span className="font-body text-[8px] font-semibold uppercase tracking-widest text-foreground-muted">
+                All
+              </span>
+            </div>
+            <ul className="space-y-px">
+              {[...communities]
+                .sort((a, b) => {
+                  const ta = a.last_message?.created_at ?? "";
+                  const tb = b.last_message?.created_at ?? "";
+                  return tb.localeCompare(ta);
+                })
+                .map((c) => (
+                  <CommunityRow
+                    key={c.id}
+                    c={c}
+                    active={c.id === activeCommunityId}
+                    onClick={() => handleNavigate(c.id)}
+                    onMouseEnter={() => onEnter(c.id)}
+                    onMouseLeave={onLeave}
+                  />
+                ))}
+            </ul>
           </div>
         )}
       </div>
