@@ -219,7 +219,7 @@ function CommunityRow({
               </p>
             )}
             {c.message_count > 0 && (
-              <span className="flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-green-500 text-white font-mono text-[10px] font-semibold shrink-0">
+              <span className="flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-blue-500 text-white font-mono text-[10px] font-semibold shrink-0">
                 {c.message_count > 99 ? "99+" : c.message_count}
               </span>
             )}
@@ -280,23 +280,13 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
   )?.[1];
 
   /**
-   * Seed React state from the module-level cache synchronously during render,
-   * BEFORE any effects run.
-   *
-   * initUserCache(userId) is called here so that if the active account changed
-   * (e.g. user A logged out and user B logged in without a hard refresh), all
-   * caches are wiped before we read them — preventing data leakage.
+   * Always start with empty/loading state on both server and client to avoid
+   * hydration mismatches caused by the module-level sidebarStore having data
+   * on the client (from a previous SPA navigation) but being empty on the server.
+   * The store is read in useEffect after hydration is complete.
    */
-  const [communities, setCommunities] = useState<Community[]>(() => {
-    initUserCache(userId);
-    return sidebarStore.data?.communities ?? [];
-  });
-
-  /**
-   * Show the loading spinner only when there is NO usable cached data.
-   * On revisits the cached list renders immediately with no spinner.
-   */
-  const [loading, setLoading] = useState(() => sidebarStore.data === null);
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [loading, setLoading] = useState(true);
 
   /**
    * Stale-while-revalidate load function.
@@ -349,8 +339,16 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
   }, []);
 
   useEffect(() => {
+    // Initialize user cache (wipes stale data on account switch) and seed
+    // communities from the store before fetching — avoids a flash of empty state
+    // on SPA navigations while still matching the server's initial render.
+    initUserCache(userId);
+    if (sidebarStore.data) {
+      setCommunities(sidebarStore.data.communities);
+      setLoading(false);
+    }
     load();
-  }, [load]);
+  }, [load, userId]);
 
   /**
    * Realtime subscription — scoped to the ACTIVE community only.
