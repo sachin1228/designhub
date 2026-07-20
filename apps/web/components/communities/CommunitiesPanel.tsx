@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Users, MessageSquare, Search } from "lucide-react";
+import { MessageSquare, Search } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import {
@@ -218,10 +218,11 @@ function CommunityRow({
                 No messages yet
               </p>
             )}
-            <span className="flex items-center gap-0.5 text-foreground-muted shrink-0">
-              <Users size={10} />
-              <span className="font-mono text-[10px]">{c.member_count}</span>
-            </span>
+            {c.message_count > 0 && (
+              <span className="flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-green-500 text-white font-mono text-[10px] font-semibold shrink-0">
+                {c.message_count > 99 ? "99+" : c.message_count}
+              </span>
+            )}
           </div>
         </div>
       </button>
