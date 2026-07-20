@@ -202,7 +202,7 @@ function CommunityRow({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-1 mb-0.5">
-            <span className="font-body text-sm font-medium truncate text-foreground">
+            <span className="font-body text-[13px] font-medium truncate text-foreground">
               {c.name}
             </span>
             {c.last_message && (
