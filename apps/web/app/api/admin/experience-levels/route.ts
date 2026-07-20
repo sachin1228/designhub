@@ -54,6 +54,15 @@ export async function GET(_request: NextRequest) {
   });
 }
 
+/** Converts a display name to a URL-safe slug, e.g. "Freelance Designers" → "freelance_designers" */
+function toSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
 export async function POST(request: NextRequest) {
   try { await requireSession("admin"); } catch (e) { return e as Response; }
 
@@ -68,8 +77,12 @@ export async function POST(request: NextRequest) {
   const db = createServiceClient();
   const { data, error } = await db
     .from("experience_levels")
-    .insert({ name: parsed.data.name, image_url: parsed.data.image_url ?? null })
-    .select("id, slug, name, image_url, is_active, created_at, updated_at")
+    .insert({
+      name:      parsed.data.name,
+      slug:      toSlug(parsed.data.name),
+      image_url: parsed.data.image_url ?? null,
+    })
+    .select("id, slug, name, image_url, created_at")
     .single();
 
   if (error) {
@@ -79,5 +92,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create experience level." }, { status: 500 });
   }
 
-  return NextResponse.json({ experience_level: data }, { status: 201 });
+  return NextResponse.json({
+    experience_level: { ...data, is_active: true, updated_at: data.created_at },
+  }, { status: 201 });
 }
