@@ -433,23 +433,26 @@ export function CommunityChat({
     return acc;
   }, []);
 
-  // First-ever load with no previous state to freeze: show full-area loader.
-  if (loading && !community) {
-    const sidebarType =
-      sidebarStore.data?.communities.find((c) => c.id === communityId)?.type ?? "";
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <LottieLoader
-          communityId={communityId}
-          communityType={sidebarType}
-          size={120}
-          spinnerClassName="h-5 w-5 text-foreground-muted"
-        />
-      </div>
-    );
-  }
+  // Resolve display data: prefer live community state, fall back to sidebar
+  // cache so the header renders immediately even before fetchMeta completes.
+  // This means the loader only ever appears inside the chatbox — never full-area.
+  const sidebarEntry = sidebarStore.data?.communities.find(
+    (c) => c.id === communityId
+  );
+  const displayCommunity = community ?? (sidebarEntry
+    ? {
+        id: communityId,
+        name: sidebarEntry.name,
+        type: sidebarEntry.type,
+        member_count: sidebarEntry.member_count,
+        image_url: sidebarEntry.image_url,
+      }
+    : null);
+  const sidebarType = displayCommunity?.type ?? "";
 
-  if (!community) {
+  // No community in state AND nothing in sidebar cache (e.g. direct URL with
+  // an id that's not in the sidebar list) AND not loading = community not found.
+  if (!loading && !displayCommunity) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <p className="font-body text-sm text-foreground-muted">
@@ -459,50 +462,53 @@ export function CommunityChat({
     );
   }
 
-  // Resolve type once here; used by the inline messages-area loader below.
-  const sidebarType =
-    sidebarStore.data?.communities.find((c) => c.id === communityId)?.type ??
-    community.type;
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Chat header */}
+      {/* Chat header — uses displayCommunity so it renders immediately from
+          sidebarStore even before fetchMeta completes, preventing any
+          full-area flash. */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-surface shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-surface-raised flex items-center justify-center text-sm shrink-0 overflow-hidden">
-            {community.image_url ? (
-              <img
-                src={community.image_url}
-                alt={community.name}
-                className="h-9 w-9 rounded-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                  e.currentTarget.parentElement!.textContent =
-                    TYPE_EMOJI[community.type] ?? "💬";
-                }}
-              />
-            ) : (
-              TYPE_EMOJI[community.type] ?? "💬"
-            )}
-          </div>
-          <div>
-            <h3 className="font-display text-sm font-semibold text-foreground leading-none">
-              {community.name}
-            </h3>
-            <p className="font-body text-[11px] text-foreground-muted mt-0.5 flex items-center gap-1">
-              <Users size={10} /> {community.member_count} member
-              {community.member_count !== 1 ? "s" : ""}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Users size={14} className="text-foreground-muted" />
-          <span className="font-body text-xs text-foreground-muted">
-            {community.member_count} member
-            {community.member_count !== 1 ? "s" : ""}
-          </span>
-        </div>
+        {displayCommunity ? (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-surface-raised flex items-center justify-center text-sm shrink-0 overflow-hidden">
+                {displayCommunity.image_url ? (
+                  <img
+                    src={displayCommunity.image_url}
+                    alt={displayCommunity.name}
+                    className="h-9 w-9 rounded-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      e.currentTarget.parentElement!.textContent =
+                        TYPE_EMOJI[displayCommunity.type] ?? "💬";
+                    }}
+                  />
+                ) : (
+                  TYPE_EMOJI[displayCommunity.type] ?? "💬"
+                )}
+              </div>
+              <div>
+                <h3 className="font-display text-sm font-semibold text-foreground leading-none">
+                  {displayCommunity.name}
+                </h3>
+                <p className="font-body text-[11px] text-foreground-muted mt-0.5 flex items-center gap-1">
+                  <Users size={10} /> {displayCommunity.member_count} member
+                  {displayCommunity.member_count !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users size={14} className="text-foreground-muted" />
+              <span className="font-body text-xs text-foreground-muted">
+                {displayCommunity.member_count} member
+                {displayCommunity.member_count !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </>
+        ) : (
+          /* Direct-URL load with nothing in sidebar cache yet: skeleton header */
+          <div className="h-5 w-48 rounded bg-surface-raised animate-pulse" />
+        )}
       </div>
 
       {/* Body: messages + members panel */}
@@ -527,12 +533,12 @@ export function CommunityChat({
             {grouped.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full gap-3 py-16">
                 <div className="h-12 w-12 rounded-full bg-surface-raised flex items-center justify-center text-2xl">
-                  {TYPE_EMOJI[community.type] ?? "💬"}
+                  {TYPE_EMOJI[displayCommunity?.type ?? ""] ?? "💬"}
                 </div>
                 <p className="font-body text-sm text-foreground-muted text-center">
                   Welcome to{" "}
                   <span className="font-medium text-foreground">
-                    {community.name}
+                    {displayCommunity?.name ?? ""}
                   </span>
                   !
                   <br />
@@ -651,7 +657,7 @@ export function CommunityChat({
                   e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder={`Message ${community.name}…`}
+                placeholder={`Message ${displayCommunity?.name ?? ""}…`}
                 rows={1}
                 className="flex-1 resize-none bg-transparent font-body text-sm text-foreground placeholder:text-foreground-muted outline-none overflow-y-auto"
                 style={{ lineHeight: "1.5", height: "24px", maxHeight: "120px" }}
