@@ -178,7 +178,7 @@ function CommunityRow({
         onClick={onClick}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${
+        className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors ${
           active
             ? "bg-accent/10 border-l-2 border-l-accent"
             : "hover:bg-surface-raised border-l-2 border-l-transparent"
@@ -248,7 +248,7 @@ function SectionGroup({
 
   return (
     <div>
-      <div className="px-4 pt-3 pb-1">
+      <div className="px-3 pt-2 pb-0.5">
         <span className="font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
           {label}
         </span>
@@ -441,7 +441,7 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
       {/* Explore communities button */}
       <button
         onClick={() => router.push("/dashboard/communities")}
-        className={`flex items-center gap-2 mx-3 mt-3 mb-1 px-3 py-2 rounded-lg font-body text-xs font-medium transition-colors text-left ${
+        className={`flex items-center gap-2 mx-2 mt-2 mb-0.5 px-2 py-1.5 rounded-lg font-body text-xs font-medium transition-colors text-left ${
           pathname === "/dashboard/communities"
             ? "bg-accent/10 text-accent"
             : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
@@ -451,7 +451,7 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
         Explore Communities
       </button>
 
-      <div className="mx-3 mb-1" />
+      <div className="mx-2 mb-0.5" />
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
@@ -470,7 +470,7 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
             </p>
           </div>
         ) : (
-          <div className="py-1">
+          <div className="py-0.5">
             {SECTIONS.map((section) => {
               const group = communities.filter((c) => c.type === section.type);
               return (
