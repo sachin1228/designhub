@@ -178,7 +178,7 @@ function CommunityRow({
         onClick={onClick}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+        className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${
           active
             ? "bg-accent/10 border-l-2 border-l-accent"
             : "hover:bg-surface-raised border-l-2 border-l-transparent"
@@ -248,7 +248,7 @@ function SectionGroup({
 
   return (
     <div>
-      <div className="px-4 pt-4 pb-1">
+      <div className="px-4 pt-3 pb-1">
         <span className="font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
           {label}
         </span>
