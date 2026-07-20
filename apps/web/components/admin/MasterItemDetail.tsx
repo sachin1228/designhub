@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Pencil, Check, X, ToggleLeft, ToggleRight, Trash2, ImagePlus, Upload } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
+import { invalidateMasterCache } from "@/components/admin/MasterDataPage";
 
 interface MasterItem {
   id: string;
@@ -138,8 +139,12 @@ export function MasterItemDetail({ entity, apiBase, listPath, responseKey, readO
         body: JSON.stringify({ image_url: uploadData.url }),
       });
       const patchData = await patchRes.json();
-      if (patchRes.ok) setItem(patchData[responseKey]);
-      else setImageError(patchData.error ?? "Failed to save image.");
+      if (patchRes.ok) {
+        setItem(patchData[responseKey]);
+        invalidateMasterCache(apiBase); // bust list cache so thumbnail shows immediately
+      } else {
+        setImageError(patchData.error ?? "Failed to save image.");
+      }
     } catch {
       setImageError("Network error. Please try again.");
     } finally {
@@ -158,8 +163,12 @@ export function MasterItemDetail({ entity, apiBase, listPath, responseKey, readO
         body: JSON.stringify({ image_url: null }),
       });
       const data = await res.json();
-      if (res.ok) setItem(data[responseKey]);
-      else setImageError(data.error ?? "Failed to remove image.");
+      if (res.ok) {
+        setItem(data[responseKey]);
+        invalidateMasterCache(apiBase); // bust list cache so removal reflects immediately
+      } else {
+        setImageError(data.error ?? "Failed to remove image.");
+      }
     } catch {
       setImageError("Network error.");
     } finally {

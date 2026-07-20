@@ -22,6 +22,12 @@ const MASTER_CACHE_TTL = 5 * 60_000;
 const masterCache = new Map<string, { data: MasterItem[]; fetchedAt: number }>();
 const masterInflight = new Map<string, Promise<MasterItem[]>>();
 
+/** Call this from any detail page after mutating an item (image upload, rename, etc.)
+ *  so the list re-fetches fresh data instead of serving the stale cache. */
+export function invalidateMasterCache(apiBase: string) {
+  masterCache.delete(apiBase);
+}
+
 interface MasterDataPageProps {
   title: string;
   entity: string;
