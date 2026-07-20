@@ -113,6 +113,12 @@ export function CommunityChat({
   // the initial render pass.  The layout effect below (client-only) then seeds
   // state from cache or SSR props before the first browser paint — so the user
   // never sees a flash.
+  //
+  // hasMounted gates any read of module-level caches (e.g. sidebarStore) during
+  // render. It starts false on both server and client so the first render is
+  // identical (no hydration mismatch). The layout effect sets it to true
+  // synchronously before the first browser paint, so the user never sees a flash.
+  const [hasMounted, setHasMounted] = useState(false);
   const [community, setCommunity] = useState<Community | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -154,6 +160,10 @@ export function CommunityChat({
   //   2. Hard browser refresh    → caches are empty; initialMeta/initialMessages
   //      come from the server and are used to seed both the cache and state.
   useIsomorphicLayoutEffect(() => {
+    // Mark as mounted so the render path can safely read module-level caches
+    // (e.g. sidebarStore) without causing a hydration mismatch.
+    setHasMounted(true);
+
     const cachedMeta = metaCache.get(communityId);
     const cachedMsgs = msgCache.get(communityId);
 
@@ -273,11 +283,16 @@ export function CommunityChat({
     [communityId]
   );
 
-  // ─── On communityId change: show cache instantly, fetch in background ─────
+  // ─── On communityId change: show cache instantly, always catch up ─────────
   //
   // The SSR seed effect (above) runs before this on the initial mount, so
   // msgFetchedAt and metaCache will already be populated for hard-refresh
-  // loads — causing this effect to skip the API calls entirely.
+  // loads — but we still do an incremental catch-up to pick up any messages
+  // that arrived while the browser was on another page or community.
+  //
+  // Key invariant: if cached messages exist, ALWAYS do an incremental fetch
+  // (regardless of MSG_STALE_MS) to pick up anything missed while away.
+  // MSG_STALE_MS only gates full refetches when there is no cache at all.
   useEffect(() => {
     communityIdRef.current = communityId;
     let cancelled = false;
@@ -299,13 +314,26 @@ export function CommunityChat({
 
     const metaIsStale =
       !cachedMeta || Date.now() - cachedMeta.fetchedAt > META_STALE_MS;
-    const fetchedAt = msgFetchedAt.get(communityId);
-    const msgsStale = !fetchedAt || Date.now() - fetchedAt > MSG_STALE_MS;
-    const hasCachedMsgs = msgCache.has(communityId);
+
+    // Message fetch strategy:
+    //   • Cache exists → incremental fetch from the latest real message's
+    //     created_at. This catches any messages received while the user was
+    //     viewing a different community or a different page entirely.
+    //     We do this regardless of MSG_STALE_MS to never miss a message.
+    //   • No cache → full fetch (the normal first-load path).
+    const msgPromise = (() => {
+      if (cachedMsgs?.length) {
+        const lastReal = cachedMsgs
+          .filter((m) => !m.id.startsWith("temp-"))
+          .at(-1);
+        return fetchMessages(lastReal?.created_at);
+      }
+      return fetchMessages();
+    })();
 
     (async () => {
       await Promise.all([
-        msgsStale || !hasCachedMsgs ? fetchMessages() : Promise.resolve(),
+        msgPromise,
         metaIsStale ? fetchMeta() : Promise.resolve(),
       ]);
       if (!cancelled) setLoading(false);
@@ -420,6 +448,27 @@ export function CommunityChat({
     return () => clearInterval(id);
   }, [communityId, fetchMessages]);
 
+  // ─── Tab visibility / window focus catch-up ───────────────────────────────
+  // When the browser tab becomes visible again (after suspension or switching)
+  // or the window regains focus, incrementally fetch any messages received
+  // while the Realtime connection was paused or the user was away.
+  // This is a lightweight point-in-time fetch — not polling.
+  useEffect(() => {
+    const handleCatchUp = () => {
+      if (document.visibilityState !== "visible") return;
+      const cached = msgCache.get(communityId) ?? [];
+      const lastReal = cached.filter((m) => !m.id.startsWith("temp-")).at(-1);
+      fetchMessages(lastReal?.created_at ?? undefined);
+    };
+
+    document.addEventListener("visibilitychange", handleCatchUp);
+    window.addEventListener("focus", handleCatchUp);
+    return () => {
+      document.removeEventListener("visibilitychange", handleCatchUp);
+      window.removeEventListener("focus", handleCatchUp);
+    };
+  }, [communityId, fetchMessages]);
+
   // ─── Send a message ───────────────────────────────────────────────────────
   async function handleSend() {
     const content = input.trim();
@@ -515,9 +564,17 @@ export function CommunityChat({
   // Resolve display data: prefer live community state, fall back to sidebar
   // cache so the header renders immediately even before fetchMeta completes.
   // This means the loader only ever appears inside the chatbox — never full-area.
-  const sidebarEntry = sidebarStore.data?.communities.find(
-    (c) => c.id === communityId
-  );
+  //
+  // IMPORTANT: sidebarStore is a module-level cache that persists across client
+  // navigations. Reading it during render before `hasMounted` is set would make
+  // the server render (empty cache) and the client's first hydration render
+  // (warm cache) produce different output → React hydration error.
+  // We gate it on `hasMounted` (set synchronously by useLayoutEffect before
+  // the first browser paint) so both server and client agree on the initial
+  // render, and then the cache is applied immediately without a visible flash.
+  const sidebarEntry = hasMounted
+    ? sidebarStore.data?.communities.find((c) => c.id === communityId)
+    : undefined;
   const displayCommunity = community ?? (sidebarEntry
     ? {
         id: communityId,
