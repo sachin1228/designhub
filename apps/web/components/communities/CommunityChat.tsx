@@ -398,6 +398,11 @@ export function CommunityChat({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ─── Auto-focus input when chat opens / community changes ─────────────────
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [communityId]);
+
   /**
    * Tracks user IDs whose profiles are currently being fetched lazily so we
    * never fire more than one request per unknown sender across rapid Realtime
