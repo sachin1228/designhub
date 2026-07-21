@@ -485,11 +485,16 @@ export function CommunityChat({
       requestAnimationFrame(() => {
         const container = scrollContainerRef.current;
         if (unreadDividerRef.current && container) {
-          // Center the unread divider vertically in the scroll container
-          const divider = unreadDividerRef.current;
-          const targetScrollTop =
-            divider.offsetTop - container.clientHeight / 2 + divider.offsetHeight / 2;
-          container.scrollTop = Math.max(0, targetScrollTop);
+          // WhatsApp-style: position the divider near the top of the visible
+          // area so the user immediately sees the boundary and can read down.
+          // Use getBoundingClientRect for accuracy — offsetTop is relative to
+          // offsetParent which is NOT necessarily the scroll container.
+          const dividerRect = unreadDividerRef.current.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          const relativeTop =
+            dividerRect.top - containerRect.top + container.scrollTop;
+          // 80 px of read context above the pill (shows the last read message)
+          container.scrollTop = Math.max(0, relativeTop - 80);
         } else {
           // No unread — jump straight to the bottom with no animation
           bottomRef.current?.scrollIntoView({ behavior: "instant" });
