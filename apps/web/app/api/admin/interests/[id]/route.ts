@@ -62,9 +62,7 @@ export async function DELETE(
   const { id } = await params;
   const db = createServiceClient();
 
-  // Delete the linked community first so it no longer appears in Explore Communities
-  await db.from("communities").delete().eq("type", "interest").eq("reference_id", id);
-
+  // Delete the master row first; only clean up the community if that succeeds.
   const { error } = await db.from("design_interests").delete().eq("id", id);
   if (error) {
     if (error.code === "23503") {
@@ -75,5 +73,9 @@ export async function DELETE(
     }
     return NextResponse.json({ error: "Failed to delete interest." }, { status: 500 });
   }
+
+  // Master row is gone — remove the linked community so it no longer appears in Explore Communities.
+  await db.from("communities").delete().eq("type", "interest").eq("reference_id", id);
+
   return NextResponse.json({ success: true });
 }
