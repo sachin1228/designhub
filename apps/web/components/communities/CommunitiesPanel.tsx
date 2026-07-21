@@ -17,6 +17,7 @@ import {
   sidebarStore,
   SIDEBAR_STALE_MS,
   initUserCache,
+  unreadOnOpen,
   type CachedMeta,
   type CachedSidebarCommunity,
 } from "@/lib/communities/cache";
@@ -453,6 +454,13 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
     if (!activeCommunityId) return;
     markReadOnServer(activeCommunityId);
     setCommunities((prev) => {
+      const current = prev.find((c) => c.id === activeCommunityId);
+      // Snapshot the unread count BEFORE zeroing it so CommunityChat can
+      // position the unread divider even though sidebarStore will be 0 by
+      // the time the chat component's effect runs.
+      if (current && current.message_count > 0) {
+        unreadOnOpen.set(activeCommunityId, current.message_count);
+      }
       const updated = prev.map((c) =>
         c.id === activeCommunityId ? { ...c, message_count: 0 } : c
       );

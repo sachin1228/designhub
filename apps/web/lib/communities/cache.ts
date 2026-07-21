@@ -165,6 +165,14 @@ export function invalidateOnLeave(communityId: string): void {
 
 // ─── Existing chat caches (unchanged) ─────────────────────────────────────────
 
+/**
+ * Unread count snapshot captured by CommunitiesPanel the moment a community
+ * is activated — BEFORE the badge is zeroed.  CommunityChat reads this so it
+ * can position the unread divider even though sidebarStore.message_count is
+ * already 0 by the time the chat component's effect fires.
+ */
+export const unreadOnOpen = new Map<string, number>();
+
 /** Messages keyed by communityId */
 export const msgCache = new Map<string, CachedMessage[]>();
 

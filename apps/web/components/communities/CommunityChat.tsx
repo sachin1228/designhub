@@ -22,6 +22,7 @@ import {
   META_STALE_MS,
   MSG_STALE_MS,
   sidebarStore,
+  unreadOnOpen,
   type CachedMessage,
   type CachedMeta,
 } from "@/lib/communities/cache";
@@ -352,8 +353,10 @@ export function CommunityChat({
     // Reset scroll state for the new community
     initialScrollDoneRef.current = false;
     setShowScrollToBottom(false);
-    // Capture unread count before the badge is cleared (effects run client-side — safe to read sidebarStore)
-    const unread = sidebarStore.data?.communities.find((c) => c.id === communityId)?.message_count ?? 0;
+    // CommunitiesPanel saves the unread count to unreadOnOpen BEFORE zeroing the
+    // sidebar badge, so we always get the real count regardless of effect order.
+    const unread = unreadOnOpen.get(communityId) ?? 0;
+    unreadOnOpen.delete(communityId); // consume it — only needed once per open
     setInitialUnreadCount(unread);
 
     let cancelled = false;
@@ -939,15 +942,17 @@ export function CommunityChat({
                   const sender = msg.users;
                   const isFirstUnread = firstUnreadMsgId !== null && msg.id === firstUnreadMsgId;
 
-                  // Unread divider pill — rendered immediately before the first unread message
+                  // Unread divider — full-width rule with centred pill, like WhatsApp
                   const unreadDivider = isFirstUnread ? (
                     <div
                       ref={unreadDividerRef}
-                      className="flex items-center justify-center py-2 my-1"
+                      className="flex items-center gap-3 py-2 my-2 w-full"
                     >
-                      <span className="font-body text-xs text-foreground-muted bg-surface-raised border border-border/60 rounded-full px-4 py-1 shadow-sm select-none">
+                      <div className="flex-1 h-px bg-border/60" />
+                      <span className="font-body text-xs text-foreground-muted bg-surface-raised border border-border/60 rounded-full px-4 py-1 shadow-sm select-none whitespace-nowrap">
                         {initialUnreadCount} unread message{initialUnreadCount !== 1 ? "s" : ""}
                       </span>
+                      <div className="flex-1 h-px bg-border/60" />
                     </div>
                   ) : null;
 
