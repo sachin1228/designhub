@@ -153,6 +153,8 @@ export function CommunityChat({
    * undefined = not yet known (divider is hidden until we get the value).
    */
   const [lastReadAt, setLastReadAt] = useState<string | null | undefined>(undefined);
+  /** When true the divider is hidden even if firstUnreadMsgId is non-null. Reset on community change. */
+  const [dividerDismissed, setDividerDismissed] = useState(false);
 
   /**
    * Tracks the *currently mounted* communityId.
@@ -378,6 +380,7 @@ export function CommunityChat({
     // Reset scroll state for the new community
     initialScrollDoneRef.current = false;
     setShowScrollToBottom(false);
+    setDividerDismissed(false);
 
     // CommunitiesPanel stores last_read_at (captured BEFORE marking read) into
     // lastReadAtOnOpen synchronously when the active community changes.
@@ -480,9 +483,13 @@ export function CommunityChat({
       initialScrollDoneRef.current = true;
       // Give React one animation frame to finish laying out messages in the DOM
       requestAnimationFrame(() => {
-        if (unreadDividerRef.current) {
-          // Stop at the unread divider — WhatsApp-style
-          unreadDividerRef.current.scrollIntoView({ behavior: "instant", block: "start" });
+        const container = scrollContainerRef.current;
+        if (unreadDividerRef.current && container) {
+          // Center the unread divider vertically in the scroll container
+          const divider = unreadDividerRef.current;
+          const targetScrollTop =
+            divider.offsetTop - container.clientHeight / 2 + divider.offsetHeight / 2;
+          container.scrollTop = Math.max(0, targetScrollTop);
         } else {
           // No unread — jump straight to the bottom with no animation
           bottomRef.current?.scrollIntoView({ behavior: "instant" });
@@ -496,6 +503,8 @@ export function CommunityChat({
     if (!container) return;
     const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
     if (distFromBottom < 100) {
+      // User is live at the bottom — dismiss the divider (they're reading in real-time)
+      setDividerDismissed(true);
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     } else {
       // User is scrolled up reading history — show the ↓ button instead
@@ -514,6 +523,34 @@ export function CommunityChat({
     container.addEventListener("scroll", onScroll, { passive: true });
     return () => container.removeEventListener("scroll", onScroll);
   }, []);
+
+  // ─── Auto-dismiss unread divider once it enters the viewport ─────────────
+  // When the divider is visible for 1.5 s the user has "seen" the boundary —
+  // dismiss it so the chat looks clean.  Resets whenever communityId changes.
+  useEffect(() => {
+    const el = unreadDividerRef.current;
+    if (!el || dividerDismissed) return;
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          timer = setTimeout(() => setDividerDismissed(true), 1500);
+        } else {
+          if (timer) { clearTimeout(timer); timer = null; }
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+    // Re-run when divider mounts/unmounts (firstUnreadMsgId changes) or community changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communityId, dividerDismissed]);
 
   // ─── Auto-focus input when chat opens / community changes ─────────────────
   useEffect(() => {
@@ -854,6 +891,7 @@ export function CommunityChat({
   // Temp (optimistic) messages are excluded so they never act as the boundary.
   const realMessages = messages.filter((m) => !m.id.startsWith("temp-"));
   const firstUnreadMsgId: string | null = (() => {
+    if (dividerDismissed) return null; // user has seen the boundary — hide it
     if (lastReadAt === undefined) return null; // not yet known
     // Only messages from OTHER users are "unread" — you obviously read your own
     // messages when you sent them. This prevents the divider from landing on a
