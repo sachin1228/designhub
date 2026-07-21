@@ -164,6 +164,17 @@ export function CommunityChat({
   /** Flips to true once unreadAtOpenRef has been populated, triggering a render
    *  so the divider element appears in the DOM before the initial scroll runs. */
   const [snapshotReady, setSnapshotReady] = useState(false);
+  /**
+   * Flips to true only after the initial message fetch (msgPromise) resolves.
+   * The snapshot must not be computed until this is true, otherwise we'd freeze
+   * the boundary from stale cached messages before the catch-up fetch completes.
+   */
+  const [initialMessagesReady, setInitialMessagesReady] = useState(false);
+  /** Set to true by the realtime INSERT handler before calling setMessages,
+   *  so the messages-change effect knows a real insert just happened. */
+  const realtimeInsertPendingRef = useRef(false);
+  /** Captured by the INSERT handler: was the user near the bottom at that moment? */
+  const realtimeWasNearBottomRef = useRef(false);
 
   /**
    * Tracks the *currently mounted* communityId.
@@ -386,11 +397,15 @@ export function CommunityChat({
   // MSG_STALE_MS only gates full refetches when there is no cache at all.
   useEffect(() => {
     communityIdRef.current = communityId;
-    // Reset scroll state for the new community
+    // Reset all scroll + unread state for the new community.
     initialScrollDoneRef.current = false;
     setShowScrollToBottom(false);
     unreadAtOpenRef.current = null;
     setSnapshotReady(false);
+    setInitialMessagesReady(false);
+    // Explicitly clear lastReadAt so the previous community's timestamp never
+    // bleeds into the new community's unread snapshot calculation.
+    setLastReadAt(undefined);
 
     // CommunitiesPanel stores last_read_at (captured BEFORE marking read) into
     // lastReadAtOnOpen synchronously when the active community changes.
@@ -401,9 +416,6 @@ export function CommunityChat({
       setLastReadAt(lastReadAtOnOpen.get(communityId) ?? null);
       lastReadAtOnOpen.delete(communityId);
     }
-    // If lastReadAtOnOpen doesn't have the key yet (race: sidebarStore was null
-    // when CommunitiesPanel's effect fired), the scroll effect's late-arrival
-    // check below will pick it up once the PATCH response resolves.
 
     let cancelled = false;
 
@@ -446,7 +458,14 @@ export function CommunityChat({
         msgPromise,
         metaIsStale ? fetchMeta() : Promise.resolve(),
       ]);
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+        // Signal that initial message catch-up is complete.  The snapshot effect
+        // waits for this before freezing the unread boundary — this prevents the
+        // snapshot from being taken against stale cached messages before the
+        // incremental fetch has added any new unread messages.
+        setInitialMessagesReady(true);
+      }
     })();
 
     return () => {
@@ -455,102 +474,117 @@ export function CommunityChat({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [communityId]);
 
-  // ─── Smart scroll: instant jump on initial load, smooth only for new messages ─
-  //
-  // Problem A: opening a chat with 1000 messages caused a visible animated
-  // scroll from top to bottom (smooth scrollIntoView on every messages change).
-  // Problem B: opening a chat with unread messages scrolled past them to the
-  // very bottom, so the user never saw where unread started.
-  //
-  // Fix:
-  //   • First load for a community → instant jump (no animation) to either
-  //     the unread divider (if there are unread messages) or the bottom.
-  //   • Subsequent updates (new realtime messages) → smooth scroll only if
-  //     the user is already near the bottom; otherwise surface the ↓ button.
+  // ─── Effect 1: Unread boundary snapshot ──────────────────────────────────
+  // Runs once after BOTH lastReadAt is known AND the initial message fetch has
+  // completed (initialMessagesReady). This guarantees the snapshot is taken
+  // against the full post-catch-up message list, not stale cached data.
+  // Does NOT depend on `messages` — we intentionally avoid re-running when
+  // realtime messages arrive after the snapshot has been frozen.
   useEffect(() => {
-    if (!messages.length) return;
+    if (!initialMessagesReady) return;
+    if (snapshotReady) return; // already done for this session
 
-    // ── PHASE 1: Initial open ─────────────────────────────────────────────
-    if (!initialScrollDoneRef.current) {
-      // Step 1a: make sure lastReadAt is known (it is the pre-PATCH snapshot).
-      // "unread state hasn't loaded yet" ≠ "no unread messages" — never scroll
-      // to bottom as a fallback while we're still waiting.
-      if (lastReadAt === undefined) {
+    // Resolve lastReadAt if CommunitiesPanel's effect ran after ours.
+    if (lastReadAt === undefined) {
+      if (lastReadAtOnOpen.has(communityId)) {
+        setLastReadAt(lastReadAtOnOpen.get(communityId) ?? null);
+        lastReadAtOnOpen.delete(communityId);
+        // State update → re-render → this effect fires again with lastReadAt set.
+        return;
+      }
+      // PATCH still in flight — poll after a short delay then give up with null.
+      const timer = setTimeout(() => {
+        if (communityIdRef.current !== communityId) return;
         if (lastReadAtOnOpen.has(communityId)) {
           setLastReadAt(lastReadAtOnOpen.get(communityId) ?? null);
           lastReadAtOnOpen.delete(communityId);
-          // State update → re-render → this effect fires again with lastReadAt set.
-          return;
-        }
-        // PATCH still in flight — do nothing, do NOT set initialScrollDoneRef.
-        // The incremental message fetch completing will re-trigger this effect.
-        return;
-      }
-
-      // Step 1b: take the unread-boundary snapshot exactly once.
-      // We compute it here (not at render time) so the snapshot is always
-      // based on the messages that were present when the chat was opened.
-      if (!snapshotReady) {
-        const realMsgs = messages.filter((m) => !m.id.startsWith("temp-"));
-        let firstMsgId: string | null = null;
-        let count = 0;
-        if (lastReadAt === null) {
-          // Community never read — every message from another user is "unread"
-          const first = realMsgs.find((m) => m.user_id !== currentUserId);
-          firstMsgId = first?.id ?? null;
-          count = realMsgs.filter((m) => m.user_id !== currentUserId).length;
         } else {
-          const lastReadTime = new Date(lastReadAt).getTime();
-          const first = realMsgs.find(
-            (m) =>
-              m.user_id !== currentUserId &&
-              new Date(m.created_at).getTime() > lastReadTime
-          );
-          firstMsgId = first?.id ?? null;
-          count = realMsgs.filter(
-            (m) =>
-              m.user_id !== currentUserId &&
-              new Date(m.created_at).getTime() > lastReadTime
-          ).length;
+          // PATCH never returned previousLastReadAt — treat as no prior reads.
+          setLastReadAt(null);
         }
-        unreadAtOpenRef.current = { firstMsgId, count };
-        // Flip snapshotReady → re-render → divider element appears in DOM →
-        // this effect fires again (snapshotReady now true) → scroll runs.
-        setSnapshotReady(true);
-        return;
-      }
-
-      // Step 1c: snapshot is set, divider is in the DOM — scroll now.
-      initialScrollDoneRef.current = true;
-      if (unreadDividerRef.current) {
-        // Place the unread boundary in the upper-middle of the viewport,
-        // exactly like WhatsApp Web: the user sees the divider and the first
-        // few unread messages immediately below it.
-        unreadDividerRef.current.scrollIntoView({
-          block: "center",
-          behavior: "instant",
-        });
-      } else {
-        // No unread messages — jump to the latest message.
-        bottomRef.current?.scrollIntoView({ behavior: "instant" });
-      }
-      return;
+      }, 800);
+      return () => clearTimeout(timer);
     }
 
-    // ── PHASE 2: Realtime / polling message arrived ───────────────────────
-    // A) User near bottom → keep them at bottom (they're live-reading).
-    // B) User reading history → surface the ↓ button; never force-scroll.
-    // The unread divider snapshot is NEVER touched here.
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    const distFromBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight;
-    if (distFromBottom < 100) {
+    // Compute the frozen snapshot from the messages currently in state.
+    // These are the post-catch-up messages: any unread messages that arrived
+    // while the user was away are now present.
+    const realMsgs = messages.filter((m) => !m.id.startsWith("temp-"));
+    const lastReadTime =
+      lastReadAt === null ? -Infinity : new Date(lastReadAt).getTime();
+    const unreadMsgs = realMsgs.filter(
+      (m) =>
+        m.user_id !== currentUserId &&
+        new Date(m.created_at).getTime() > lastReadTime
+    );
+    const firstMsgId = unreadMsgs[0]?.id ?? null;
+    const count = unreadMsgs.length;
+
+    console.log("[UnreadSnapshot CREATED]", {
+      communityId,
+      lastReadAt,
+      firstMsgId,
+      count,
+      messageCount: messages.length,
+      existsInMessages: firstMsgId
+        ? messages.some((m) => m.id === firstMsgId)
+        : "n/a",
+    });
+
+    unreadAtOpenRef.current = { firstMsgId, count };
+    // setSnapshotReady → re-render → divider element appears in DOM at the
+    // correct position → Effect 2 fires and performs the initial scroll.
+    setSnapshotReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMessagesReady, lastReadAt, communityId, snapshotReady]);
+
+  // ─── Effect 2: Initial scroll to unread boundary ──────────────────────────
+  // Fires once per community session, after the snapshot is ready and loading
+  // is complete (so the divider element is guaranteed to be in the DOM).
+  useEffect(() => {
+    if (!snapshotReady) return;
+    if (loading) return;
+    if (initialScrollDoneRef.current) return;
+
+    // Mark done synchronously before rAF to prevent double-fire if deps change.
+    initialScrollDoneRef.current = true;
+
+    requestAnimationFrame(() => {
+      const container = scrollContainerRef.current;
+      const divider = unreadDividerRef.current;
+
+      if (divider && container && unreadAtOpenRef.current?.firstMsgId) {
+        // Position the divider ~100 px below the top of the message viewport —
+        // WhatsApp-style: user sees the boundary and the first unread messages
+        // immediately below it, with a few read messages above for context.
+        const dividerRect = divider.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const dividerTop =
+          dividerRect.top - containerRect.top + container.scrollTop;
+        container.scrollTop = Math.max(0, dividerTop - 100);
+      } else {
+        // No unread — jump to the latest message.
+        bottomRef.current?.scrollIntoView({ behavior: "instant" });
+      }
+    });
+  }, [snapshotReady, loading, communityId]);
+
+  // ─── Effect 3: Realtime auto-scroll ───────────────────────────────────────
+  // Fires when a realtime INSERT has just been processed (flagged by the
+  // subscription callback before calling setMessages).  Only scrolls if the
+  // user was near the bottom at the moment the message arrived — never
+  // interrupts someone reading history.  The unread snapshot is never touched.
+  useEffect(() => {
+    if (!initialScrollDoneRef.current) return;
+    if (!realtimeInsertPendingRef.current) return;
+    realtimeInsertPendingRef.current = false;
+
+    if (realtimeWasNearBottomRef.current) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     } else {
       setShowScrollToBottom(true);
     }
-  }, [messages, lastReadAt, snapshotReady]);
+  }, [messages]);
 
   // ─── Show / hide scroll-to-bottom button on manual scroll ────────────────
   useEffect(() => {
@@ -652,6 +686,22 @@ export function CommunityChat({
             content: string;
             created_at: string;
           };
+
+          // Capture scroll position NOW — before setMessages changes the DOM.
+          // Effect 3 reads these refs after the messages state update settles.
+          if (initialScrollDoneRef.current) {
+            const container = scrollContainerRef.current;
+            if (container) {
+              const dist =
+                container.scrollHeight -
+                container.scrollTop -
+                container.clientHeight;
+              realtimeWasNearBottomRef.current = dist < 100;
+            } else {
+              realtimeWasNearBottomRef.current = false;
+            }
+            realtimeInsertPendingRef.current = true;
+          }
 
           setMessages((prev) => {
             // Already in state (optimistic send or duplicate event) — skip.

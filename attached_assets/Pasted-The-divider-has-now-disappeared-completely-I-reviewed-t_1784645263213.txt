@@ -1,0 +1,492 @@
+The divider has now disappeared completely.
+
+I reviewed the latest CommunityChat.tsx.
+
+DO NOT redesign the divider again.
+
+The new unreadAtOpenRef/snapshotReady architecture is directionally
+correct, but the snapshot is being taken at the WRONG TIME.
+
+====================================================
+BUG: YOU FREEZE THE SNAPSHOT BEFORE MESSAGE CATCH-UP
+====================================================
+
+Current code does approximately:
+
+if (!snapshotReady) {
+    calculate unread boundary from `messages`
+    unreadAtOpenRef.current = ...
+    setSnapshotReady(true)
+}
+
+This is unsafe.
+
+On community open we frequently already have cached messages.
+
+Then this happens:
+
+1. cachedMsgs are immediately put into React state
+2. incremental fetch starts using ?after=latestCachedMessage
+3. lastReadAt becomes available
+4. scroll effect sees messages + lastReadAt
+5. snapshot is calculated IMMEDIATELY from stale cached messages
+6. incremental fetch has NOT necessarily completed yet
+7. first unread message may therefore not exist in `messages`
+8. snapshot gets permanently frozen as:
+
+{
+    firstMsgId: null,
+    count: 0
+}
+
+9. incremental fetch later adds unread messages
+10. snapshotReady is already true
+11. snapshot is never recalculated
+12. DIVIDER NEVER APPEARS
+
+
+This is the bug I am seeing now.
+
+
+====================================================
+FIX THE INITIALIZATION PIPELINE
+====================================================
+
+Unread snapshot creation must wait until BOTH are resolved:
+
+A. lastReadAt at the moment the community was opened
+
+AND
+
+B. initial message catch-up/full fetch has completed
+
+
+Add explicit state for this.
+
+For example:
+
+const [initialMessagesReady, setInitialMessagesReady] = useState(false);
+
+
+On community switch:
+
+initialScrollDoneRef.current = false;
+unreadAtOpenRef.current = null;
+setSnapshotReady(false);
+setInitialMessagesReady(false);
+
+
+Then run the initial message fetch.
+
+ONLY AFTER:
+
+await msgPromise
+
+mark:
+
+setInitialMessagesReady(true);
+
+
+Do NOT infer "initial messages are ready" from the `messages` dependency.
+
+Make it explicit.
+
+
+====================================================
+SNAPSHOT EFFECT
+====================================================
+
+Separate unread snapshot creation from scrolling.
+
+Do NOT put everything into one giant [messages, lastReadAt,
+snapshotReady] scroll effect.
+
+Create a dedicated snapshot effect conceptually like:
+
+useEffect(() => {
+
+    if (!initialMessagesReady) return;
+
+    if (lastReadAt === undefined) return;
+
+    if (snapshotReady) return;
+
+    const realMsgs =
+        messages.filter(m => !m.id.startsWith("temp-"));
+
+    const lastReadTime =
+        lastReadAt === null
+            ? -Infinity
+            : new Date(lastReadAt).getTime();
+
+    const unreadAtOpen = realMsgs.filter(
+        m =>
+            m.user_id !== currentUserId &&
+            new Date(m.created_at).getTime() > lastReadTime
+    );
+
+    unreadAtOpenRef.current = {
+        firstMsgId: unreadAtOpen[0]?.id ?? null,
+        count: unreadAtOpen.length
+    };
+
+    setSnapshotReady(true);
+
+}, [
+    initialMessagesReady,
+    lastReadAt,
+    communityId
+]);
+
+
+IMPORTANT:
+
+Do NOT continuously rerun this because realtime `messages` changed.
+
+The snapshot must be created once AFTER INITIAL CATCH-UP.
+
+
+====================================================
+BUT THERE IS AN IMPORTANT DATA REQUIREMENT
+====================================================
+
+Before implementing the above, verify what:
+
+GET /api/communities/[id]/messages
+
+actually returns.
+
+If it only returns the latest 50 messages, make sure the first unread
+message is contained in that initial window.
+
+If there can be MORE unread messages than the loaded page, then deriving
+the unread boundary solely from loaded messages is fundamentally unsafe.
+
+In that case the server/API should provide one of:
+
+first_unread_message_id
+unread_count
+
+OR provide enough messages beginning at last_read_at.
+
+Do not silently freeze:
+
+firstMsgId = null
+
+just because the first unread message isn't in the currently loaded
+array.
+
+
+====================================================
+ALSO FIX lastReadAt INITIALIZATION
+====================================================
+
+On every communityId change, explicitly do:
+
+setLastReadAt(undefined);
+
+BEFORE resolving the new community's lastReadAt.
+
+Right now you reset:
+
+unreadAtOpenRef.current = null
+setSnapshotReady(false)
+
+but I do NOT see an unconditional:
+
+setLastReadAt(undefined)
+
+at the beginning of the communityId-change effect.
+
+This means the previous community's lastReadAt can temporarily survive
+while switching communities.
+
+That can cause the NEW community's snapshot to be calculated using the
+OLD community's timestamp.
+
+This is a serious cross-community race.
+
+
+Do:
+
+setLastReadAt(undefined);
+
+then resolve:
+
+if (lastReadAtOnOpen.has(communityId)) {
+    setLastReadAt(lastReadAtOnOpen.get(communityId) ?? null);
+    lastReadAtOnOpen.delete(communityId);
+}
+
+Otherwise wait for the actual value.
+
+
+====================================================
+VERY IMPORTANT: DON'T RELY ON PATCH COMPLETION
+TO PROVIDE THE PREVIOUS last_read_at
+====================================================
+
+The unread boundary needs the OLD last_read_at:
+
+last_read_at BEFORE marking the community read.
+
+Correct sequence should ideally be:
+
+1. User clicks community.
+
+2. Capture existing last_read_at / unread information.
+
+3. Store it as opening snapshot.
+
+4. Navigate/open CommunityChat.
+
+5. CommunityChat consumes that snapshot.
+
+6. Separately PATCH server to mark community read.
+
+Do not let:
+
+PATCH mark-read
+
+happen first and then try to reconstruct the previous unread state.
+
+Once last_read_at becomes "now", you've lost the original boundary.
+
+
+====================================================
+INITIAL SCROLL SHOULD BE ITS OWN EFFECT
+====================================================
+
+Once:
+
+snapshotReady === true
+
+AND:
+
+loading === false
+
+then perform initial positioning ONCE.
+
+Conceptually:
+
+useLayoutEffect(() => {
+
+    if (!snapshotReady) return;
+    if (loading) return;
+    if (initialScrollDoneRef.current) return;
+
+    requestAnimationFrame(() => {
+
+        const snapshot = unreadAtOpenRef.current;
+
+        if (
+            snapshot &&
+            snapshot.firstMsgId &&
+            unreadDividerRef.current
+        ) {
+            const container = scrollContainerRef.current;
+            const divider = unreadDividerRef.current;
+
+            if (!container) return;
+
+            const dividerRect = divider.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            const dividerTop =
+                dividerRect.top -
+                containerRect.top +
+                container.scrollTop;
+
+            // WhatsApp-style:
+            // boundary near top, leaving some previous context.
+            container.scrollTop =
+                Math.max(0, dividerTop - 100);
+
+        } else {
+            bottomRef.current?.scrollIntoView({
+                behavior: "instant"
+            });
+        }
+
+        initialScrollDoneRef.current = true;
+
+    });
+
+}, [snapshotReady, loading, communityId]);
+
+
+Do NOT use block:"center".
+
+I want the unread boundary approximately 80–120px below the top
+of the message viewport, similar to WhatsApp, leaving maximum room
+below for unread messages.
+
+
+====================================================
+RENDERING
+====================================================
+
+Keep the current rendering idea:
+
+const firstUnreadMsgId =
+    snapshotReady
+        ? unreadAtOpenRef.current?.firstMsgId ?? null
+        : null;
+
+
+and:
+
+const isFirstUnread =
+    msg.id === firstUnreadMsgId;
+
+
+Then insert:
+
+<UnreadDivider />
+
+immediately BEFORE that message.
+
+That part is correct.
+
+
+====================================================
+REMOVE GENERIC AUTO-SCROLL FROM messages EFFECT
+====================================================
+
+There is STILL another architecture problem.
+
+Your current scroll effect has:
+
+[ messages, lastReadAt, snapshotReady ]
+
+and after initialScrollDoneRef becomes true it assumes:
+
+messages changed = realtime/polling message arrived.
+
+That is false.
+
+messages can change because:
+
+- profile information was patched
+- optimistic message became real
+- polling completed
+- reconnect catch-up completed
+- initial incremental fetch completed
+- realtime insert happened
+
+Do NOT automatically smooth-scroll based only on `messages` changing.
+
+Remove Phase 2 from this generic effect.
+
+Realtime auto-follow should happen specifically from the realtime
+insert path, based on whether the user was near bottom BEFORE the
+message was inserted.
+
+
+====================================================
+DEBUG THIS BEFORE CLAIMING IT IS FIXED
+====================================================
+
+Temporarily add development-only logs:
+
+console.log("[UnreadInit]", {
+    communityId,
+    lastReadAt,
+    initialMessagesReady,
+    snapshotReady,
+    messageCount: messages.length,
+    firstMessage: messages[0]?.created_at,
+    lastMessage: messages.at(-1)?.created_at,
+    snapshot: unreadAtOpenRef.current
+});
+
+
+And when snapshot is created:
+
+console.log("[UnreadSnapshot CREATED]", {
+    communityId,
+    lastReadAt,
+    firstMsgId,
+    count
+});
+
+
+And during render:
+
+console.log("[UnreadDivider]", {
+    firstUnreadMsgId,
+    existsInMessages:
+        messages.some(m => m.id === firstUnreadMsgId)
+});
+
+
+I want you to verify that for a community showing an unread count in
+the sidebar:
+
+count > 0
+firstMsgId !== null
+existsInMessages === true
+
+BEFORE saying the issue is fixed.
+
+
+====================================================
+ACCEPTANCE TEST
+====================================================
+
+Create/choose a community where:
+
+5 messages are already read.
+
+Then from another user send:
+
+message 6
+message 7
+message 8
+message 9
+message 10
+
+DO NOT open the community until all five arrive.
+
+Sidebar should show:
+
+5 unread
+
+
+Now open community.
+
+Expected snapshot:
+
+{
+    firstMsgId: ID_OF_MESSAGE_6,
+    count: 5
+}
+
+Expected UI:
+
+message 4
+message 5
+
+----------- 5 unread messages -----------
+
+message 6
+message 7
+message 8
+message 9
+message 10
+
+
+Divider must be visible immediately.
+
+It must NOT be at the bottom.
+
+It must NOT disappear after a timer.
+
+It must NOT become 6 if another realtime message arrives afterward.
+
+
+DO NOT make another CSS change.
+
+The current problem is an initialization/data race:
+you are freezing the unread snapshot before initial message catch-up
+has definitively completed.
