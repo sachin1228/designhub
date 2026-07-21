@@ -81,6 +81,10 @@ export async function DELETE(
   try { await requireSession("admin"); } catch (e) { return e as Response; }
   const { id } = await params;
   const db = createServiceClient();
+
+  // Delete the linked community first so it no longer appears in Explore Communities
+  await db.from("communities").delete().eq("type", "experience_level").eq("reference_id", id);
+
   const { error } = await db.from("experience_levels").delete().eq("id", id);
   if (error) {
     // FK violation — a designer profile still references this level

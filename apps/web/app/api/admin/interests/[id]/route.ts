@@ -61,6 +61,10 @@ export async function DELETE(
   try { await requireSession("admin"); } catch (e) { return e as Response; }
   const { id } = await params;
   const db = createServiceClient();
+
+  // Delete the linked community first so it no longer appears in Explore Communities
+  await db.from("communities").delete().eq("type", "interest").eq("reference_id", id);
+
   const { error } = await db.from("design_interests").delete().eq("id", id);
   if (error) {
     if (error.code === "23503") {
