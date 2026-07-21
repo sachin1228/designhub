@@ -251,7 +251,7 @@ function CommunityRow({
                 No messages yet
               </p>
             )}
-            {c.message_count > 0 && (
+            {c.message_count > 0 && !active && (
               <span className="flex items-center justify-center p-1 min-w-[20px] h-[16px] rounded-full bg-green-500 text-white font-mono text-[11px] leading-[10px] font-semibold shrink-0">
                 {c.message_count > 99 ? "99+" : c.message_count}
               </span>
@@ -418,16 +418,18 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
 
         setCommunities((prev) => {
           const prevMap = new Map(prev.map((c) => [c.id, c]));
+          const currentActiveId = activeCommunityIdRef.current;
           const merged = fresh.map((server) => {
             const local = prevMap.get(server.id);
             return {
               ...server,
-              // Never roll back a count that realtime already incremented
-              // while this fetch was in-flight.
-              message_count: Math.max(
-                server.message_count,
-                local?.message_count ?? 0
-              ),
+              // Active community is always 0 — user is reading it right now.
+              // For others: never roll back a count already incremented by
+              // realtime while this fetch was in-flight.
+              message_count:
+                server.id === currentActiveId
+                  ? 0
+                  : Math.max(server.message_count, local?.message_count ?? 0),
             };
           });
           // Keep sidebarStore in sync so subsequent realtime increments and
