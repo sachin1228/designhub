@@ -10,8 +10,8 @@ const JPEG_QUALITY = 78; // matches client-side compressImage
 const MASTER_TABLES: { table: string; column: string; responseKey: string }[] = [
   { table: "companies",         column: "image_url",  responseKey: "companies"         },
   { table: "cities",            column: "image_url",  responseKey: "cities"            },
-  { table: "sectors",           column: "image_url",  responseKey: "sectors"           },
-  { table: "interests",         column: "image_url",  responseKey: "interests"         },
+  { table: "design_sectors",    column: "image_url",  responseKey: "design_sectors"    },
+  { table: "design_interests",  column: "image_url",  responseKey: "design_interests"  },
   { table: "experience_levels", column: "image_url",  responseKey: "experience_levels" },
 ];
 

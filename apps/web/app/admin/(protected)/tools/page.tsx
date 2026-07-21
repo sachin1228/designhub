@@ -15,10 +15,10 @@ interface Summary {
 }
 
 const TABLE_LABELS: Record<string, string> = {
-  companies: "Companies",
-  cities: "Cities",
-  sectors: "Industry",
-  interests: "Interests",
+  companies:         "Companies",
+  cities:            "Cities",
+  design_sectors:    "Industry",
+  design_interests:  "Interests",
   experience_levels: "Experience",
   designer_profiles: "User Avatars",
 };
