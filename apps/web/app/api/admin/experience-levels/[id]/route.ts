@@ -95,8 +95,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete experience level." }, { status: 500 });
   }
 
-  // Master row is gone — remove the linked community so it no longer appears in Explore Communities.
-  await db.from("communities").delete().eq("type", "experience_level").eq("reference_id", id);
+  // Master row is gone — kick off community cleanup in the background so it
+  // doesn't add latency to the admin response. The orphan filter in
+  // /api/communities/all hides it from users immediately.
+  void db.from("communities").delete().eq("type", "experience_level").eq("reference_id", id);
 
   return NextResponse.json({ success: true });
 }
