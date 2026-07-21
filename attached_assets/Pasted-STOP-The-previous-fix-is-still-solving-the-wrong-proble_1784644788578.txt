@@ -1,0 +1,351 @@
+STOP. The previous fix is still solving the wrong problem.
+
+Do not make another change yet.
+
+I need you to reproduce the WhatsApp Web behavior shown in my reference screenshot.
+
+THE MOST IMPORTANT RULE:
+
+"13 unread messages" is NOT a temporary notification pill.
+
+It is a MESSAGE TIMELINE DIVIDER.
+
+It must be rendered permanently at the exact boundary between the messages that were already read when the chat was opened and the messages that were unread when the chat was opened.
+
+
+==================================================
+REMOVE THE CURRENT "DISMISS DIVIDER" CONCEPT
+==================================================
+
+I see the implementation has things such as:
+
+- dividerDismissed
+- setDividerDismissed(...)
+- IntersectionObserver for dismissing the divider
+
+This is the wrong mental model.
+
+DO NOT dismiss the unread divider because it entered the viewport.
+
+DO NOT remove it after 1.5 seconds.
+
+DO NOT remove it when I scroll past it.
+
+DO NOT remove it when realtime messages arrive.
+
+For the current open-chat session, it should remain at its original chronological position in the message list.
+
+It can naturally become invisible ONLY because the user scrolled away from that position.
+
+Example:
+
+MESSAGE 97    (read)
+MESSAGE 98    (read)
+MESSAGE 99    (read)
+
+--------- 13 unread messages ---------
+
+MESSAGE 100   <-- FIRST unread at time chat was opened
+MESSAGE 101
+MESSAGE 102
+MESSAGE 103
+...
+MESSAGE 112
+
+
+The divider belongs BEFORE MESSAGE 100.
+
+It stays there.
+
+If I scroll down to Message 112, the divider is above the viewport.
+
+If I scroll back up to Message 100, I should see the divider again.
+
+THAT IS THE BEHAVIOR I WANT.
+
+
+==================================================
+DO NOT USE CURRENT unreadCount AS THE RENDER CONDITION
+==================================================
+
+This is also extremely important.
+
+When I open the chat, the app may immediately mark the messages as read.
+
+That may cause:
+
+unreadCount -> 0
+
+But that MUST NOT cause the divider to disappear or move.
+
+On initial chat open, SNAPSHOT:
+
+1. firstUnreadMessageId
+2. unreadCountAtOpen
+
+For example:
+
+firstUnreadMessageIdAtOpen = "message-100"
+unreadCountAtOpen = 13
+
+Keep those values stable for the lifetime of this mounted chat/session.
+
+Even if the server now says unreadCount = 0, render:
+
+--------- 13 unread messages ---------
+
+before message-100.
+
+
+==================================================
+INITIAL VIEWPORT POSITION
+==================================================
+
+Now separately handle scrolling.
+
+When opening a chat WITH unread messages:
+
+DO NOT position the user at the latest message.
+
+DO NOT position the unread divider immediately above the composer.
+
+DO NOT scroll to bottom first and then try to correct it.
+
+The FIRST meaningful scroll position must be the unread boundary.
+
+After the messages have rendered:
+
+scroll to:
+
+firstUnreadMessageIdAtOpen
+
+or:
+
+unreadDividerRef
+
+with approximately:
+
+block: "center"
+
+The result should look like WhatsApp:
+
+        some older/read messages
+
+        13 unread messages
+
+        first unread message
+        second unread message
+        third unread message
+        fourth unread message
+
+        more messages below viewport...
+
+
+The divider should be around the middle/upper-middle of the CHAT VIEWPORT.
+
+NOT at the bottom immediately above the composer.
+
+
+==================================================
+VERY IMPORTANT: DON'T SCROLL BEFORE STATE IS READY
+==================================================
+
+If firstUnreadMessageId / lastReadAt / unread snapshot is still loading:
+
+DO NOTHING.
+
+Do NOT scroll to bottom as a fallback.
+
+Do NOT set initialScrollDoneRef yet.
+
+Wait until we definitively know one of these two states:
+
+STATE A:
+Chat had unread messages on open
+-> scroll to unread boundary
+
+STATE B:
+Chat definitely had ZERO unread messages on open
+-> scroll to latest/bottom
+
+"Unread information hasn't loaded yet" is NOT the same thing as
+"there are no unread messages."
+
+
+==================================================
+SEPARATE THESE THREE SYSTEMS
+==================================================
+
+Please stop combining these into one effect.
+
+There should conceptually be three independent concerns:
+
+
+1. UNREAD BOUNDARY SNAPSHOT
+
+When chat opens:
+
+capture:
+firstUnreadMessageIdAtOpen
+unreadCountAtOpen
+
+Do not mutate them afterward for this chat session.
+
+
+2. INITIAL SCROLL
+
+Once messages + unread snapshot are ready:
+
+IF unreadCountAtOpen > 0:
+    scroll unread divider into view
+ELSE:
+    scroll to bottom
+
+Run ONCE.
+
+
+3. REALTIME AUTO-SCROLL
+
+After initial positioning has completed:
+
+when a new message arrives:
+
+IF user is near bottom:
+    scroll to bottom
+ELSE:
+    don't move viewport
+    show down-arrow/new-message indicator
+
+Realtime behavior must NOT modify:
+firstUnreadMessageIdAtOpen
+unreadCountAtOpen
+unread divider visibility
+
+
+==================================================
+RENDERING
+==================================================
+
+The rendering should conceptually be:
+
+messages.map(message => (
+  <>
+    {message.id === firstUnreadMessageIdAtOpen && (
+       <UnreadDivider count={unreadCountAtOpen} />
+    )}
+
+    <Message message={message} />
+  </>
+))
+
+This is the key architecture.
+
+The unread divider is inserted BEFORE A SPECIFIC MESSAGE.
+
+It is NOT inserted based on viewport position.
+
+It is NOT attached to the bottom.
+
+It is NOT attached to the composer.
+
+It is NOT a floating overlay.
+
+
+==================================================
+IMPORTANT: PAGINATION / MESSAGE FETCH
+==================================================
+
+If the first unread message isn't currently in the loaded messages,
+you cannot correctly render the divider.
+
+In that case make sure the initial message query loads enough messages
+to include firstUnreadMessageIdAtOpen.
+
+Do NOT simply place the divider before the oldest currently loaded
+message unless that message is actually the first unread message.
+
+The divider's position must be derived from message identity/read
+boundary, NOT from whichever messages happen to currently be loaded.
+
+
+==================================================
+EXPECTED TEST
+==================================================
+
+Please test with this exact scenario:
+
+There are 30 messages total.
+
+Messages 1-17 = previously read.
+Messages 18-30 = unread.
+
+Therefore:
+
+unreadCountAtOpen = 13
+firstUnreadMessageIdAtOpen = message 18
+
+Opening chat MUST produce:
+
+Message 15
+Message 16
+Message 17
+
+------- 13 unread messages -------
+
+Message 18
+Message 19
+Message 20
+Message 21
+...
+
+The viewport should initially be positioned around this area.
+
+It should NOT initially show:
+
+Message 27
+Message 28
+Message 29
+Message 30
+
+------- 13 unread messages -------
+
+[composer]
+
+That is WRONG because the divider has no business being at the bottom.
+
+And it should NEVER produce:
+
+Message 15
+Message 16
+Message 17
+Message 18
+Message 19
+...
+Message 30
+
+[composer]
+
+with the divider disappearing after being observed.
+
+
+==================================================
+BEFORE YOU CODE
+==================================================
+
+First inspect the existing implementation and tell me:
+
+1. What exact value currently determines WHERE the divider is inserted?
+2. Is the divider currently tied to firstUnreadMessageId or only lastReadAt?
+3. Why does the divider currently end up near the bottom?
+4. What code removes/dismisses the divider?
+5. Is unreadCount being reset to zero when the chat is marked read?
+6. Does initial scroll-to-bottom run before unread state is known?
+7. Is firstUnreadMessageId actually available in the currently loaded messages?
+
+DO NOT MODIFY CODE UNTIL YOU answer those 7 questions.
+
+Then implement the architecture described above.
+
+Do not solve this by adjusting CSS.
+Do not solve this only by changing scrollIntoView.
+This is primarily an UNREAD BOUNDARY SNAPSHOT + MESSAGE TIMELINE POSITION problem.

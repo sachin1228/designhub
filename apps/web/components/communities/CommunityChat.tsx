@@ -153,8 +153,17 @@ export function CommunityChat({
    * undefined = not yet known (divider is hidden until we get the value).
    */
   const [lastReadAt, setLastReadAt] = useState<string | null | undefined>(undefined);
-  /** When true the divider is hidden even if firstUnreadMsgId is non-null. Reset on community change. */
-  const [dividerDismissed, setDividerDismissed] = useState(false);
+  /**
+   * Frozen snapshot of the unread boundary captured the moment lastReadAt is
+   * first known for this chat session.  Never mutated afterward — this is what
+   * WhatsApp calls the "unread boundary": it stays at the same chronological
+   * position regardless of new messages arriving or the server marking messages
+   * read.  null = snapshot not yet taken (divider hidden until ready).
+   */
+  const unreadAtOpenRef = useRef<{ firstMsgId: string | null; count: number } | null>(null);
+  /** Flips to true once unreadAtOpenRef has been populated, triggering a render
+   *  so the divider element appears in the DOM before the initial scroll runs. */
+  const [snapshotReady, setSnapshotReady] = useState(false);
 
   /**
    * Tracks the *currently mounted* communityId.
@@ -380,7 +389,8 @@ export function CommunityChat({
     // Reset scroll state for the new community
     initialScrollDoneRef.current = false;
     setShowScrollToBottom(false);
-    setDividerDismissed(false);
+    unreadAtOpenRef.current = null;
+    setSnapshotReady(false);
 
     // CommunitiesPanel stores last_read_at (captured BEFORE marking read) into
     // lastReadAtOnOpen synchronously when the active community changes.
@@ -460,58 +470,77 @@ export function CommunityChat({
   useEffect(() => {
     if (!messages.length) return;
 
+    // ── PHASE 1: Initial open ─────────────────────────────────────────────
     if (!initialScrollDoneRef.current) {
-      // Late-fallback: CommunitiesPanel's activeCommunityId effect and the PATCH
-      // response may resolve AFTER the communityId effect (sibling effects have
-      // no guaranteed order, and the PATCH is async).
-      // If lastReadAtOnOpen now has a value that we haven't consumed yet, consume
-      // it and re-render so the divider element exists in the DOM before scrolling.
+      // Step 1a: make sure lastReadAt is known (it is the pre-PATCH snapshot).
+      // "unread state hasn't loaded yet" ≠ "no unread messages" — never scroll
+      // to bottom as a fallback while we're still waiting.
       if (lastReadAt === undefined) {
         if (lastReadAtOnOpen.has(communityId)) {
           setLastReadAt(lastReadAtOnOpen.get(communityId) ?? null);
           lastReadAtOnOpen.delete(communityId);
-          // Don't mark done — the state update triggers a re-render which fires
-          // this effect again (with initialScrollDoneRef still false), at which
-          // point lastReadAt is set and the divider element exists in the DOM.
+          // State update → re-render → this effect fires again with lastReadAt set.
           return;
         }
-        // lastReadAtOnOpen not yet populated (PATCH still in flight).
-        // Do NOT fall through to bottom-scroll — that would lock initialScrollDone
-        // before we know where unread messages start and we'd never scroll to
-        // the divider.  Instead just return; the incremental message fetch (or
-        // the next realtime update) will trigger this effect again, by which
-        // time CommunitiesPanel will have populated lastReadAtOnOpen.
+        // PATCH still in flight — do nothing, do NOT set initialScrollDoneRef.
+        // The incremental message fetch completing will re-trigger this effect.
         return;
       }
 
-      initialScrollDoneRef.current = true;
-      // Give React one animation frame to finish laying out messages in the DOM
-      requestAnimationFrame(() => {
-        const container = scrollContainerRef.current;
-        if (unreadDividerRef.current && container) {
-          // WhatsApp-style: position the divider near the top of the visible
-          // area so the user immediately sees the boundary and can read down.
-          // Use getBoundingClientRect for accuracy — offsetTop is relative to
-          // offsetParent which is NOT necessarily the scroll container.
-          const dividerRect = unreadDividerRef.current.getBoundingClientRect();
-          const containerRect = container.getBoundingClientRect();
-          const relativeTop =
-            dividerRect.top - containerRect.top + container.scrollTop;
-          // 80 px of read context above the pill (shows the last read message)
-          container.scrollTop = Math.max(0, relativeTop - 80);
+      // Step 1b: take the unread-boundary snapshot exactly once.
+      // We compute it here (not at render time) so the snapshot is always
+      // based on the messages that were present when the chat was opened.
+      if (!snapshotReady) {
+        const realMsgs = messages.filter((m) => !m.id.startsWith("temp-"));
+        let firstMsgId: string | null = null;
+        let count = 0;
+        if (lastReadAt === null) {
+          // Community never read — every message from another user is "unread"
+          const first = realMsgs.find((m) => m.user_id !== currentUserId);
+          firstMsgId = first?.id ?? null;
+          count = realMsgs.filter((m) => m.user_id !== currentUserId).length;
         } else {
-          // No unread — jump straight to the bottom with no animation
-          bottomRef.current?.scrollIntoView({ behavior: "instant" });
+          const lastReadTime = new Date(lastReadAt).getTime();
+          const first = realMsgs.find(
+            (m) =>
+              m.user_id !== currentUserId &&
+              new Date(m.created_at).getTime() > lastReadTime
+          );
+          firstMsgId = first?.id ?? null;
+          count = realMsgs.filter(
+            (m) =>
+              m.user_id !== currentUserId &&
+              new Date(m.created_at).getTime() > lastReadTime
+          ).length;
         }
-      });
+        unreadAtOpenRef.current = { firstMsgId, count };
+        // Flip snapshotReady → re-render → divider element appears in DOM →
+        // this effect fires again (snapshotReady now true) → scroll runs.
+        setSnapshotReady(true);
+        return;
+      }
+
+      // Step 1c: snapshot is set, divider is in the DOM — scroll now.
+      initialScrollDoneRef.current = true;
+      if (unreadDividerRef.current) {
+        // Place the unread boundary in the upper-middle of the viewport,
+        // exactly like WhatsApp Web: the user sees the divider and the first
+        // few unread messages immediately below it.
+        unreadDividerRef.current.scrollIntoView({
+          block: "center",
+          behavior: "instant",
+        });
+      } else {
+        // No unread messages — jump to the latest message.
+        bottomRef.current?.scrollIntoView({ behavior: "instant" });
+      }
       return;
     }
 
-    // ── New realtime / polling message arrived ──────────────────────────────
-    // A) User is at or near the bottom → keep them there (they're live-reading).
-    // B) User scrolled up reading history → surface the ↓ button; do NOT
-    //    force-scroll them away from where they are.
-    // Never touch dividerDismissed here — the IntersectionObserver handles it.
+    // ── PHASE 2: Realtime / polling message arrived ───────────────────────
+    // A) User near bottom → keep them at bottom (they're live-reading).
+    // B) User reading history → surface the ↓ button; never force-scroll.
+    // The unread divider snapshot is NEVER touched here.
     const container = scrollContainerRef.current;
     if (!container) return;
     const distFromBottom =
@@ -521,7 +550,7 @@ export function CommunityChat({
     } else {
       setShowScrollToBottom(true);
     }
-  }, [messages, lastReadAt]);
+  }, [messages, lastReadAt, snapshotReady]);
 
   // ─── Show / hide scroll-to-bottom button on manual scroll ────────────────
   useEffect(() => {
@@ -535,33 +564,6 @@ export function CommunityChat({
     return () => container.removeEventListener("scroll", onScroll);
   }, []);
 
-  // ─── Auto-dismiss unread divider once it enters the viewport ─────────────
-  // When the divider is visible for 1.5 s the user has "seen" the boundary —
-  // dismiss it so the chat looks clean.  Resets whenever communityId changes.
-  useEffect(() => {
-    const el = unreadDividerRef.current;
-    if (!el || dividerDismissed) return;
-
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          timer = setTimeout(() => setDividerDismissed(true), 1500);
-        } else {
-          if (timer) { clearTimeout(timer); timer = null; }
-        }
-      },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      if (timer) clearTimeout(timer);
-    };
-    // Re-run when divider mounts/unmounts (firstUnreadMsgId changes) or community changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [communityId, dividerDismissed]);
 
   // ─── Auto-focus input when chat opens / community changes ─────────────────
   useEffect(() => {
@@ -888,49 +890,19 @@ export function CommunityChat({
     return acc;
   }, []);
 
-  // ─── Unread divider: find the id of the first unread message ─────────────
-  // Uses the last_read_at timestamp captured when this community was opened
-  // (BEFORE last_read_at was updated on the server).  Timestamp comparison is
-  // immune to the count-mismatch bug: the old count-from-end approach used
-  // message_count which only counted other users' messages, but indexed into
-  // ALL messages — wrong position whenever the current user also sent messages.
-  //
-  // lastReadAt === undefined  → not yet known, hide divider
-  // lastReadAt === null       → community never read, first message is divider
-  // lastReadAt === ISO string → first message after that timestamp is divider
-  //
+  // ─── Unread divider: frozen snapshot taken at open time ──────────────────
+  // firstUnreadMsgId and unreadDisplayCount come exclusively from the snapshot
+  // captured when lastReadAt was first established for this chat session.
+  // They NEVER change while this community is open — new realtime messages,
+  // server read-state updates, or anything else cannot move or hide the divider.
   // Temp (optimistic) messages are excluded so they never act as the boundary.
   const realMessages = messages.filter((m) => !m.id.startsWith("temp-"));
-  const firstUnreadMsgId: string | null = (() => {
-    if (dividerDismissed) return null; // user has seen the boundary — hide it
-    if (lastReadAt === undefined) return null; // not yet known
-    // Only messages from OTHER users are "unread" — you obviously read your own
-    // messages when you sent them. This prevents the divider from landing on a
-    // message you sent yourself, which was causing it to appear at the top when
-    // your own message happened to be the oldest one after lastReadAt.
-    if (lastReadAt === null) {
-      // Community never read before — first message from another user is the boundary
-      return realMessages.find((m) => m.user_id !== currentUserId)?.id ?? null;
-    }
-    const lastReadTime = new Date(lastReadAt).getTime();
-    const first = realMessages.find(
-      (m) =>
-        m.user_id !== currentUserId &&
-        new Date(m.created_at).getTime() > lastReadTime
-    );
-    return first?.id ?? null;
-  })();
-
-  // Count for the pill label: messages from other users after last_read_at.
-  const unreadDisplayCount = (() => {
-    if (!firstUnreadMsgId || lastReadAt === undefined) return 0;
-    const lastReadTime = lastReadAt === null ? -Infinity : new Date(lastReadAt).getTime();
-    return realMessages.filter(
-      (m) =>
-        m.user_id !== currentUserId &&
-        new Date(m.created_at).getTime() > lastReadTime
-    ).length;
-  })();
+  const firstUnreadMsgId: string | null = snapshotReady
+    ? (unreadAtOpenRef.current?.firstMsgId ?? null)
+    : null;
+  const unreadDisplayCount: number = snapshotReady
+    ? (unreadAtOpenRef.current?.count ?? 0)
+    : 0;
 
   // Resolve display data: prefer live community state, fall back to sidebar
   // cache so the header renders immediately even before fetchMeta completes.
