@@ -94,6 +94,7 @@ export function CommunityChat({
   currentUserId,
   initialMeta,
   initialMessages,
+  initialUnreadCount: initialUnreadCountProp,
 }: {
   communityId: string;
   currentUserId: string;
@@ -101,6 +102,8 @@ export function CommunityChat({
   initialMeta?: CachedMeta;
   /** Provided only on hard browser refresh (SSR). Undefined on client navigation. */
   initialMessages?: CachedMessage[];
+  /** Unread message count from SSR — seeds the divider on hard refresh before sidebarStore is warm. */
+  initialUnreadCount?: number;
 }) {
   // ─── Initial state — always start empty to avoid SSR/client hydration mismatch ──
   //
@@ -196,8 +199,15 @@ export function CommunityChat({
 
     if (cachedMeta || initialMeta) setLoading(false);
 
-    // communityId, initialMeta, initialMessages are stable for this component
-    // instance (they come from the page params and never change after mount).
+    // Case 2 (hard refresh): seed the unread count from the SSR prop so the
+    // divider is positioned correctly before sidebarStore / unreadOnOpen is warm.
+    // On client-nav the communityId effect handles this via unreadOnOpen instead.
+    if (!cachedMsgs?.length && initialUnreadCountProp && initialUnreadCountProp > 0) {
+      setInitialUnreadCount(initialUnreadCountProp);
+    }
+
+    // communityId, initialMeta, initialMessages, initialUnreadCountProp are stable
+    // for this component instance (from page params, never change after mount).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

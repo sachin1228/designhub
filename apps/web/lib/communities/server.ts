@@ -5,6 +5,8 @@ import type { CachedMeta, CachedMessage } from "./cache";
 export interface SSRCommunityData {
   meta: CachedMeta;
   messages: CachedMessage[];
+  /** Number of messages the user hasn't read yet — used to position the unread divider. */
+  unreadCount: number;
 }
 
 const TABLE_LOOKUP: Record<string, { table: string; idCol: string }> = {
@@ -45,7 +47,7 @@ export async function fetchCommunitySSRData(
   ] = await Promise.all([
     db
       .from("community_members")
-      .select("joined_at")
+      .select("joined_at, last_read_at")
       .eq("community_id", communityId)
       .eq("user_id", userId)
       .maybeSingle(),
@@ -166,5 +168,14 @@ export async function fetchCommunitySSRData(
     fetchedAt: Date.now(),
   };
 
-  return { meta, messages };
+  // ─── Unread count ─────────────────────────────────────────────────────────
+  // Count how many of the fetched messages were sent after the user last read
+  // this community. Used by CommunityChat to position the unread divider on
+  // hard refresh (when the sidebarStore / unreadOnOpen map is not yet warm).
+  const lastReadAt = (membership as unknown as { last_read_at: string | null }).last_read_at;
+  const unreadCount = lastReadAt
+    ? messages.filter((m) => new Date(m.created_at) > new Date(lastReadAt)).length
+    : 0;
+
+  return { meta, messages, unreadCount };
 }
