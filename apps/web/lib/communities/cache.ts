@@ -116,6 +116,8 @@ export function clearAllUserCaches(): void {
   exploreStore.data     = null;
   exploreStore.inflight = null;
   cachedUserId          = null;
+  lastReadAtOnOpen.clear();
+  unreadOpenSnapshot.clear();
 }
 
 // ─── Cache-invalidation helpers (join / leave) ────────────────────────────────
@@ -178,6 +180,27 @@ export function invalidateOnLeave(communityId: string): void {
  * `undefined` (key absent) means the value has not been captured yet.
  */
 export const lastReadAtOnOpen = new Map<string, string | null>();
+
+/**
+ * Pre-navigation opening snapshot captured by handleNavigate BEFORE the sidebar
+ * is mutated (message_count zeroed, last_read_at updated).
+ *
+ * This gives CommunityChat both pieces of pre-mutation state it needs:
+ *  - lastReadAt  → timestamp to find the first unread message
+ *  - unreadCount → the count BEFORE zeroing, used by the stale-cache safety
+ *                  check that determines whether the message cache predates
+ *                  the unread messages (so it can wait for the incremental fetch
+ *                  rather than freezing a wrong zero snapshot).
+ *
+ * Without this, the safety check reads sidebarStore.message_count which is
+ * already 0 by the time CommunityChat's layout effect fires, causing the
+ * divider to disappear entirely when the cache is stale.
+ */
+export interface UnreadOpenSnapshot {
+  lastReadAt: string | null;
+  unreadCount: number;
+}
+export const unreadOpenSnapshot = new Map<string, UnreadOpenSnapshot>();
 
 /** Messages keyed by communityId */
 export const msgCache = new Map<string, CachedMessage[]>();

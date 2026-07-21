@@ -23,6 +23,7 @@ import {
   MSG_STALE_MS,
   sidebarStore,
   lastReadAtOnOpen,
+  unreadOpenSnapshot,
   type CachedMessage,
   type CachedMeta,
 } from "@/lib/communities/cache";
@@ -328,31 +329,54 @@ export function CommunityChat({
     setInitialPositionResolved(false);
 
     const cachedMsgs = msgCache.get(communityId);
-    const hasOpeningLastReadAt = lastReadAtOnOpen.has(communityId);
 
-    if (!cachedMsgs?.length || !hasOpeningLastReadAt) {
+    // Prefer the full pre-mutation snapshot (has both lastReadAt AND the
+    // pre-zeroing unreadCount).  Fall back to lastReadAtOnOpen-only for the
+    // activeCommunityId / async-PATCH paths that don't yet use unreadOpenSnapshot.
+    const hasFullSnapshot = unreadOpenSnapshot.has(communityId);
+    const hasLastReadAtOnly = !hasFullSnapshot && lastReadAtOnOpen.has(communityId);
+
+    if (!cachedMsgs?.length || (!hasFullSnapshot && !hasLastReadAtOnly)) {
       // Cannot fast-path: cache is cold or opening snapshot not yet available.
       // Messages stay hidden (initialPositionResolved=false) until the fallback
       // path (incremental fetch → snapshot effect → scroll layout effect) runs.
       return;
     }
 
-    const openingLastReadAt = lastReadAtOnOpen.get(communityId) ?? null;
-    // Consume the map entry so the snapshot effect's fallback poll is skipped.
-    lastReadAtOnOpen.delete(communityId);
-    // Surface lastReadAt in state so the snapshot effect can use it if needed.
+    let openingLastReadAt: string | null;
+    let openingUnreadCount: number;
+
+    if (hasFullSnapshot) {
+      const snap = unreadOpenSnapshot.get(communityId)!;
+      openingLastReadAt = snap.lastReadAt;
+      openingUnreadCount = snap.unreadCount;
+      // Consume both entries so the fallback snapshot effect is skipped.
+      unreadOpenSnapshot.delete(communityId);
+      lastReadAtOnOpen.delete(communityId); // clean up sibling entry if present
+    } else {
+      // lastReadAtOnOpen-only path (activeCommunityId effect when sidebarStore
+      // was null, or async PATCH fallback).  We don't have the pre-mutation
+      // unreadCount, so we can't do the stale-cache check — proceed optimistically.
+      openingLastReadAt = lastReadAtOnOpen.get(communityId) ?? null;
+      openingUnreadCount = 0; // unknown: safety check will be skipped
+      lastReadAtOnOpen.delete(communityId);
+    }
+
+    // Surface lastReadAt in state so the fallback snapshot effect can use it.
     setLastReadAt(openingLastReadAt);
 
     // ── Safety check ─────────────────────────────────────────────────────────
-    // If the sidebar still shows unread messages but the cached snapshot yields
-    // zero unread (e.g. the cache was fetched before those messages arrived),
-    // the cache is stale. Fall back to the incremental fetch path rather than
-    // freezing a wrong zero count. Messages stay hidden until positioned.
-    const sidebarEntry_ = sidebarStore.data?.communities.find(
-      (c) => c.id === communityId
-    );
-    const sidebarUnreadCount = sidebarEntry_?.message_count ?? 0;
-
+    // If the pre-open unread count was > 0 but the cached messages yield zero
+    // unread (cache predates the unread messages), the cache is stale.
+    // Fall back to the incremental fetch path rather than freezing a wrong
+    // zero snapshot.  Messages stay hidden until the fetch delivers the missing
+    // messages and the fallback effect re-computes the boundary.
+    //
+    // IMPORTANT: We use openingUnreadCount (captured BEFORE the sidebar was
+    // optimistically zeroed) — not sidebarStore.message_count which is already
+    // 0 by the time this layout effect fires.  Using the zeroed value was the
+    // root cause of the divider disappearing entirely (the guard never fired,
+    // so a wrong { firstMsgId: null, count: 0 } snapshot got frozen).
     const lastReadTime =
       openingLastReadAt === null ? -Infinity : new Date(openingLastReadAt).getTime();
     const unreadMsgs = cachedMsgs.filter(
@@ -362,22 +386,32 @@ export function CommunityChat({
         new Date(m.created_at).getTime() > lastReadTime
     );
 
-    if (sidebarUnreadCount > 0 && unreadMsgs.length === 0) {
-      // Stale cache — fall back silently. lastReadAt is already set so the
+    if (openingUnreadCount > 0 && unreadMsgs.length === 0) {
+      // Stale cache — fall back silently.  lastReadAt is already set so the
       // snapshot effect can compute the boundary once the fetch delivers the
       // missing messages.
       return;
     }
 
     // ── Freeze the snapshot ───────────────────────────────────────────────────
+    const firstUnreadMsgId = unreadMsgs[0]?.id ?? null;
     unreadAtOpenRef.current = {
-      firstMsgId: unreadMsgs[0]?.id ?? null,
+      firstMsgId: firstUnreadMsgId,
       count: unreadMsgs.length,
     };
     // Initialize the live count and the dedup set from the initial unread msgs
     // so incoming messages can be counted without double-counting these ones.
     countedUnreadIdsRef.current = new Set(unreadMsgs.map((m) => m.id));
     setUnreadDisplayCount(unreadMsgs.length);
+
+    console.log("[UnreadBoundary]", {
+      communityId,
+      firstUnreadMsgId,
+      openingUnreadCount,
+      matchedUnreadMessages: unreadMsgs.length,
+      path: hasFullSnapshot ? "full-snapshot" : "lastReadAt-only",
+    });
+
     // Trigger re-render so the divider element appears in the DOM; the scroll
     // layout effect below will then position the viewport before paint.
     setSnapshotReady(true);

@@ -18,6 +18,7 @@ import {
   SIDEBAR_STALE_MS,
   initUserCache,
   lastReadAtOnOpen,
+  unreadOpenSnapshot,
   type CachedMeta,
   type CachedSidebarCommunity,
 } from "@/lib/communities/cache";
@@ -484,17 +485,22 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
     // value synchronously.  markReadOnServer's async fallback will store it from
     // the PATCH response instead, and CommunityChat's late-arrival check in the
     // scroll effect will pick it up once messages finish loading.
-    // Only capture last_read_at if handleNavigate didn't already do it
+    // Only capture the opening snapshot if handleNavigate didn't already do it
     // synchronously (handleNavigate sets it before router.push so CommunityChat's
     // layout effect always finds it; this effect fires later and must not overwrite).
-    if (!lastReadAtOnOpen.has(activeCommunityId)) {
-      const snapshot = sidebarStore.data?.communities.find(
+    if (!unreadOpenSnapshot.has(activeCommunityId) && !lastReadAtOnOpen.has(activeCommunityId)) {
+      const community = sidebarStore.data?.communities.find(
         (c) => c.id === activeCommunityId
       );
-      if (snapshot) {
-        // "last_read_at" in snapshot only when the sidebar API has been fetched at
+      if (community) {
+        // "last_read_at" in community only when the sidebar API has been fetched at
         // least once; fall back gracefully if the field is absent.
-        lastReadAtOnOpen.set(activeCommunityId, snapshot.last_read_at ?? null);
+        const snap = {
+          lastReadAt: community.last_read_at ?? null,
+          unreadCount: community.message_count ?? 0,
+        };
+        unreadOpenSnapshot.set(activeCommunityId, snap);
+        lastReadAtOnOpen.set(activeCommunityId, snap.lastReadAt);
       }
 
       // markReadOnServer is now async and stores previousLastReadAt as a fallback
@@ -606,19 +612,38 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
   }, [communityIds, userId]);
 
   function handleNavigate(id: string) {
-    // STEP 1: Capture the OLD last_read_at SYNCHRONOUSLY before anything else.
-    // This must happen before:
+    // STEP 1: Capture BOTH old last_read_at AND old message_count SYNCHRONOUSLY,
+    // before anything else changes.  This must happen before:
     //   - message_count is cleared (badge disappears)
     //   - markReadOnServer overwrites last_read_at on the server
     //   - router.push triggers navigation (CommunityChat effects fire)
     //
-    // By writing to lastReadAtOnOpen here (before router.push), the fast-path
-    // layout effect in CommunityChat will always find the value immediately —
-    // no race condition with the activeCommunityId effect below.
-    if (!lastReadAtOnOpen.has(id)) {
-      const snapshot = sidebarStore.data?.communities.find((c) => c.id === id);
-      if (snapshot) {
-        lastReadAtOnOpen.set(id, snapshot.last_read_at ?? null);
+    // unreadOpenSnapshot stores the full pre-mutation state so CommunityChat's
+    // stale-cache safety check can use the real pre-open unread count instead of
+    // sidebarStore.message_count which will already be 0 by the time the layout
+    // effect runs.
+    //
+    // By writing before router.push, the fast-path layout effect in CommunityChat
+    // always finds the value immediately — no race condition with the
+    // activeCommunityId effect below.
+    if (!unreadOpenSnapshot.has(id)) {
+      const community = sidebarStore.data?.communities.find((c) => c.id === id);
+      if (community) {
+        const snap = {
+          lastReadAt: community.last_read_at ?? null,
+          unreadCount: community.message_count ?? 0,
+        };
+        unreadOpenSnapshot.set(id, snap);
+        console.log("[UnreadOpen CAPTURE]", {
+          communityId: id,
+          lastReadAt: snap.lastReadAt,
+          unreadCount: snap.unreadCount,
+        });
+        // Keep lastReadAtOnOpen in sync for the async PATCH fallback in
+        // markReadOnServer (which only writes there when the key is absent).
+        if (!lastReadAtOnOpen.has(id)) {
+          lastReadAtOnOpen.set(id, snap.lastReadAt);
+        }
       }
     }
 
