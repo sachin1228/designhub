@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useState,
   useEffect,
   useLayoutEffect,
@@ -130,6 +131,11 @@ export function CommunityChat({
   const membersDropdownRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const initialScrollDoneRef = useRef(false);
+  const unreadDividerRef = useRef<HTMLDivElement>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [initialUnreadCount, setInitialUnreadCount] = useState(0);
 
   /**
    * Tracks the *currently mounted* communityId.
@@ -343,6 +349,13 @@ export function CommunityChat({
   // MSG_STALE_MS only gates full refetches when there is no cache at all.
   useEffect(() => {
     communityIdRef.current = communityId;
+    // Reset scroll state for the new community
+    initialScrollDoneRef.current = false;
+    setShowScrollToBottom(false);
+    // Capture unread count before the badge is cleared (effects run client-side — safe to read sidebarStore)
+    const unread = sidebarStore.data?.communities.find((c) => c.id === communityId)?.message_count ?? 0;
+    setInitialUnreadCount(unread);
+
     let cancelled = false;
 
     const cachedMsgs = msgCache.get(communityId);
@@ -393,10 +406,59 @@ export function CommunityChat({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [communityId]);
 
-  // ─── Scroll to bottom on new messages ────────────────────────────────────
+  // ─── Smart scroll: instant jump on initial load, smooth only for new messages ─
+  //
+  // Problem A: opening a chat with 1000 messages caused a visible animated
+  // scroll from top to bottom (smooth scrollIntoView on every messages change).
+  // Problem B: opening a chat with unread messages scrolled past them to the
+  // very bottom, so the user never saw where unread started.
+  //
+  // Fix:
+  //   • First load for a community → instant jump (no animation) to either
+  //     the unread divider (if there are unread messages) or the bottom.
+  //   • Subsequent updates (new realtime messages) → smooth scroll only if
+  //     the user is already near the bottom; otherwise surface the ↓ button.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!messages.length) return;
+
+    if (!initialScrollDoneRef.current) {
+      initialScrollDoneRef.current = true;
+      // Give React one animation frame to finish laying out messages in the DOM
+      requestAnimationFrame(() => {
+        if (initialUnreadCount > 0 && unreadDividerRef.current) {
+          // Stop at the unread divider — WhatsApp-style
+          unreadDividerRef.current.scrollIntoView({ behavior: "instant", block: "start" });
+        } else {
+          // No unread — jump straight to the bottom with no animation
+          bottomRef.current?.scrollIntoView({ behavior: "instant" });
+        }
+      });
+      return;
+    }
+
+    // A new message arrived (realtime / polling) — scroll only if already near bottom
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distFromBottom < 100) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      // User is scrolled up reading history — show the ↓ button instead
+      setShowScrollToBottom(true);
+    }
+  }, [messages, initialUnreadCount]);
+
+  // ─── Show / hide scroll-to-bottom button on manual scroll ────────────────
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const dist = container.scrollHeight - container.scrollTop - container.clientHeight;
+      setShowScrollToBottom(dist > 80);
+    };
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, []);
 
   // ─── Auto-focus input when chat opens / community changes ─────────────────
   useEffect(() => {
@@ -723,6 +785,15 @@ export function CommunityChat({
     return acc;
   }, []);
 
+  // ─── Unread divider: find the id of the first unread message ─────────────
+  // Uses the unread count captured when this community was opened.
+  // Temp (optimistic) messages are excluded from the count.
+  const realMessages = messages.filter((m) => !m.id.startsWith("temp-"));
+  const firstUnreadMsgId =
+    initialUnreadCount > 0 && realMessages.length >= initialUnreadCount
+      ? realMessages[realMessages.length - initialUnreadCount].id
+      : null;
+
   // Resolve display data: prefer live community state, fall back to sidebar
   // cache so the header renders immediately even before fetchMeta completes.
   // This means the loader only ever appears inside the chatbox — never full-area.
@@ -812,8 +883,8 @@ export function CommunityChat({
       {/* Body: messages + members panel */}
       <div className="flex-1 flex overflow-hidden">
         {/* Messages */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1">
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-1">
             {/* Loading: show Lottie only inside the messages area.
                 The header, members panel, and input stay frozen from the
                 previous community so the outer frame never disappears. */}
@@ -866,79 +937,96 @@ export function CommunityChat({
                   const prev = group.messages[i - 1];
                   const isSameAuthor = prev?.user_id === msg.user_id;
                   const sender = msg.users;
+                  const isFirstUnread = firstUnreadMsgId !== null && msg.id === firstUnreadMsgId;
+
+                  // Unread divider pill — rendered immediately before the first unread message
+                  const unreadDivider = isFirstUnread ? (
+                    <div
+                      ref={unreadDividerRef}
+                      className="flex items-center justify-center py-2 my-1"
+                    >
+                      <span className="font-body text-xs text-foreground-muted bg-surface-raised border border-border/60 rounded-full px-4 py-1 shadow-sm select-none">
+                        {initialUnreadCount} unread message{initialUnreadCount !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  ) : null;
 
                   if (isMe) {
                     return (
-                      <div
-                        key={msg.id}
-                        className={`flex justify-end ${isSameAuthor ? "mt-0.5" : "mt-3"}`}
-                      >
-                        <div className="max-w-[65%]">
-                          <div
-                            className={`rounded-2xl rounded-tr-sm px-3 py-2 transition-opacity ${
-                              msg.status === "sending"
-                                ? "bg-accent opacity-70"
-                                : msg.status === "failed"
-                                ? "bg-red-500/80"
-                                : "bg-accent"
-                            }`}
-                          >
-                            <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
-                              {msg.content}
-                            </p>
-                          </div>
-                          <div className="flex items-center justify-end gap-1 mt-0.5 pr-1">
-                            <span className="font-mono text-[10px] text-foreground-muted">
-                              {fmtTime(msg.created_at)}
-                            </span>
-                            {msg.status === "sending" && (
-                              <Clock
-                                size={10}
-                                className="text-foreground-muted animate-pulse"
-                              />
-                            )}
-                            {(msg.status === "sent" || !msg.status) && (
-                              <CheckCheck size={11} className="text-accent" />
-                            )}
-                            {msg.status === "failed" && (
-                              <span className="text-[10px] text-red-400">!</span>
-                            )}
+                      <Fragment key={msg.id}>
+                        {unreadDivider}
+                        <div
+                          className={`flex justify-end ${isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"}`}
+                        >
+                          <div className="max-w-[65%]">
+                            <div
+                              className={`rounded-2xl rounded-tr-sm px-3 py-2 transition-opacity ${
+                                msg.status === "sending"
+                                  ? "bg-accent opacity-70"
+                                  : msg.status === "failed"
+                                  ? "bg-red-500/80"
+                                  : "bg-accent"
+                              }`}
+                            >
+                              <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
+                                {msg.content}
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-end gap-1 mt-0.5 pr-1">
+                              <span className="font-mono text-[10px] text-foreground-muted">
+                                {fmtTime(msg.created_at)}
+                              </span>
+                              {msg.status === "sending" && (
+                                <Clock
+                                  size={10}
+                                  className="text-foreground-muted animate-pulse"
+                                />
+                              )}
+                              {(msg.status === "sent" || !msg.status) && (
+                                <CheckCheck size={11} className="text-accent" />
+                              )}
+                              {msg.status === "failed" && (
+                                <span className="text-[10px] text-red-400">!</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </Fragment>
                     );
                   }
 
                   return (
-                    <div
-                      key={msg.id}
-                      className={`flex items-start gap-2 ${isSameAuthor ? "mt-0.5" : "mt-3"}`}
-                    >
-                      <div className="w-7 shrink-0">
-                        {!isSameAuthor && sender && (
-                          <Avatar
-                            name={sender.name}
-                            url={sender.avatar_url}
-                            size={7}
-                          />
-                        )}
-                      </div>
-                      <div className="max-w-[65%]">
-                        {!isSameAuthor && sender && (
-                          <p className="font-body text-[11px] font-medium text-foreground-muted mb-0.5 ml-0.5">
-                            {sender.name}
-                          </p>
-                        )}
-                        <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 py-2">
-                          <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
-                            {msg.content}
+                    <Fragment key={msg.id}>
+                      {unreadDivider}
+                      <div
+                        className={`flex items-start gap-2 ${isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"}`}
+                      >
+                        <div className="w-7 shrink-0">
+                          {!isSameAuthor && sender && (
+                            <Avatar
+                              name={sender.name}
+                              url={sender.avatar_url}
+                              size={7}
+                            />
+                          )}
+                        </div>
+                        <div className="max-w-[65%]">
+                          {!isSameAuthor && sender && (
+                            <p className="font-body text-[11px] font-medium text-foreground-muted mb-0.5 ml-0.5">
+                              {sender.name}
+                            </p>
+                          )}
+                          <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 py-2">
+                            <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
+                              {msg.content}
+                            </p>
+                          </div>
+                          <p className="font-mono text-[10px] text-foreground-muted mt-0.5 ml-0.5">
+                            {fmtTime(msg.created_at)}
                           </p>
                         </div>
-                        <p className="font-mono text-[10px] text-foreground-muted mt-0.5 ml-0.5">
-                          {fmtTime(msg.created_at)}
-                        </p>
                       </div>
-                    </div>
+                    </Fragment>
                   );
                 })}
               </div>
@@ -947,6 +1035,19 @@ export function CommunityChat({
               </>
             )}
           </div>
+
+          {/* Scroll-to-bottom button — visible when user is scrolled up */}
+          {showScrollToBottom && (
+            <button
+              onClick={() => {
+                bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="absolute bottom-[72px] right-4 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-surface-raised shadow-lg border border-border text-foreground-muted hover:text-foreground transition-colors"
+              aria-label="Scroll to bottom"
+            >
+              <ChevronDown size={16} />
+            </button>
+          )}
 
           {/* Floating Input */}
           <div className="px-4 pb-4 pt-2 shrink-0">
