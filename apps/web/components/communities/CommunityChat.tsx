@@ -973,7 +973,7 @@ export function CommunityChat({
       <div className="flex-1 flex overflow-hidden">
         {/* Messages */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-1">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-1" style={{backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px)",backgroundSize:"24px 24px"}}>
             {/* Loading: show Lottie only inside the messages area.
                 The header, members panel, and input stay frozen from the
                 previous community so the outer frame never disappears. */}
@@ -1035,7 +1035,7 @@ export function CommunityChat({
                       className="flex items-center gap-3 py-2 my-2 w-full"
                     >
                       <div className="flex-1 h-px bg-border/60" />
-                      <span className="font-body text-xs text-foreground-muted bg-surface-raised border border-border/60 rounded-full px-4 py-1 shadow-sm select-none whitespace-nowrap">
+                      <span className="font-body text-xs text-foreground-muted bg-surface-raised rounded-full px-4 py-1 shadow-sm select-none whitespace-nowrap">
                         {unreadDisplayCount > 0
                           ? `${unreadDisplayCount} unread message${unreadDisplayCount !== 1 ? "s" : ""}`
                           : "New messages"}
