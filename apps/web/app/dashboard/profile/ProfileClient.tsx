@@ -29,8 +29,10 @@ import Avatar from "boring-avatars";
 const ALL_DICEBEAR_STYLES = [
   "adventurer","adventurer-neutral","avataaars","avataaars-neutral",
   "big-ears","big-ears-neutral","big-smile","bottts","bottts-neutral",
-  "croodles","dylan","fun-emoji","glass","lorelei","micah","miniavs",
-  "notionists","open-peeps","personas","pixel-art","shapes","thumbs",
+  "croodles","croodles-neutral","dylan","fun-emoji","glass","icons",
+  "identicon","initials","lorelei","lorelei-neutral","micah","miniavs",
+  "notionists","notionists-neutral","open-peeps","personas","pixel-art",
+  "pixel-art-neutral","rings","shapes","thumbs",
 ];
 
 const ALL_BORING_STYLES = ["marble","beam","pixel","sunset","ring","bauhaus","triangles"];
@@ -46,7 +48,7 @@ interface AvatarOption {
 
 function buildAvatarOptions(name: string): AvatarOption[] {
   const seed = name || "designer";
-  const dicebear = ALL_DICEBEAR_STYLES.slice(0, 12).map((style) => ({
+  const dicebear = ALL_DICEBEAR_STYLES.map((style) => ({
     id: `dicebear-${style}`,
     source: "dicebear" as const,
     style,
@@ -648,7 +650,7 @@ export function ProfileClient({
               )}
 
               {avatarTab === "generated" ? (
-                <div className="max-h-[280px] overflow-y-auto">
+                <div className="max-h-[380px] overflow-y-auto">
                   <div className="grid grid-cols-4 gap-2.5">
                     {avatarOptions.map((opt) => {
                       const isSel = pickedAvatar?.id === opt.id;
