@@ -95,7 +95,7 @@ export async function GET() {
   );
   const countMap = Object.fromEntries(countResults.map((r) => [r.id, r.count]));
 
-  const result = liveCommunities.map((c) => ({
+  const result = liveCommunities.filter((c) => (countMap[c.id] ?? 0) > 0).map((c) => ({
     id: c.id,
     name: c.name,
     type: c.type,
