@@ -166,10 +166,22 @@ export function CommunityChat({
   const [snapshotReady, setSnapshotReady] = useState(false);
   /**
    * Flips to true only after the initial message fetch (msgPromise) resolves.
-   * The snapshot must not be computed until this is true, otherwise we'd freeze
-   * the boundary from stale cached messages before the catch-up fetch completes.
+   * Used only by the FALLBACK path when the fast-path layout effect could not
+   * compute the snapshot immediately (cold cache or stale cache safety check).
    */
   const [initialMessagesReady, setInitialMessagesReady] = useState(false);
+  /**
+   * Controls whether the message timeline is visible. Starts false so the
+   * browser never paints messages at an incorrect scroll position. Set to true
+   * by the initial-scroll layout effect immediately after it positions the
+   * viewport — so the FIRST visible frame is already at the correct position.
+   *
+   * visibility:hidden (not display:none) is used so the DOM exists and its
+   * height/scroll metrics can be measured by the layout effect.
+   *
+   * Header, composer, and members panel remain visible throughout.
+   */
+  const [initialPositionResolved, setInitialPositionResolved] = useState(false);
   /** Set to true by the realtime INSERT handler before calling setMessages,
    *  so the messages-change effect knows a real insert just happened. */
   const realtimeInsertPendingRef = useRef(false);
@@ -247,6 +259,90 @@ export function CommunityChat({
     // for this component instance (from page params, never change after mount).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ─── Fast-path: compute unread snapshot from cache BEFORE first paint ─────
+  //
+  // Runs synchronously (layout phase) on every communityId change so the very
+  // first browser frame is already positioned at the unread boundary.
+  //
+  // Why layout effect?
+  //   A regular useEffect fires after the browser has had a chance to paint.
+  //   By using useIsomorphicLayoutEffect we run in the same synchronous phase as
+  //   React DOM commits — before any pixels are drawn. State updates made here
+  //   trigger a synchronous re-render (still pre-paint), so the user never sees
+  //   the intermediate "scrollTop=0" state.
+  //
+  // Fast path fires when:
+  //   1. cachedMsgs are available (warm cache from hover-prefetch or prior visit)
+  //   2. lastReadAtOnOpen has the OLD last_read_at captured by handleNavigate
+  //
+  // Safety gate: if the sidebar says message_count > 0 but the cached messages
+  // produce 0 unread (cache predates the unread messages), we don't freeze an
+  // incorrect zero snapshot. Instead we stay hidden and let the incremental
+  // fetch + fallback snapshot path handle it.
+  useIsomorphicLayoutEffect(() => {
+    // ── Reset scroll / unread / visibility state for this community ──────────
+    // These MUST be reset in the layout phase so the scroll layout effect (also
+    // in the layout phase) sees a clean slate before snapshotReady flips true.
+    initialScrollDoneRef.current = false;
+    unreadAtOpenRef.current = null;
+    setSnapshotReady(false);
+    setInitialPositionResolved(false);
+
+    const cachedMsgs = msgCache.get(communityId);
+    const hasOpeningLastReadAt = lastReadAtOnOpen.has(communityId);
+
+    if (!cachedMsgs?.length || !hasOpeningLastReadAt) {
+      // Cannot fast-path: cache is cold or opening snapshot not yet available.
+      // Messages stay hidden (initialPositionResolved=false) until the fallback
+      // path (incremental fetch → snapshot effect → scroll layout effect) runs.
+      return;
+    }
+
+    const openingLastReadAt = lastReadAtOnOpen.get(communityId) ?? null;
+    // Consume the map entry so the snapshot effect's fallback poll is skipped.
+    lastReadAtOnOpen.delete(communityId);
+    // Surface lastReadAt in state so the snapshot effect can use it if needed.
+    setLastReadAt(openingLastReadAt);
+
+    // ── Safety check ─────────────────────────────────────────────────────────
+    // If the sidebar still shows unread messages but the cached snapshot yields
+    // zero unread (e.g. the cache was fetched before those messages arrived),
+    // the cache is stale. Fall back to the incremental fetch path rather than
+    // freezing a wrong zero count. Messages stay hidden until positioned.
+    const sidebarEntry_ = sidebarStore.data?.communities.find(
+      (c) => c.id === communityId
+    );
+    const sidebarUnreadCount = sidebarEntry_?.message_count ?? 0;
+
+    const lastReadTime =
+      openingLastReadAt === null ? -Infinity : new Date(openingLastReadAt).getTime();
+    const unreadMsgs = cachedMsgs.filter(
+      (m) =>
+        !m.id.startsWith("temp-") &&
+        m.user_id !== currentUserId &&
+        new Date(m.created_at).getTime() > lastReadTime
+    );
+
+    if (sidebarUnreadCount > 0 && unreadMsgs.length === 0) {
+      // Stale cache — fall back silently. lastReadAt is already set so the
+      // snapshot effect can compute the boundary once the fetch delivers the
+      // missing messages.
+      return;
+    }
+
+    // ── Freeze the snapshot ───────────────────────────────────────────────────
+    unreadAtOpenRef.current = {
+      firstMsgId: unreadMsgs[0]?.id ?? null,
+      count: unreadMsgs.length,
+    };
+    // Trigger re-render so the divider element appears in the DOM; the scroll
+    // layout effect below will then position the viewport before paint.
+    setSnapshotReady(true);
+
+    // currentUserId is a stable prop — intentionally omitted from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communityId]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -397,25 +493,11 @@ export function CommunityChat({
   // MSG_STALE_MS only gates full refetches when there is no cache at all.
   useEffect(() => {
     communityIdRef.current = communityId;
-    // Reset all scroll + unread state for the new community.
-    initialScrollDoneRef.current = false;
+    // scroll/unread/position state is reset in the fast-path layout effect above
+    // (which runs synchronously before this effect). Only reset the async flags
+    // that the layout effect doesn't touch.
     setShowScrollToBottom(false);
-    unreadAtOpenRef.current = null;
-    setSnapshotReady(false);
     setInitialMessagesReady(false);
-    // Explicitly clear lastReadAt so the previous community's timestamp never
-    // bleeds into the new community's unread snapshot calculation.
-    setLastReadAt(undefined);
-
-    // CommunitiesPanel stores last_read_at (captured BEFORE marking read) into
-    // lastReadAtOnOpen synchronously when the active community changes.
-    // Read it here and clear it so subsequent navigations start fresh.
-    // Use .has() to distinguish "not yet captured" (undefined → skip) from
-    // "captured as null" (community was never read before → show all as unread).
-    if (lastReadAtOnOpen.has(communityId)) {
-      setLastReadAt(lastReadAtOnOpen.get(communityId) ?? null);
-      lastReadAtOnOpen.delete(communityId);
-    }
 
     let cancelled = false;
 
@@ -538,35 +620,60 @@ export function CommunityChat({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMessagesReady, lastReadAt, communityId, snapshotReady]);
 
-  // ─── Effect 2: Initial scroll to unread boundary ──────────────────────────
-  // Fires once per community session, after the snapshot is ready and loading
-  // is complete (so the divider element is guaranteed to be in the DOM).
-  useEffect(() => {
+  // ─── Effect 2: Initial scroll to unread boundary (layout effect) ─────────
+  //
+  // Using useIsomorphicLayoutEffect instead of useEffect ensures this runs
+  // SYNCHRONOUSLY after the DOM is committed but BEFORE the browser paints.
+  // Combined with the fast-path layout effect above, the sequence is:
+  //
+  //   Render N   → messages + divider committed to DOM
+  //   Layout effect (fast-path) → snapshotReady = true  (re-render queued)
+  //   Render N+1 → divider element present in DOM
+  //   Layout effect (this one) → scrollTop set instantly
+  //   Layout effect → initialPositionResolved = true  (re-render queued)
+  //   Render N+2 → visibility:hidden lifted
+  //   Browser paints → user sees correct position on first frame  ✓
+  //
+  // No requestAnimationFrame, no smooth scrolling — initial positioning is
+  // always instant so there is never a visible jump.
+  useIsomorphicLayoutEffect(() => {
     if (!snapshotReady) return;
-    if (loading) return;
+    if (loading) return; // messages not in DOM yet; wait for loading to clear
     if (initialScrollDoneRef.current) return;
 
-    // Mark done synchronously before rAF to prevent double-fire if deps change.
     initialScrollDoneRef.current = true;
 
-    requestAnimationFrame(() => {
-      const container = scrollContainerRef.current;
-      const divider = unreadDividerRef.current;
+    const container = scrollContainerRef.current;
+    if (!container) {
+      setInitialPositionResolved(true);
+      return;
+    }
 
-      if (divider && container && unreadAtOpenRef.current?.firstMsgId) {
-        // Position the divider ~100 px below the top of the message viewport —
-        // WhatsApp-style: user sees the boundary and the first unread messages
-        // immediately below it, with a few read messages above for context.
-        const dividerRect = divider.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const dividerTop =
-          dividerRect.top - containerRect.top + container.scrollTop;
-        container.scrollTop = Math.max(0, dividerTop - 100);
-      } else {
-        // No unread — jump to the latest message.
-        bottomRef.current?.scrollIntoView({ behavior: "instant" });
-      }
-    });
+    const isOverflowing = container.scrollHeight > container.clientHeight;
+
+    if (!isOverflowing) {
+      // Short chat: content fits entirely in the viewport. The inner wrapper's
+      // `justify-end` already places messages at the bottom above the composer.
+      // There is nothing to scroll — just reveal.
+      setInitialPositionResolved(true);
+      return;
+    }
+
+    const divider = unreadDividerRef.current;
+    if (divider && unreadAtOpenRef.current?.firstMsgId) {
+      // Position the unread divider ~80 px below the top of the viewport —
+      // WhatsApp-style: the boundary is visible with a few read messages above
+      // for context, and the first unread messages are immediately below.
+      const dividerRect = divider.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const dividerTop = dividerRect.top - containerRect.top + container.scrollTop;
+      container.scrollTop = Math.max(0, dividerTop - 80);
+    } else {
+      // No unread boundary — jump instantly to the very bottom.
+      container.scrollTop = container.scrollHeight - container.clientHeight;
+    }
+
+    setInitialPositionResolved(true);
   }, [snapshotReady, loading, communityId]);
 
   // ─── Effect 3: Realtime auto-scroll ───────────────────────────────────────
@@ -1044,7 +1151,7 @@ export function CommunityChat({
       <div className="flex-1 flex overflow-hidden">
         {/* Messages */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-1" style={{backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px)",backgroundSize:"24px 24px"}}>
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px)",backgroundSize:"24px 24px"}}>
             {/* Loading: show Lottie only inside the messages area.
                 The header, members panel, and input stay frozen from the
                 previous community so the outer frame never disappears. */}
@@ -1058,9 +1165,19 @@ export function CommunityChat({
                 />
               </div>
             ) : (
-              <>
+              // Inner wrapper — two responsibilities:
+              // 1. min-h-full + flex col + justify-end: short chats sit at the bottom
+              //    above the composer without any fake spacer. Long chats overflow and
+              //    the scroll container's overflow-y-auto takes over.
+              // 2. visibility:hidden until initialPositionResolved: DOM exists so the
+              //    layout effect can measure heights and set scrollTop before paint.
+              //    Header, composer, and members panel stay visible throughout.
+              <div
+                className="min-h-full flex flex-col justify-end px-5 py-4 space-y-1"
+                style={{ visibility: initialPositionResolved ? "visible" : "hidden" }}
+              >
             {grouped.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full gap-3 py-16">
+              <div className="flex flex-col items-center justify-center flex-1 gap-3 py-16">
                 <div className="h-12 w-12 rounded-full bg-surface-raised flex items-center justify-center text-2xl overflow-hidden shrink-0">
                   {displayCommunity?.image_url ? (
                     <img
@@ -1196,7 +1313,7 @@ export function CommunityChat({
               </div>
             ))}
             <div ref={bottomRef} />
-              </>
+              </div>
             )}
           </div>
 
