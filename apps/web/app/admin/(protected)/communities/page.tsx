@@ -123,6 +123,16 @@ function CommunityRow({
           {c.message_count.toLocaleString()}
         </span>
       </td>
+      {/* Status */}
+      <td className="px-4 py-3 text-right">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-body text-[11px] font-medium ${
+          c.is_active
+            ? "bg-green-500/10 text-green-400"
+            : "bg-orange-500/10 text-orange-400"
+        }`}>
+          {c.is_active ? "Active" : "Deactivated"}
+        </span>
+      </td>
       {/* Created */}
       <td className="px-4 py-3 text-right font-body text-xs text-foreground-muted">
         {fmt(c.created_at)}
@@ -231,6 +241,7 @@ export default function AdminCommunitiesPage() {
                 <th className="px-4 py-2.5 text-left font-body text-[11px] font-medium text-foreground-muted">Type</th>
                 <th className="px-4 py-2.5 text-right font-body text-[11px] font-medium text-foreground-muted">Members</th>
                 <th className="px-4 py-2.5 text-right font-body text-[11px] font-medium text-foreground-muted">Messages</th>
+                <th className="px-4 py-2.5 text-right font-body text-[11px] font-medium text-foreground-muted">Status</th>
                 <th className="px-4 py-2.5 text-right font-body text-[11px] font-medium text-foreground-muted">Created</th>
                 <th className="px-4 py-2.5" />
               </tr>
