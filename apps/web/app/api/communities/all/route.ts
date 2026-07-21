@@ -21,6 +21,7 @@ export async function GET() {
   const { data: communities, error } = await db
     .from("communities")
     .select("id, name, type, image_url, reference_id")
+    .eq("is_active", true)
     .order("name");
 
   if (error) return NextResponse.json({ error: "Failed to fetch communities." }, { status: 500 });

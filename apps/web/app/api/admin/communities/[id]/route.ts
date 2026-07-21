@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
 
@@ -10,45 +10,38 @@ const TABLE_LOOKUP: Record<string, { table: string; idCol: string }> = {
   experience_level: { table: "experience_levels", idCol: "id" },
 };
 
+// ── GET /api/admin/communities/[id] ─────────────────────────────────────────
 export async function GET(
-  _req: Request,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try { await requireSession("admin"); } catch (e) { return e as Response; }
-
-  const db = createServiceClient();
   const { id } = await params;
+  const db = createServiceClient();
 
-  // Community base info
   const { data: community, error } = await db
     .from("communities")
-    .select("id, name, type, image_url, description, reference_id, created_at, updated_at")
+    .select("id, name, type, image_url, description, reference_id, is_active, created_at, updated_at")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   if (error || !community) {
     return NextResponse.json({ error: "Community not found." }, { status: 404 });
   }
 
-  // ── Resolve reference entity: name + image_url from master table ────────────
+  // Resolve reference entity name + image from master table
   let reference_name: string | null = null;
-  let resolved_image_url: string | null = community.image_url ?? null;
-
   const lookup = TABLE_LOOKUP[community.type];
   if (lookup && community.reference_id) {
     const { data: refRow } = await db
       .from(lookup.table as any)
-      .select("name, image_url")
+      .select("name")
       .eq(lookup.idCol, community.reference_id)
-      .single();
-
-    if (refRow) {
-      reference_name    = (refRow as any).name      ?? null;
-      resolved_image_url = (refRow as any).image_url ?? community.image_url ?? null;
-    }
+      .maybeSingle();
+    reference_name = (refRow as any)?.name ?? null;
   }
 
-  // ── Counts + members + messages (parallel) ──────────────────────────────────
+  // Counts + members + messages in parallel
   const [
     { count: member_count },
     { count: message_count },
@@ -71,49 +64,95 @@ export async function GET(
       .limit(10),
   ]);
 
-  // Resolve member user details
-  let members: { id: string; name: string; email: string; joined_at: string }[] = [];
-  if (memberRows?.length) {
-    const userIds = memberRows.map((m) => m.user_id);
-    const { data: userRows } = await db
-      .from("users")
-      .select("id, name, email")
-      .in("id", userIds);
-    const userMap = Object.fromEntries((userRows ?? []).map((u) => [u.id, u]));
-    members = memberRows.map((m) => ({
-      id:        m.user_id,
-      name:      userMap[m.user_id]?.name  ?? "Unknown",
-      email:     userMap[m.user_id]?.email ?? "",
-      joined_at: m.joined_at,
-    }));
-  }
+  // Resolve member + sender names
+  const allUserIds = [
+    ...new Set([
+      ...(memberRows ?? []).map((m) => m.user_id),
+      ...(msgRows ?? []).map((m) => m.user_id),
+    ]),
+  ];
 
-  // Resolve message sender names
-  let messages: { id: string; content: string; created_at: string; user_name: string }[] = [];
-  if (msgRows?.length) {
-    const senderIds = [...new Set(msgRows.map((m) => m.user_id))];
-    const { data: senderRows } = await db
-      .from("users")
-      .select("id, name")
-      .in("id", senderIds);
-    const senderMap = Object.fromEntries((senderRows ?? []).map((u) => [u.id, u.name]));
-    messages = msgRows.map((m) => ({
-      id:         m.id,
-      content:    m.content,
-      created_at: m.created_at,
-      user_name:  senderMap[m.user_id] ?? "Unknown",
-    }));
-  }
+  const { data: userRows } = allUserIds.length
+    ? await db.from("users").select("id, name, email").in("id", allUserIds)
+    : { data: [] };
+
+  const userMap = Object.fromEntries((userRows ?? []).map((u) => [u.id, u]));
+
+  const members = (memberRows ?? []).map((m) => ({
+    id:        m.user_id,
+    name:      userMap[m.user_id]?.name  ?? "Unknown",
+    email:     userMap[m.user_id]?.email ?? "",
+    joined_at: m.joined_at,
+  }));
+
+  const messages = (msgRows ?? []).map((m) => ({
+    id:         m.id,
+    content:    m.content,
+    created_at: m.created_at,
+    user_name:  userMap[m.user_id]?.name ?? "Unknown",
+  }));
 
   return NextResponse.json({
     community: {
       ...community,
-      image_url:      resolved_image_url,
       reference_name,
-      member_count:   member_count  ?? 0,
-      message_count:  message_count ?? 0,
+      member_count:  member_count  ?? 0,
+      message_count: message_count ?? 0,
       members,
       messages,
     },
   });
+}
+
+// ── PATCH /api/admin/communities/[id] ────────────────────────────────────────
+// Supports: { name?: string, is_active?: boolean }
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try { await requireSession("admin"); } catch (e) { return e as Response; }
+  const { id } = await params;
+
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { body = {}; }
+
+  const update: Record<string, unknown> = {};
+  if (typeof body.name === "string") {
+    const name = body.name.trim();
+    if (!name) return NextResponse.json({ error: "Name cannot be empty." }, { status: 422 });
+    update.name = name;
+  }
+  if (typeof body.is_active === "boolean") {
+    update.is_active = body.is_active;
+  }
+
+  if (!Object.keys(update).length) {
+    return NextResponse.json({ error: "Nothing to update." }, { status: 422 });
+  }
+
+  const db = createServiceClient();
+  const { data, error } = await db
+    .from("communities")
+    .update(update)
+    .eq("id", id)
+    .select("id, name, type, image_url, description, reference_id, is_active, created_at, updated_at")
+    .single();
+
+  if (error) return NextResponse.json({ error: "Failed to update community." }, { status: 500 });
+  return NextResponse.json({ community: data });
+}
+
+// ── DELETE /api/admin/communities/[id] ───────────────────────────────────────
+// Hard-deletes community + cascades to members + messages via FK.
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try { await requireSession("admin"); } catch (e) { return e as Response; }
+  const { id } = await params;
+  const db = createServiceClient();
+
+  const { error } = await db.from("communities").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: "Failed to delete community." }, { status: 500 });
+  return NextResponse.json({ success: true });
 }

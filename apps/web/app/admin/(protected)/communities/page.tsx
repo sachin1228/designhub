@@ -10,6 +10,7 @@ interface Community {
   name: string;
   type: string;
   image_url: string | null;
+  is_active: boolean;
   member_count: number;
   message_count: number;
   created_at: string;
@@ -90,7 +91,14 @@ function CommunityRow({
               {fallback}
             </div>
           )}
-          <span className="font-body text-sm text-foreground">{c.name}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-body text-sm text-foreground">{c.name}</span>
+            {!c.is_active && (
+              <span className="px-1.5 py-0.5 rounded-full font-body text-[10px] font-medium bg-orange-500/10 text-orange-400">
+                Deactivated
+              </span>
+            )}
+          </div>
         </div>
       </td>
       {/* Type badge */}
