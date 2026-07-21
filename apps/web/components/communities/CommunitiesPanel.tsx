@@ -453,14 +453,21 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
     activeCommunityIdRef.current = activeCommunityId;
     if (!activeCommunityId) return;
     markReadOnServer(activeCommunityId);
+
+    // Snapshot the unread count SYNCHRONOUSLY in the effect body — NOT inside the
+    // setCommunities updater.  React calls updaters lazily during the next render,
+    // so anything written inside an updater is invisible to sibling-component
+    // effects that fire in the same flush (e.g. CommunityChat's communityId effect).
+    // Reading from sidebarStore directly here is always safe: it's a module-level
+    // variable that is always current, and effects only run client-side.
+    const snapshot = sidebarStore.data?.communities.find(
+      (c) => c.id === activeCommunityId
+    );
+    if (snapshot && snapshot.message_count > 0) {
+      unreadOnOpen.set(activeCommunityId, snapshot.message_count);
+    }
+
     setCommunities((prev) => {
-      const current = prev.find((c) => c.id === activeCommunityId);
-      // Snapshot the unread count BEFORE zeroing it so CommunityChat can
-      // position the unread divider even though sidebarStore will be 0 by
-      // the time the chat component's effect runs.
-      if (current && current.message_count > 0) {
-        unreadOnOpen.set(activeCommunityId, current.message_count);
-      }
       const updated = prev.map((c) =>
         c.id === activeCommunityId ? { ...c, message_count: 0 } : c
       );

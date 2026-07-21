@@ -138,6 +138,12 @@ export function CommunityChat({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const initialScrollDoneRef = useRef(false);
   const unreadDividerRef = useRef<HTMLDivElement>(null);
+  /**
+   * True only during the very first run of the communityId effect (initial mount).
+   * Prevents the effect from overwriting the SSR-seeded initialUnreadCount with 0
+   * when unreadOnOpen is still empty (hard-refresh timing race).
+   */
+  const isFirstMountRef = useRef(true);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [initialUnreadCount, setInitialUnreadCount] = useState(0);
 
@@ -363,11 +369,19 @@ export function CommunityChat({
     // Reset scroll state for the new community
     initialScrollDoneRef.current = false;
     setShowScrollToBottom(false);
-    // CommunitiesPanel saves the unread count to unreadOnOpen BEFORE zeroing the
-    // sidebar badge, so we always get the real count regardless of effect order.
+
+    const isFirst = isFirstMountRef.current;
+    isFirstMountRef.current = false;
+
+    // CommunitiesPanel snapshots the count into unreadOnOpen synchronously when
+    // the active community changes.  Read it here; if it's 0 on first mount the
+    // SSR-seeded value from useIsomorphicLayoutEffect is already in state —
+    // don't overwrite it.  On subsequent navigations always update.
     const unread = unreadOnOpen.get(communityId) ?? 0;
-    unreadOnOpen.delete(communityId); // consume it — only needed once per open
-    setInitialUnreadCount(unread);
+    unreadOnOpen.delete(communityId);
+    if (!isFirst || unread > 0) {
+      setInitialUnreadCount(unread);
+    }
 
     let cancelled = false;
 
@@ -435,6 +449,22 @@ export function CommunityChat({
     if (!messages.length) return;
 
     if (!initialScrollDoneRef.current) {
+      // Late-fallback: CommunitiesPanel's effect may have fired AFTER the
+      // communityId effect (sibling effects have no guaranteed order).
+      // If unreadOnOpen still has a value, consume it now and re-render so
+      // the divider element exists in the DOM before we try to scroll to it.
+      if (initialUnreadCount === 0) {
+        const late = unreadOnOpen.get(communityId);
+        if (late && late > 0) {
+          unreadOnOpen.delete(communityId);
+          setInitialUnreadCount(late);
+          // Don't mark done — the state update triggers a re-render which
+          // fires this effect again (with initialScrollDoneRef still false),
+          // at which point the divider element will exist and we can scroll.
+          return;
+        }
+      }
+
       initialScrollDoneRef.current = true;
       // Give React one animation frame to finish laying out messages in the DOM
       requestAnimationFrame(() => {
