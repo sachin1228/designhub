@@ -155,6 +155,8 @@ export function CommunityChat({
   const [lastReadAt, setLastReadAt] = useState<string | null | undefined>(undefined);
   /** When true the divider is hidden even if firstUnreadMsgId is non-null. Reset on community change. */
   const [dividerDismissed, setDividerDismissed] = useState(false);
+  /** True while the inline unread divider element is inside the visible viewport. */
+  const [dividerInView, setDividerInView] = useState(false);
 
   /**
    * Tracks the *currently mounted* communityId.
@@ -534,12 +536,16 @@ export function CommunityChat({
   // dismiss it so the chat looks clean.  Resets whenever communityId changes.
   useEffect(() => {
     const el = unreadDividerRef.current;
-    if (!el || dividerDismissed) return;
+    if (!el || dividerDismissed) {
+      setDividerInView(false);
+      return;
+    }
 
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
+        setDividerInView(entry.isIntersecting);
         if (entry.isIntersecting) {
           timer = setTimeout(() => setDividerDismissed(true), 1500);
         } else {
@@ -552,6 +558,7 @@ export function CommunityChat({
     return () => {
       observer.disconnect();
       if (timer) clearTimeout(timer);
+      setDividerInView(false);
     };
     // Re-run when divider mounts/unmounts (firstUnreadMsgId changes) or community changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1171,6 +1178,34 @@ export function CommunityChat({
               </>
             )}
           </div>
+
+          {/* Sticky unread pill — WhatsApp-style: floats at the top of the
+              visible message area whenever the inline divider is off-screen
+              below the current scroll position. Clicking scrolls to it. */}
+          {firstUnreadMsgId && !dividerDismissed && !dividerInView && (
+            <button
+              onClick={() => {
+                const container = scrollContainerRef.current;
+                const divider = unreadDividerRef.current;
+                if (divider && container) {
+                  const dividerRect = divider.getBoundingClientRect();
+                  const containerRect = container.getBoundingClientRect();
+                  const relativeTop =
+                    dividerRect.top - containerRect.top + container.scrollTop;
+                  container.scrollTo({
+                    top: Math.max(0, relativeTop - 80),
+                    behavior: "smooth",
+                  });
+                }
+              }}
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-accent/80 text-xs font-body shadow-lg backdrop-blur-sm hover:bg-accent transition-colors whitespace-nowrap select-none"
+              aria-label="Jump to unread messages"
+            >
+              {unreadDisplayCount > 0
+                ? `${unreadDisplayCount} unread message${unreadDisplayCount !== 1 ? "s" : ""}`
+                : "New messages"}
+            </button>
+          )}
 
           {/* Scroll-to-bottom button — visible when user is scrolled up */}
           {showScrollToBottom && (
