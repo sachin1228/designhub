@@ -30,38 +30,48 @@ export async function GET(
     return NextResponse.json({ error: "Community not found." }, { status: 404 });
   }
 
-  // Resolve reference entity name
+  // ── Resolve reference entity: name + image_url from master table ────────────
   let reference_name: string | null = null;
+  let resolved_image_url: string | null = community.image_url ?? null;
+
   const lookup = TABLE_LOOKUP[community.type];
   if (lookup && community.reference_id) {
     const { data: refRow } = await db
       .from(lookup.table as any)
-      .select("name")
+      .select("name, image_url")
       .eq(lookup.idCol, community.reference_id)
       .single();
-    reference_name = (refRow as any)?.name ?? null;
+
+    if (refRow) {
+      reference_name    = (refRow as any).name      ?? null;
+      resolved_image_url = (refRow as any).image_url ?? community.image_url ?? null;
+    }
   }
 
-  // Member count
-  const { count: member_count } = await db
-    .from("community_members")
-    .select("*", { count: "exact", head: true })
-    .eq("community_id", id);
+  // ── Counts + members + messages (parallel) ──────────────────────────────────
+  const [
+    { count: member_count },
+    { count: message_count },
+    { data: memberRows },
+    { data: msgRows },
+  ] = await Promise.all([
+    db.from("community_members").select("*", { count: "exact", head: true }).eq("community_id", id),
+    db.from("community_messages").select("*", { count: "exact", head: true }).eq("community_id", id),
+    db
+      .from("community_members")
+      .select("user_id, joined_at")
+      .eq("community_id", id)
+      .order("joined_at", { ascending: false })
+      .limit(20),
+    db
+      .from("community_messages")
+      .select("id, content, created_at, user_id")
+      .eq("community_id", id)
+      .order("created_at", { ascending: false })
+      .limit(10),
+  ]);
 
-  // Message count
-  const { count: message_count } = await db
-    .from("community_messages")
-    .select("*", { count: "exact", head: true })
-    .eq("community_id", id);
-
-  // Members list (latest 20 joined)
-  const { data: memberRows } = await db
-    .from("community_members")
-    .select("user_id, joined_at")
-    .eq("community_id", id)
-    .order("joined_at", { ascending: false })
-    .limit(20);
-
+  // Resolve member user details
   let members: { id: string; name: string; email: string; joined_at: string }[] = [];
   if (memberRows?.length) {
     const userIds = memberRows.map((m) => m.user_id);
@@ -78,14 +88,7 @@ export async function GET(
     }));
   }
 
-  // Recent messages (last 10)
-  const { data: msgRows } = await db
-    .from("community_messages")
-    .select("id, content, created_at, user_id")
-    .eq("community_id", id)
-    .order("created_at", { ascending: false })
-    .limit(10);
-
+  // Resolve message sender names
   let messages: { id: string; content: string; created_at: string; user_name: string }[] = [];
   if (msgRows?.length) {
     const senderIds = [...new Set(msgRows.map((m) => m.user_id))];
@@ -105,9 +108,10 @@ export async function GET(
   return NextResponse.json({
     community: {
       ...community,
+      image_url:      resolved_image_url,
       reference_name,
-      member_count:  member_count  ?? 0,
-      message_count: message_count ?? 0,
+      member_count:   member_count  ?? 0,
+      message_count:  message_count ?? 0,
       members,
       messages,
     },
