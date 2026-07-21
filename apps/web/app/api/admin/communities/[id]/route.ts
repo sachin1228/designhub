@@ -12,12 +12,12 @@ const TABLE_LOOKUP: Record<string, { table: string; idCol: string }> = {
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try { await requireSession("admin"); } catch (e) { return e as Response; }
 
   const db = createServiceClient();
-  const { id } = params;
+  const { id } = await params;
 
   // Community base info
   const { data: community, error } = await db
