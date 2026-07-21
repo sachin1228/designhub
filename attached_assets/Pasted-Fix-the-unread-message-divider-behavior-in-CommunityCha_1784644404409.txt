@@ -1,0 +1,199 @@
+Fix the unread-message divider behavior in CommunityChat.
+
+IMPORTANT: Please understand the UX before changing code.
+
+CURRENT BUG:
+The "X unread messages" pill/divider is effectively staying near the bottom of the chat / above the composer.
+
+This is incorrect.
+
+I want WhatsApp Web behavior.
+
+HOW WHATSAPP WORKS:
+
+The unread divider is NOT a sticky/fixed/floating element at the bottom of the viewport.
+
+It is an actual divider inserted INSIDE the chronological message list at the boundary between:
+
+    last previously-read message
+    -----------------------------
+          X unread messages
+    -----------------------------
+    first unread message
+    second unread message
+    third unread message
+
+The divider must therefore have a FIXED POSITION RELATIVE TO THE MESSAGES, not relative to the screen.
+
+Example:
+
+Suppose the message history is:
+
+Message A  <- already read
+Message B  <- already read
+Message C  <- first unread
+Message D  <- unread
+Message E  <- unread
+
+Render:
+
+Message A
+Message B
+
+       3 unread messages
+
+Message C
+Message D
+Message E
+
+
+INITIAL OPEN / SCROLL BEHAVIOR:
+
+When I open a community that has unread messages:
+
+1. Determine the FIRST unread message.
+2. Insert the unread divider immediately BEFORE that message.
+3. Automatically position/scroll the chat so this unread divider is visible in the viewport.
+4. Preferably place it around the middle / upper-middle area of the available chat viewport, similar to WhatsApp.
+5. The user should immediately be able to see:
+   - the unread divider
+   - the first unread messages below it
+
+DO NOT automatically scroll all the way to the latest/bottom message when unread messages exist.
+
+That is the main bug currently.
+
+If there are many unread messages, the user should start at the unread boundary, NOT at the bottom of the conversation.
+
+
+VERY IMPORTANT:
+
+Once rendered, the unread divider should behave like normal content in the message list.
+
+If I scroll downward:
+    the divider naturally scrolls upward and eventually leaves the screen.
+
+If I scroll upward:
+    I can encounter the divider again at the same chronological position.
+
+It must NOT follow the viewport.
+
+Do NOT implement it using:
+- position: fixed
+- position: sticky
+- position: absolute relative to the viewport/composer
+- bottom positioning
+
+The composer/input should have absolutely no effect on where the unread divider belongs.
+
+
+IMPLEMENTATION MODEL:
+
+Think of messages as:
+
+messages.map((message, index) => {
+    if (message.id === firstUnreadMessageId) {
+        render <UnreadDivider count={unreadCount} />
+    }
+
+    render <Message ... />
+})
+
+The divider therefore becomes part of the normal scrollable message flow.
+
+
+SCROLL INITIALIZATION:
+
+After the messages and unread divider have rendered:
+
+if (firstUnreadMessageId exists) {
+    scroll the unread divider / first unread message into view
+} else {
+    scroll to the bottom normally
+}
+
+Something conceptually like:
+
+unreadDividerRef.current?.scrollIntoView({
+    block: "center",
+    behavior: "instant"
+})
+
+Do NOT blindly call bottomRef.scrollIntoView() afterward because that will override the unread-position scroll.
+
+Check the existing effects carefully for competing scroll-to-bottom logic.
+
+
+ALSO CHECK FOR THIS LIKELY BUG:
+
+There may currently be an effect such as:
+
+useEffect(() => {
+    bottomRef.current?.scrollIntoView(...)
+}, [messages])
+
+If this runs when opening the community, it will force the viewport back to the bottom AFTER we position it at the unread divider.
+
+Separate these two behaviors:
+
+A) INITIAL OPEN WITH UNREAD MESSAGES
+   -> position at unread boundary
+
+B) INITIAL OPEN WITH NO UNREAD MESSAGES
+   -> position at bottom
+
+C) NEW MESSAGE ARRIVES WHILE USER IS ALREADY AT/NEAR BOTTOM
+   -> auto-scroll to bottom
+
+D) NEW MESSAGE ARRIVES WHILE USER IS READING OLDER MESSAGES
+   -> DO NOT force-scroll them to bottom
+
+
+READ STATE:
+
+Do not remove/move the divider immediately just because opening the community marks messages as read in the database.
+
+The divider represents:
+
+"where unread messages started when I opened this conversation."
+
+Capture that boundary when the conversation is opened and preserve it for that chat session.
+
+Otherwise the divider can disappear immediately after the read-state API updates.
+
+
+EXPECTED RESULT:
+
+Before opening:
+
+20 older read messages
+13 unread messages
+
+After opening, viewport should look approximately like:
+
+[older messages...]
+
+             13 unread messages
+
+Hi                  7:36 pm
+Hi                  7:36 pm
+Hi                  7:36 pm
+Hi                  7:36 pm
+
+[more unread messages below...]
+
+The input/composer remains fixed at the bottom as usual.
+
+This should match WhatsApp Web's unread-boundary behavior.
+
+Before modifying code, inspect:
+- message rendering
+- unread count / last-read tracking
+- initial scroll logic
+- scroll-to-bottom effects
+- realtime message effects
+- read-state mutation
+
+Then identify exactly which existing logic is causing the unread divider to end up at the bottom.
+
+Do not just change CSS positioning. This is primarily a message-boundary + initial-scroll-state problem.

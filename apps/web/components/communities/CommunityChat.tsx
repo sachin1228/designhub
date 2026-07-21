@@ -475,9 +475,13 @@ export function CommunityChat({
           // point lastReadAt is set and the divider element exists in the DOM.
           return;
         }
-        // lastReadAtOnOpen still not populated (PATCH in flight) — skip for now.
-        // We'll fall through and scroll to bottom; if the divider appears later
-        // it won't be scrolled to (acceptable UX vs. perpetually blocking scroll).
+        // lastReadAtOnOpen not yet populated (PATCH still in flight).
+        // Do NOT fall through to bottom-scroll — that would lock initialScrollDone
+        // before we know where unread messages start and we'd never scroll to
+        // the divider.  Instead just return; the incremental message fetch (or
+        // the next realtime update) will trigger this effect again, by which
+        // time CommunitiesPanel will have populated lastReadAtOnOpen.
+        return;
       }
 
       initialScrollDoneRef.current = true;
@@ -503,35 +507,20 @@ export function CommunityChat({
       return;
     }
 
-    // A new message arrived (realtime / polling).
-    // WhatsApp-style: if there is an unread divider, always scroll so it is
-    // visible near the top of the viewport (same as the initial-load behaviour).
-    // Only fall back to the "near bottom → keep at bottom" path when there is
-    // no divider (user has already read everything up to this point).
+    // ── New realtime / polling message arrived ──────────────────────────────
+    // A) User is at or near the bottom → keep them there (they're live-reading).
+    // B) User scrolled up reading history → surface the ↓ button; do NOT
+    //    force-scroll them away from where they are.
+    // Never touch dividerDismissed here — the IntersectionObserver handles it.
     const container = scrollContainerRef.current;
     if (!container) return;
     const distFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
-
-    requestAnimationFrame(() => {
-      const divider = unreadDividerRef.current;
-      const cont = scrollContainerRef.current;
-      if (!cont) return;
-
-      if (divider) {
-        // Divider exists in DOM — scroll to it (80 px of context above, like initial load)
-        const dividerRect = divider.getBoundingClientRect();
-        const contRect = cont.getBoundingClientRect();
-        const relTop = dividerRect.top - contRect.top + cont.scrollTop;
-        cont.scrollTo({ top: Math.max(0, relTop - 80), behavior: "smooth" });
-      } else if (distFromBottom < 100) {
-        // No divider and user was already near the bottom — keep them there
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      } else {
-        // No divider and user is reading history — surface the ↓ button
-        setShowScrollToBottom(true);
-      }
-    });
+    if (distFromBottom < 100) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      setShowScrollToBottom(true);
+    }
   }, [messages, lastReadAt]);
 
   // ─── Show / hide scroll-to-bottom button on manual scroll ────────────────
