@@ -165,6 +165,12 @@ export function CommunityChat({
    *  so the divider element appears in the DOM before the initial scroll runs. */
   const [snapshotReady, setSnapshotReady] = useState(false);
   /**
+   * Count of messages from other users that arrived via realtime AFTER the
+   * unread snapshot was frozen. Added to unreadAtOpenRef.count so the divider
+   * label grows as new messages land while you're in the chat.
+   */
+  const [liveUnreadExtra, setLiveUnreadExtra] = useState(0);
+  /**
    * Flips to true only after the initial message fetch (msgPromise) resolves.
    * Used only by the FALLBACK path when the fast-path layout effect could not
    * compute the snapshot immediately (cold cache or stale cache safety check).
@@ -288,6 +294,7 @@ export function CommunityChat({
     unreadAtOpenRef.current = null;
     setSnapshotReady(false);
     setInitialPositionResolved(false);
+    setLiveUnreadExtra(0);
 
     const cachedMsgs = msgCache.get(communityId);
     const hasOpeningLastReadAt = lastReadAtOnOpen.has(communityId);
@@ -842,6 +849,13 @@ export function CommunityChat({
             );
             msgCache.set(communityId, next);
 
+            // If the unread snapshot is already frozen and this message is from
+            // another user, grow the divider label in real time so it reflects
+            // every new message that arrives while the user is in this chat.
+            if (newRow.user_id !== currentUserId && unreadAtOpenRef.current !== null) {
+              setLiveUnreadExtra((prev) => prev + 1);
+            }
+
             // ── Lazy sender profile fetch ─────────────────────────────────
             // If the sender is unknown (not in membersRef yet — e.g. they just
             // joined), fire a single background request to fetch their profile.
@@ -1058,7 +1072,7 @@ export function CommunityChat({
     ? (unreadAtOpenRef.current?.firstMsgId ?? null)
     : null;
   const unreadDisplayCount: number = snapshotReady
-    ? (unreadAtOpenRef.current?.count ?? 0)
+    ? (unreadAtOpenRef.current?.count ?? 0) + liveUnreadExtra
     : 0;
 
   // Resolve display data: prefer live community state, fall back to sidebar
