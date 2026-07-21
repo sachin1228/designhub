@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutList, Building2, MapPin, Layers, Database, ChevronDown, Users, Sparkles, TrendingUp, Clapperboard } from "lucide-react";
+import { LayoutList, Building2, MapPin, Layers, Database, ChevronDown, Users, Sparkles, TrendingUp, Clapperboard, MessagesSquare } from "lucide-react";
 
 function isMatch(href: string, pathname: string) {
   return href === "/admin"
@@ -59,6 +59,20 @@ export function AdminSidebar() {
       >
         <LayoutList size={16} className={active("/admin") ? "text-accent" : ""} />
         Applications
+      </Link>
+
+      {/* Communities */}
+      <Link
+        href="/admin/communities"
+        onClick={() => setPendingHref("/admin/communities")}
+        className={`flex items-center gap-3 rounded-lg px-3 py-2 font-body text-xs transition-colors ${
+          active("/admin/communities")
+            ? "bg-surface-raised text-foreground"
+            : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
+        }`}
+      >
+        <MessagesSquare size={16} className={active("/admin/communities") ? "text-accent" : ""} />
+        Communities
       </Link>
 
       {/* Loading Animations */}
