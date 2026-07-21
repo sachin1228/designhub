@@ -539,7 +539,18 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
         c.id === activeCommunityId ? { ...c, message_count: 0 } : c
       );
       if (sidebarStore.data) {
-        sidebarStore.data = { ...sidebarStore.data, communities: updated };
+        // Preserve the optimistic last_read_at from sidebarStore — do not
+        // overwrite it with the stale value in React state.
+        const storeById = new Map(
+          sidebarStore.data.communities.map((c) => [c.id, c])
+        );
+        sidebarStore.data = {
+          ...sidebarStore.data,
+          communities: updated.map((c) => ({
+            ...c,
+            last_read_at: storeById.get(c.id)?.last_read_at ?? c.last_read_at,
+          })),
+        };
       }
       return updated;
     });
@@ -618,7 +629,21 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
               );
 
               if (sidebarStore.data) {
-                sidebarStore.data = { ...sidebarStore.data, communities: updated };
+                // Preserve optimistic last_read_at from sidebarStore so that
+                // real-time message arrivals don't overwrite it with stale
+                // React state, which would cause the unread divider to
+                // reappear on return visits.
+                const storeById = new Map(
+                  sidebarStore.data.communities.map((c) => [c.id, c])
+                );
+                sidebarStore.data = {
+                  ...sidebarStore.data,
+                  communities: updated.map((c) => ({
+                    ...c,
+                    last_read_at:
+                      storeById.get(c.id)?.last_read_at ?? c.last_read_at,
+                  })),
+                };
               }
 
               return updated;
@@ -670,7 +695,19 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
         c.id === id ? { ...c, message_count: 0 } : c
       );
       if (sidebarStore.data) {
-        sidebarStore.data = { ...sidebarStore.data, communities: updated };
+        // Merge with sidebarStore so the optimistic last_read_at advancement
+        // written above is not overwritten by the stale value in React state.
+        // Without this, every return visit would re-show the unread divider.
+        const storeById = new Map(
+          sidebarStore.data.communities.map((c) => [c.id, c])
+        );
+        sidebarStore.data = {
+          ...sidebarStore.data,
+          communities: updated.map((c) => ({
+            ...c,
+            last_read_at: storeById.get(c.id)?.last_read_at ?? c.last_read_at,
+          })),
+        };
       }
       return updated;
     });
