@@ -1035,7 +1035,7 @@ export function CommunityChat({
                       className="flex items-center gap-3 py-2 my-2 w-full"
                     >
                       <div className="flex-1 h-px bg-border/60" />
-                      <span className="font-body text-xs text-foreground-muted bg-surface-raised rounded-full px-4 py-1 shadow-sm select-none whitespace-nowrap">
+                      <span className="font-body text-xs text-foreground-muted bg-accent/15 rounded-full px-4 py-1 shadow-sm select-none whitespace-nowrap">
                         {unreadDisplayCount > 0
                           ? `${unreadDisplayCount} unread message${unreadDisplayCount !== 1 ? "s" : ""}`
                           : "New messages"}
