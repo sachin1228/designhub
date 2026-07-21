@@ -83,7 +83,7 @@ export async function POST() {
       continue;
     }
 
-    for (const row of (rows ?? [])) {
+    for (const row of (rows ?? []) as Record<string, string | null>[]) {
       const url: string | null = row[column];
       if (!url) continue;
 
