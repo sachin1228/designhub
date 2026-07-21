@@ -2,15 +2,10 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
 
-const TABLE_LOOKUP: Record<string, { table: string; idCol: string }> = {
-  city:             { table: "cities",            idCol: "id" },
-  sector:           { table: "design_sectors",    idCol: "id" },
-  interest:         { table: "design_interests",  idCol: "id" },
-  company:          { table: "companies",         idCol: "id" },
-  experience_level: { table: "experience_levels", idCol: "id" },
-};
-
-/** Admin-only: returns all communities with resolved images + member/message counts */
+/** Admin-only: returns all communities with member + message counts.
+ *  image_url is read directly from the communities table — it is populated
+ *  at upsert time by the auto-join flow and is the single source of truth.
+ */
 export async function GET() {
   try { await requireSession("admin"); } catch (e) { return e as Response; }
 
@@ -27,35 +22,7 @@ export async function GET() {
   }
   if (!communities?.length) return NextResponse.json({ communities: [] });
 
-  // ── Resolve image_url from master tables (same logic as user-facing /api/communities/all) ──
-  const byType: Record<string, { id: string; reference_id: string }[]> = {};
-  for (const c of communities) {
-    if (!byType[c.type]) byType[c.type] = [];
-    byType[c.type].push({ id: c.id, reference_id: c.reference_id });
-  }
-
-  const masterImageMap: Record<string, string | null> = {};
-
-  await Promise.all(
-    Object.entries(byType).map(async ([type, items]) => {
-      const lookup = TABLE_LOOKUP[type];
-      if (!lookup) return;
-
-      const { data: rows } = await db
-        .from(lookup.table as any)
-        .select(`${lookup.idCol}, image_url`)
-        .in(lookup.idCol, items.map((i) => i.reference_id));
-
-      const imgMap = Object.fromEntries(
-        (rows ?? []).map((r: any) => [r[lookup.idCol], r.image_url ?? null])
-      );
-      for (const item of items) {
-        masterImageMap[item.id] = imgMap[item.reference_id] ?? null;
-      }
-    })
-  );
-
-  // ── Member + message counts (parallel) ──────────────────────────────────────
+  // Member + message counts in parallel
   const [memberCounts, messageCounts] = await Promise.all([
     Promise.all(
       communities.map((c) =>
@@ -84,8 +51,7 @@ export async function GET() {
     id:            c.id,
     name:          c.name,
     type:          c.type,
-    // prefer master-table image, fall back to communities.image_url
-    image_url:     masterImageMap[c.id] ?? c.image_url ?? null,
+    image_url:     c.image_url ?? null,
     reference_id:  c.reference_id,
     created_at:    c.created_at,
     member_count:  memberCountMap[c.id]  ?? 0,
