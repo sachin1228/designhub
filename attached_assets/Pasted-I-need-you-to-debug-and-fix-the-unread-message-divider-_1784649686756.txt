@@ -1,0 +1,1029 @@
+I need you to debug and fix the unread-message divider in my community chat.
+
+IMPORTANT: You have no previous context, so first READ the existing implementation carefully before changing anything.
+
+Start by inspecting at minimum:
+
+- CommunityChat.tsx
+- CommunitiesPanel.tsx
+- lib/communities/cache.ts
+- community messages API
+- mark-read API / last_read_at logic
+- server/SSR community data
+- community page that passes SSR props
+
+Also search globally for:
+
+lastReadAtOnOpen
+unreadAtOpenRef
+unreadDisplayCount
+countedUnreadIdsRef
+snapshotReady
+initialMessagesReady
+initialPositionResolved
+last_read_at
+message_count
+markReadOnServer
+
+DO NOT immediately rewrite the feature.
+
+First understand the current data lifecycle.
+
+============================================================
+WHAT THIS FEATURE IS SUPPOSED TO DO
+============================================================
+
+I want WhatsApp-style unread behavior.
+
+Example:
+
+There are old/read messages:
+
+message 1
+message 2
+message 3
+
+Then 8 messages arrived while I was away.
+
+Sidebar shows:
+
+8 unread
+
+
+When I open the community, the timeline should show:
+
+message 1
+message 2
+message 3
+
+----------- 8 unread messages -----------
+
+message 4
+message 5
+message 6
+message 7
+message 8
+message 9
+message 10
+message 11
+
+
+The divider must be inserted immediately BEFORE the FIRST message
+that was unread when the community was opened.
+
+
+============================================================
+CURRENT BUG
+============================================================
+
+RIGHT NOW THE UNREAD DIVIDER IS NOT SHOWING AT ALL.
+
+This is the current regression I need fixed.
+
+Do NOT assume the CSS/divider component itself is the problem.
+
+This feature was previously showing the divider.
+
+The regression happened after changes involving:
+
+- optimistic last_read_at updates
+- message_count being cleared immediately
+- live unreadDisplayCount
+- countedUnreadIdsRef
+- fast-path unread initialization
+
+So investigate the OPENING STATE lifecycle first.
+
+
+============================================================
+IMPORTANT EXISTING UX THAT MUST NOT BE BROKEN
+============================================================
+
+Several previous problems have already been fixed.
+
+DO NOT regress these.
+
+
+1. CHAT MUST NOT OPEN AT TOP AND THEN JUMP
+
+Previously:
+
+open chat
+→ top of messages appears
+→ wait 1–2 seconds
+→ jump to unread divider
+
+That was bad.
+
+The first visible frame should already be correctly positioned.
+
+
+2. SHORT CHATS ARE BOTTOM ALIGNED
+
+If messages don't fill the viewport:
+
+empty space
+empty space
+empty space
+
+message
+message
+
+composer
+
+Messages should naturally sit above the composer.
+
+Do not top-align short conversations.
+
+
+3. LONG CHAT WITH UNREAD MESSAGES
+
+If the conversation overflows:
+
+position the initial viewport around the unread boundary.
+
+Do not automatically go to latest.
+
+
+4. NO UNREAD
+
+If there is no unread boundary:
+
+long chat → open at latest/bottom
+
+short chat → naturally bottom aligned
+
+
+5. DO NOT ADD ARTIFICIAL BOTTOM SPACERS
+
+We do not need fake blank scroll content.
+
+
+============================================================
+IMPORTANT STATE MODEL
+============================================================
+
+There are TWO different versions of read/unread state during
+navigation.
+
+This distinction is extremely important.
+
+
+A) PRE-NAVIGATION / OPENING STATE
+
+This tells CommunityChat what was unread when I clicked the community.
+
+Example:
+
+lastReadAt = OLD timestamp
+unreadCount = 8
+
+
+B) POST-NAVIGATION / CURRENT SIDEBAR STATE
+
+As soon as I open the community, the sidebar can optimistically become:
+
+lastReadAt = NOW
+unreadCount = 0
+
+
+These are BOTH correct.
+
+But they serve completely different purposes.
+
+
+The CURRENT chat needs A.
+
+The sidebar / NEXT navigation needs B.
+
+
+============================================================
+LIKELY ROOT CAUSE TO INVESTIGATE
+============================================================
+
+The current implementation captures OLD last_read_at, but then
+handleNavigate also optimistically changes:
+
+message_count = 0
+last_read_at = now
+
+before CommunityChat finishes initializing.
+
+If CommunityChat later reads:
+
+sidebarStore.message_count
+
+to determine how many messages WERE unread when the chat opened,
+it will see:
+
+0
+
+because the sidebar has already been marked read.
+
+That can make the unread divider disappear completely.
+
+
+DO NOT reconstruct opening unread state from sidebarStore AFTER the
+sidebar has already been mutated.
+
+
+============================================================
+FIX: CAPTURE A COMPLETE OPENING SNAPSHOT
+============================================================
+
+Before changing ANY read state in handleNavigate, capture BOTH:
+
+1. old last_read_at
+2. old message_count
+
+
+Use one object.
+
+Conceptually:
+
+type UnreadOpenSnapshot = {
+    lastReadAt: string | null;
+    unreadCount: number;
+};
+
+
+Maintain something like:
+
+const unreadOpenSnapshot =
+    new Map<string, UnreadOpenSnapshot>();
+
+
+When user clicks community:
+
+const community =
+    sidebarStore.data?.communities.find(c => c.id === id);
+
+
+FIRST:
+
+unreadOpenSnapshot.set(id, {
+    lastReadAt: community?.last_read_at ?? null,
+    unreadCount: community?.message_count ?? 0,
+});
+
+
+ONLY AFTER THAT:
+
+optimistically update sidebar:
+
+message_count = 0
+last_read_at = now
+
+
+Then navigate.
+
+Then PATCH /read in the background.
+
+
+============================================================
+CORRECT ORDER
+============================================================
+
+The navigation lifecycle should be:
+
+USER CLICKS COMMUNITY
+        ↓
+capture PRE-MUTATION snapshot:
+
+{
+    lastReadAt: OLD timestamp,
+    unreadCount: 8
+}
+        ↓
+optimistically update sidebar:
+
+{
+    lastReadAt: NOW,
+    message_count: 0
+}
+        ↓
+router.push()
+        ↓
+CommunityChat consumes PRE-MUTATION snapshot
+        ↓
+find first unread message
+        ↓
+render:
+
+-------- 8 unread messages --------
+
+        ↓
+PATCH /read continues in background
+
+
+This separation is critical.
+
+
+============================================================
+COMMUNITYCHAT SHOULD CONSUME THE OPENING SNAPSHOT
+============================================================
+
+When CommunityChat initializes for communityId:
+
+copy/consume the opening snapshot.
+
+For example:
+
+const openingSnapshot =
+    unreadOpenSnapshot.get(communityId);
+
+
+Store it in a component ref if necessary:
+
+openingSnapshotRef.current = openingSnapshot;
+
+
+Then remove the module-level map entry after safely copying it:
+
+unreadOpenSnapshot.delete(communityId);
+
+
+Do NOT immediately lose the snapshot if a cold-cache fallback still
+needs it.
+
+
+============================================================
+CALCULATING THE FIRST UNREAD MESSAGE
+============================================================
+
+Use:
+
+openingSnapshot.lastReadAt
+
+
+Example:
+
+const lastReadTime =
+    openingSnapshot.lastReadAt === null
+        ? -Infinity
+        : new Date(openingSnapshot.lastReadAt).getTime();
+
+
+const unreadMsgs = messages.filter(
+    m =>
+        !m.id.startsWith("temp-") &&
+        m.user_id !== currentUserId &&
+        new Date(m.created_at).getTime() > lastReadTime
+);
+
+
+Then:
+
+firstUnreadMsgId =
+    unreadMsgs[0]?.id ?? null;
+
+
+The divider is rendered immediately BEFORE that message.
+
+
+============================================================
+INITIAL COUNT
+============================================================
+
+The initial displayed count should come from:
+
+openingSnapshot.unreadCount
+
+
+NOT from the already-mutated:
+
+sidebarStore.message_count
+
+
+Example:
+
+openingSnapshot.unreadCount = 8
+
+sidebarStore.message_count = 0
+
+
+This is EXPECTED.
+
+The current chat should show:
+
+8 unread messages
+
+
+The sidebar should simultaneously show:
+
+0
+
+
+There is no contradiction.
+
+They represent different moments.
+
+
+============================================================
+IMPORTANT CACHE SAFETY
+============================================================
+
+If:
+
+openingSnapshot.unreadCount > 0
+
+but cached messages produce:
+
+unreadMsgs.length === 0
+
+DO NOT freeze a zero/no-divider snapshot.
+
+That means the cached messages are stale/incomplete.
+
+Wait for the initial incremental/catch-up fetch.
+
+But DO NOT show the conversation at scrollTop=0 while waiting.
+
+Preserve the existing hidden-before-positioned behavior so the user
+doesn't see:
+
+top
+→ wait
+→ jump
+
+
+After catch-up finishes, calculate the boundary again using the SAME:
+
+openingSnapshot.lastReadAt
+openingSnapshot.unreadCount
+
+
+Do not use the mutated sidebar values.
+
+
+============================================================
+HARD REFRESH / DIRECT URL
+============================================================
+
+A hard browser refresh is different because there may be no client
+opening snapshot.
+
+Keep the existing SSR fallback.
+
+SSR should provide enough information such as:
+
+initialLastReadAt
+initial unread count
+
+to calculate the unread boundary on a direct URL/hard refresh.
+
+
+Do NOT break SSR while fixing client navigation.
+
+
+============================================================
+SECOND REQUIRED BEHAVIOR — LIVE WHATSAPP COUNT
+============================================================
+
+Once the divider exists:
+
+-------- 8 unread messages --------
+
+
+If another user sends a genuinely NEW message while I am still
+inside that same chat:
+
+the divider should become:
+
+-------- 9 unread messages --------
+
+
+Another incoming message:
+
+-------- 10 unread messages --------
+
+
+BUT THE DIVIDER POSITION MUST NOT MOVE.
+
+
+============================================================
+SEPARATE POSITION FROM COUNT
+============================================================
+
+The initial:
+
+firstUnreadMsgId
+
+is frozen for the current unread session.
+
+
+The:
+
+unreadDisplayCount
+
+is live.
+
+
+Example:
+
+OPEN:
+
+firstUnreadMsgId = messageA
+unreadDisplayCount = 8
+
+
+NEW MESSAGE:
+
+firstUnreadMsgId = messageA
+unreadDisplayCount = 9
+
+
+NEW MESSAGE:
+
+firstUnreadMsgId = messageA
+unreadDisplayCount = 10
+
+
+Do not recalculate the first unread boundary when realtime messages
+arrive.
+
+
+============================================================
+PREVENT DOUBLE COUNTING
+============================================================
+
+Messages can arrive through:
+
+- realtime INSERT
+- polling
+- reconnect catch-up
+- incremental fetch
+- focus/visibility catch-up
+
+
+Track message IDs that already contributed to the unread count.
+
+Something like:
+
+const countedUnreadIdsRef =
+    useRef<Set<string>>(new Set());
+
+
+Initialize it with the initial unread messages:
+
+countedUnreadIdsRef.current =
+    new Set(initialUnreadMessages.map(m => m.id));
+
+
+Then when a genuinely new incoming message is merged:
+
+if (
+    existingUnreadSession &&
+    message.user_id !== currentUserId &&
+    !countedUnreadIdsRef.current.has(message.id)
+) {
+    countedUnreadIdsRef.current.add(message.id);
+
+    setUnreadDisplayCount(prev => prev + 1);
+}
+
+
+My own messages must NEVER increase the count.
+
+
+The same message coming from realtime and then polling must only
+increase the count ONCE.
+
+
+============================================================
+THIRD REQUIRED BEHAVIOR — OLD DIVIDER MUST NOT RETURN
+============================================================
+
+Another previous bug was:
+
+A has 8 unread
+→ open A
+→ divider shows 8
+→ go to B
+→ return to A
+→ old 8-unread divider appears again
+→ only refresh removes it
+
+
+That must NOT happen.
+
+
+When I open A, it is marked read.
+
+The sidebar/client state should therefore be optimistically updated:
+
+message_count = 0
+last_read_at = now
+
+
+When I leave A, the current unread SESSION must be destroyed.
+
+
+If I return to A without receiving anything new:
+
+NO DIVIDER.
+
+
+============================================================
+IF NEW MESSAGES ARRIVE WHILE AWAY
+============================================================
+
+Example:
+
+A had 8 unread.
+
+Open A.
+
+Read/open them.
+
+Go to B.
+
+
+While in B, 3 new messages arrive in A.
+
+Sidebar:
+
+3 unread
+
+
+Open A again.
+
+Expected:
+
+--------- 3 unread messages ---------
+
+before the FIRST of those three messages.
+
+
+NOT:
+
+8
+
+NOT:
+
+11
+
+
+This is a brand-new unread session.
+
+
+============================================================
+RESET SESSION STATE ON COMMUNITY CHANGE
+============================================================
+
+Do not assume the React component always fully unmounts.
+
+Next.js may reuse CommunityChat with a different communityId.
+
+
+On communityId change reset ALL session-local unread state:
+
+- unreadAtOpenRef / firstUnreadMsgId
+- unreadDisplayCount
+- countedUnreadIdsRef
+- snapshotReady
+- initialScrollDoneRef
+- initialPositionResolved
+- any opening-snapshot component ref
+- any other unread-session-only state
+
+
+Then initialize the NEW community from its fresh opening snapshot.
+
+
+============================================================
+IMPORTANT: ACTIVE COMMUNITY EFFECT
+============================================================
+
+CommunitiesPanel may also have an effect watching activeCommunityId.
+
+Make sure that effect does NOT overwrite the PRE-MUTATION snapshot
+created by handleNavigate.
+
+
+For normal click navigation:
+
+handleNavigate's snapshot must win.
+
+
+The activeCommunityId effect must not later replace:
+
+{
+    old lastReadAt,
+    unreadCount: 8
+}
+
+with:
+
+{
+    lastReadAt: now,
+    unreadCount: 0
+}
+
+
+============================================================
+DEBUG BEFORE CLAIMING FIXED
+============================================================
+
+Temporarily add development logs.
+
+
+BEFORE mutating sidebar in handleNavigate:
+
+console.log("[UnreadOpen CAPTURE]", {
+    communityId: id,
+    lastReadAt: community?.last_read_at,
+    unreadCount: community?.message_count,
+});
+
+
+When CommunityChat consumes it:
+
+console.log("[UnreadOpen CONSUME]", {
+    communityId,
+    openingSnapshot,
+    sidebarNow:
+        sidebarStore.data?.communities.find(
+            c => c.id === communityId
+        ),
+});
+
+
+For 8 unread, I expect:
+
+CAPTURE:
+
+{
+    unreadCount: 8,
+    lastReadAt: OLD_TIMESTAMP
+}
+
+
+CONSUME:
+
+openingSnapshot:
+
+{
+    unreadCount: 8,
+    lastReadAt: OLD_TIMESTAMP
+}
+
+
+while current sidebar state can already be:
+
+{
+    message_count: 0,
+    last_read_at: NEW_TIMESTAMP
+}
+
+
+That is CORRECT.
+
+
+Then log:
+
+console.log("[UnreadBoundary]", {
+    firstUnreadMsgId,
+    openingUnreadCount: openingSnapshot?.unreadCount,
+    matchedUnreadMessages: unreadMsgs.length,
+});
+
+
+For an 8-unread chat:
+
+firstUnreadMsgId MUST NOT be null.
+
+
+============================================================
+ACCEPTANCE TEST 1 — CURRENT REGRESSION
+============================================================
+
+Have exactly 8 unread messages.
+
+Sidebar shows:
+
+8
+
+
+Click community.
+
+Expected immediately:
+
+--------- 8 unread messages ---------
+
+
+The divider MUST appear.
+
+No refresh.
+
+
+============================================================
+ACCEPTANCE TEST 2 — LIVE COUNT
+============================================================
+
+Open with:
+
+8 unread
+
+
+Another user sends a message while I remain inside the chat.
+
+Expected:
+
+9 unread
+
+
+Another:
+
+10 unread
+
+
+Divider chronological position stays unchanged.
+
+
+============================================================
+ACCEPTANCE TEST 3 — OWN MESSAGE
+============================================================
+
+Open with:
+
+8 unread
+
+
+I send a message myself.
+
+Expected:
+
+still 8
+
+
+============================================================
+ACCEPTANCE TEST 4 — DUPLICATE DELIVERY
+============================================================
+
+Open with:
+
+8
+
+
+Realtime receives message X.
+
+Expected:
+
+9
+
+
+Polling later receives the SAME X.
+
+Expected:
+
+still 9
+
+
+NOT 10.
+
+
+============================================================
+ACCEPTANCE TEST 5 — RETURN WITHOUT NEW MESSAGES
+============================================================
+
+A has 8 unread.
+
+Open A.
+
+Go to B.
+
+Return to A without receiving anything new.
+
+Expected:
+
+NO DIVIDER.
+
+
+No browser refresh should be required.
+
+
+============================================================
+ACCEPTANCE TEST 6 — RETURN WITH NEW MESSAGES
+============================================================
+
+A had 8.
+
+Open A.
+
+Go to B.
+
+Receive exactly 3 new messages in A.
+
+Sidebar:
+
+3
+
+
+Open A.
+
+Expected:
+
+--------- 3 unread messages ---------
+
+
+at the NEW unread boundary.
+
+
+============================================================
+ACCEPTANCE TEST 7 — SHORT CHAT
+============================================================
+
+If the entire conversation fits in the message viewport:
+
+keep the timeline bottom-aligned above the composer.
+
+Do NOT force the unread divider to the top.
+
+
+============================================================
+ACCEPTANCE TEST 8 — LONG CHAT
+============================================================
+
+If the conversation is scrollable and has unread messages:
+
+the first visible frame should already be positioned at/around the
+unread boundary.
+
+DO NOT show the top first and jump 1–2 seconds later.
+
+
+============================================================
+FINAL ARCHITECTURE
+============================================================
+
+Think about this as an UNREAD SESSION.
+
+
+ON CLICK:
+
+capture PRE-MUTATION:
+
+{
+    lastReadAt,
+    unreadCount
+}
+
+
+THEN:
+
+optimistically mark sidebar read.
+
+
+CURRENT CHAT:
+
+uses PRE-MUTATION snapshot.
+
+
+UNREAD SESSION:
+
+firstUnreadMsgId = frozen
+unreadDisplayCount = live + deduplicated
+
+
+LEAVE COMMUNITY:
+
+destroy session.
+
+
+NEXT OPEN:
+
+create completely fresh snapshot.
+
+
+============================================================
+IMPORTANT
+============================================================
+
+Do not solve this by:
+
+- CSS hiding the divider
+- adding setTimeout hacks
+- reverting the working scroll behavior
+- removing optimistic sidebar updates
+- deriving opening unread count from sidebar AFTER it has been zeroed
+
+
+The current primary regression is:
+
+THE DIVIDER DOES NOT APPEAR AT ALL.
+
+Fix the PRE-MUTATION vs POST-MUTATION state separation first.
+
+After implementing:
+
+1. Run TypeScript checks.
+2. Run build if practical.
+3. Tell me exactly which files changed.
+4. Tell me what caused the divider to disappear.
+5. Tell me how the pre-navigation snapshot is now preserved.
+6. Tell me how live 8→9→10 counting works without moving the divider.
+7. Tell me how duplicate realtime/polling delivery is deduplicated.
+8. Tell me how returning to a read community avoids restoring the old divider.
+
+Do not change unrelated community functionality.
