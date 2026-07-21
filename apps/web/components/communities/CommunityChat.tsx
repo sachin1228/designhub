@@ -855,13 +855,19 @@ export function CommunityChat({
   const realMessages = messages.filter((m) => !m.id.startsWith("temp-"));
   const firstUnreadMsgId: string | null = (() => {
     if (lastReadAt === undefined) return null; // not yet known
+    // Only messages from OTHER users are "unread" — you obviously read your own
+    // messages when you sent them. This prevents the divider from landing on a
+    // message you sent yourself, which was causing it to appear at the top when
+    // your own message happened to be the oldest one after lastReadAt.
     if (lastReadAt === null) {
-      // Never read — all messages are unread; put divider before first message
-      return realMessages[0]?.id ?? null;
+      // Community never read before — first message from another user is the boundary
+      return realMessages.find((m) => m.user_id !== currentUserId)?.id ?? null;
     }
     const lastReadTime = new Date(lastReadAt).getTime();
     const first = realMessages.find(
-      (m) => new Date(m.created_at).getTime() > lastReadTime
+      (m) =>
+        m.user_id !== currentUserId &&
+        new Date(m.created_at).getTime() > lastReadTime
     );
     return first?.id ?? null;
   })();
