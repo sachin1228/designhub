@@ -155,8 +155,6 @@ export function CommunityChat({
   const [lastReadAt, setLastReadAt] = useState<string | null | undefined>(undefined);
   /** When true the divider is hidden even if firstUnreadMsgId is non-null. Reset on community change. */
   const [dividerDismissed, setDividerDismissed] = useState(false);
-  /** True while the inline unread divider element is inside the visible viewport. */
-  const [dividerInView, setDividerInView] = useState(false);
 
   /**
    * Tracks the *currently mounted* communityId.
@@ -505,18 +503,35 @@ export function CommunityChat({
       return;
     }
 
-    // A new message arrived (realtime / polling) — scroll only if already near bottom
+    // A new message arrived (realtime / polling).
+    // WhatsApp-style: if there is an unread divider, always scroll so it is
+    // visible near the top of the viewport (same as the initial-load behaviour).
+    // Only fall back to the "near bottom → keep at bottom" path when there is
+    // no divider (user has already read everything up to this point).
     const container = scrollContainerRef.current;
     if (!container) return;
-    const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-    if (distFromBottom < 100) {
-      // User is live at the bottom — dismiss the divider (they're reading in real-time)
-      setDividerDismissed(true);
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      // User is scrolled up reading history — show the ↓ button instead
-      setShowScrollToBottom(true);
-    }
+    const distFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    requestAnimationFrame(() => {
+      const divider = unreadDividerRef.current;
+      const cont = scrollContainerRef.current;
+      if (!cont) return;
+
+      if (divider) {
+        // Divider exists in DOM — scroll to it (80 px of context above, like initial load)
+        const dividerRect = divider.getBoundingClientRect();
+        const contRect = cont.getBoundingClientRect();
+        const relTop = dividerRect.top - contRect.top + cont.scrollTop;
+        cont.scrollTo({ top: Math.max(0, relTop - 80), behavior: "smooth" });
+      } else if (distFromBottom < 100) {
+        // No divider and user was already near the bottom — keep them there
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        // No divider and user is reading history — surface the ↓ button
+        setShowScrollToBottom(true);
+      }
+    });
   }, [messages, lastReadAt]);
 
   // ─── Show / hide scroll-to-bottom button on manual scroll ────────────────
@@ -536,16 +551,12 @@ export function CommunityChat({
   // dismiss it so the chat looks clean.  Resets whenever communityId changes.
   useEffect(() => {
     const el = unreadDividerRef.current;
-    if (!el || dividerDismissed) {
-      setDividerInView(false);
-      return;
-    }
+    if (!el || dividerDismissed) return;
 
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setDividerInView(entry.isIntersecting);
         if (entry.isIntersecting) {
           timer = setTimeout(() => setDividerDismissed(true), 1500);
         } else {
@@ -558,7 +569,6 @@ export function CommunityChat({
     return () => {
       observer.disconnect();
       if (timer) clearTimeout(timer);
-      setDividerInView(false);
     };
     // Re-run when divider mounts/unmounts (firstUnreadMsgId changes) or community changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1178,34 +1188,6 @@ export function CommunityChat({
               </>
             )}
           </div>
-
-          {/* Sticky unread pill — WhatsApp-style: floats at the top of the
-              visible message area whenever the inline divider is off-screen
-              below the current scroll position. Clicking scrolls to it. */}
-          {firstUnreadMsgId && !dividerDismissed && !dividerInView && (
-            <button
-              onClick={() => {
-                const container = scrollContainerRef.current;
-                const divider = unreadDividerRef.current;
-                if (divider && container) {
-                  const dividerRect = divider.getBoundingClientRect();
-                  const containerRect = container.getBoundingClientRect();
-                  const relativeTop =
-                    dividerRect.top - containerRect.top + container.scrollTop;
-                  container.scrollTo({
-                    top: Math.max(0, relativeTop - 80),
-                    behavior: "smooth",
-                  });
-                }
-              }}
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-accent/80 text-xs font-body shadow-lg backdrop-blur-sm hover:bg-accent transition-colors whitespace-nowrap select-none"
-              aria-label="Jump to unread messages"
-            >
-              {unreadDisplayCount > 0
-                ? `${unreadDisplayCount} unread message${unreadDisplayCount !== 1 ? "s" : ""}`
-                : "New messages"}
-            </button>
-          )}
 
           {/* Scroll-to-bottom button — visible when user is scrolled up */}
           {showScrollToBottom && (
