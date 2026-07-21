@@ -37,6 +37,8 @@ type Community = CachedSidebarCommunity;
  * set the value (hasOwnProperty check via .has()).
  */
 async function markReadOnServer(communityId: string) {
+  // Capture the timestamp before the fetch so it matches what the server stores.
+  const newLastReadAt = new Date().toISOString();
   try {
     const res = await fetch(`/api/communities/${communityId}/read`, { method: "PATCH" });
     if (res.ok) {
@@ -44,6 +46,18 @@ async function markReadOnServer(communityId: string) {
       // Only use as fallback — don't overwrite a value the sync path already set.
       if (!lastReadAtOnOpen.has(communityId) && "previousLastReadAt" in data) {
         lastReadAtOnOpen.set(communityId, data.previousLastReadAt ?? null);
+      }
+      // Update sidebarStore with the new last_read_at so that if the user
+      // navigates away and comes back, handleNavigate captures the updated
+      // value instead of the stale pre-read timestamp. Without this, every
+      // return visit would re-show the same unread divider.
+      if (sidebarStore.data) {
+        sidebarStore.data = {
+          ...sidebarStore.data,
+          communities: sidebarStore.data.communities.map((c) =>
+            c.id === communityId ? { ...c, last_read_at: newLastReadAt } : c
+          ),
+        };
       }
     }
   } catch {}
