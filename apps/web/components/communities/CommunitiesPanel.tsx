@@ -511,6 +511,22 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
         // "last_read_at" in snapshot only when the sidebar API has been fetched at
         // least once; fall back gracefully if the field is absent.
         lastReadAtOnOpen.set(activeCommunityId, snapshot.last_read_at ?? null);
+
+        // Optimistically advance last_read_at in sidebarStore to NOW so that
+        // if the user returns to this community before markReadOnServer resolves,
+        // handleNavigate re-snapshots the fresh timestamp instead of the stale
+        // pre-read one — preventing the unread divider from reappearing.
+        const optimisticReadAt = new Date().toISOString();
+        if (sidebarStore.data) {
+          sidebarStore.data = {
+            ...sidebarStore.data,
+            communities: sidebarStore.data.communities.map((c) =>
+              c.id === activeCommunityId
+                ? { ...c, last_read_at: optimisticReadAt }
+                : c
+            ),
+          };
+        }
       }
 
       // markReadOnServer is now async and stores previousLastReadAt as a fallback
@@ -632,6 +648,19 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
       const snapshot = sidebarStore.data?.communities.find((c) => c.id === id);
       if (snapshot) {
         lastReadAtOnOpen.set(id, snapshot.last_read_at ?? null);
+
+        // Optimistically advance last_read_at in sidebarStore to NOW so that
+        // if the user returns here before markReadOnServer resolves, the
+        // re-snapshot uses the fresh timestamp and the divider stays gone.
+        const optimisticReadAt = new Date().toISOString();
+        if (sidebarStore.data) {
+          sidebarStore.data = {
+            ...sidebarStore.data,
+            communities: sidebarStore.data.communities.map((c) =>
+              c.id === id ? { ...c, last_read_at: optimisticReadAt } : c
+            ),
+          };
+        }
       }
     }
 
