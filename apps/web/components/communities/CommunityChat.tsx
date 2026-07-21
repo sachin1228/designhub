@@ -165,12 +165,6 @@ export function CommunityChat({
    *  so the divider element appears in the DOM before the initial scroll runs. */
   const [snapshotReady, setSnapshotReady] = useState(false);
   /**
-   * Count of messages from other users that arrived via realtime AFTER the
-   * unread snapshot was frozen. Added to unreadAtOpenRef.count so the divider
-   * label grows as new messages land while you're in the chat.
-   */
-  const [liveUnreadExtra, setLiveUnreadExtra] = useState(0);
-  /**
    * Flips to true only after the initial message fetch (msgPromise) resolves.
    * Used only by the FALLBACK path when the fast-path layout effect could not
    * compute the snapshot immediately (cold cache or stale cache safety check).
@@ -294,7 +288,6 @@ export function CommunityChat({
     unreadAtOpenRef.current = null;
     setSnapshotReady(false);
     setInitialPositionResolved(false);
-    setLiveUnreadExtra(0);
 
     const cachedMsgs = msgCache.get(communityId);
     const hasOpeningLastReadAt = lastReadAtOnOpen.has(communityId);
@@ -849,13 +842,6 @@ export function CommunityChat({
             );
             msgCache.set(communityId, next);
 
-            // If the unread snapshot is already frozen and this message is from
-            // another user, grow the divider label in real time so it reflects
-            // every new message that arrives while the user is in this chat.
-            if (newRow.user_id !== currentUserId && unreadAtOpenRef.current !== null) {
-              setLiveUnreadExtra((prev) => prev + 1);
-            }
-
             // ── Lazy sender profile fetch ─────────────────────────────────
             // If the sender is unknown (not in membersRef yet — e.g. they just
             // joined), fire a single background request to fetch their profile.
@@ -1061,19 +1047,25 @@ export function CommunityChat({
     return acc;
   }, []);
 
-  // ─── Unread divider: frozen snapshot taken at open time ──────────────────
-  // firstUnreadMsgId and unreadDisplayCount come exclusively from the snapshot
-  // captured when lastReadAt was first established for this chat session.
-  // They NEVER change while this community is open — new realtime messages,
-  // server read-state updates, or anything else cannot move or hide the divider.
-  // Temp (optimistic) messages are excluded so they never act as the boundary.
+  // ─── Unread divider ───────────────────────────────────────────────────────
+  // firstUnreadMsgId is frozen at open time so the divider position never
+  // moves while you're reading. unreadDisplayCount is computed live from the
+  // current message list so it grows correctly as new messages arrive via
+  // realtime — without the double-counting bug that a setState-inside-updater
+  // approach causes in React Strict Mode.
   const realMessages = messages.filter((m) => !m.id.startsWith("temp-"));
   const firstUnreadMsgId: string | null = snapshotReady
     ? (unreadAtOpenRef.current?.firstMsgId ?? null)
     : null;
-  const unreadDisplayCount: number = snapshotReady
-    ? (unreadAtOpenRef.current?.count ?? 0) + liveUnreadExtra
-    : 0;
+  const unreadDisplayCount: number =
+    snapshotReady && lastReadAt !== undefined
+      ? realMessages.filter(
+          (m) =>
+            m.user_id !== currentUserId &&
+            (lastReadAt === null ||
+              new Date(m.created_at).getTime() > new Date(lastReadAt).getTime())
+        ).length
+      : 0;
 
   // Resolve display data: prefer live community state, fall back to sidebar
   // cache so the header renders immediately even before fetchMeta completes.
