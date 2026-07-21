@@ -418,11 +418,31 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
 
         setCommunities((prev) => {
           const prevMap = new Map(prev.map((c) => [c.id, c]));
+          // Snapshot sidebarStore communities so we can preserve optimistic
+          // last_read_at values that may be ahead of what the server returns.
+          // (markReadOnServer may still be in-flight when this fetch resolves.)
+          const storeById = new Map(
+            (sidebarStore.data?.communities ?? []).map((c) => [c.id, c])
+          );
           const currentActiveId = activeCommunityIdRef.current;
           const merged = fresh.map((server) => {
             const local = prevMap.get(server.id);
+            const stored = storeById.get(server.id);
+            // Keep the later of the server's and optimistic last_read_at so
+            // that an in-flight markReadOnServer is never rolled back.
+            const serverMs = server.last_read_at
+              ? new Date(server.last_read_at).getTime()
+              : -Infinity;
+            const storedMs = stored?.last_read_at
+              ? new Date(stored.last_read_at).getTime()
+              : -Infinity;
+            const bestLastReadAt =
+              !stored?.last_read_at || serverMs >= storedMs
+                ? server.last_read_at
+                : stored.last_read_at;
             return {
               ...server,
+              last_read_at: bestLastReadAt,
               // Active community is always 0 — user is reading it right now.
               // For others: never roll back a count already incremented by
               // realtime while this fetch was in-flight.
