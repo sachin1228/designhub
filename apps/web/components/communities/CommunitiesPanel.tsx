@@ -502,9 +502,12 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
       markReadOnServer(activeCommunityId);
     }
 
+    // Update last_read_at optimistically so that returning to this community
+    // uses the fresh timestamp as the boundary, not the old stale one.
+    const nowIso = new Date().toISOString();
     setCommunities((prev) => {
       const updated = prev.map((c) =>
-        c.id === activeCommunityId ? { ...c, message_count: 0 } : c
+        c.id === activeCommunityId ? { ...c, message_count: 0, last_read_at: nowIso } : c
       );
       if (sidebarStore.data) {
         sidebarStore.data = { ...sidebarStore.data, communities: updated };
@@ -619,10 +622,14 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
       }
     }
 
-    // STEP 2: Clear the unread badge immediately (optimistic UI).
+    // STEP 2: Clear the unread badge and update last_read_at immediately (optimistic UI).
+    // Updating last_read_at here is critical: if the user returns to this community
+    // before the next sidebar refresh, handleNavigate will capture this updated
+    // timestamp as the new baseline instead of reconstructing the stale old divider.
+    const nowIso = new Date().toISOString();
     setCommunities((prev) => {
       const updated = prev.map((c) =>
-        c.id === id ? { ...c, message_count: 0 } : c
+        c.id === id ? { ...c, message_count: 0, last_read_at: nowIso } : c
       );
       if (sidebarStore.data) {
         sidebarStore.data = { ...sidebarStore.data, communities: updated };

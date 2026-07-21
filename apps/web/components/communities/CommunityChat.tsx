@@ -182,11 +182,33 @@ export function CommunityChat({
    * Header, composer, and members panel remain visible throughout.
    */
   const [initialPositionResolved, setInitialPositionResolved] = useState(false);
+  /**
+   * The live count shown in the unread divider pill. Initialized from the
+   * snapshot's initial unread count. Can be incremented (never decremented)
+   * while the community is open when genuinely new messages arrive from
+   * other users. Kept separate from firstUnreadMsgId so the divider position
+   * never moves while the count grows (WhatsApp-style).
+   */
+  const [unreadDisplayCount, setUnreadDisplayCount] = useState(0);
   /** Set to true by the realtime INSERT handler before calling setMessages,
    *  so the messages-change effect knows a real insert just happened. */
   const realtimeInsertPendingRef = useRef(false);
   /** Captured by the INSERT handler: was the user near the bottom at that moment? */
   const realtimeWasNearBottomRef = useRef(false);
+  /**
+   * Tracks which message IDs have already been counted toward the current
+   * unread session's display count. Initialized from the initial unread set
+   * when the snapshot is frozen. Prevents double-counting the same message
+   * across realtime, polling, reconnect catch-up, and incremental fetch paths.
+   */
+  const countedUnreadIdsRef = useRef<Set<string>>(new Set());
+  /**
+   * Stable-ref wrapper around the countIncoming logic so it can be called
+   * from fetchMessages (a useCallback) and the realtime handler without
+   * adding extra deps. Updated every render so it always closes over current
+   * state setters and refs.
+   */
+  const countIncomingRef = useRef<(msg: Message) => void>(() => {});
 
   /**
    * Tracks the *currently mounted* communityId.
@@ -280,12 +302,28 @@ export function CommunityChat({
   // produce 0 unread (cache predates the unread messages), we don't freeze an
   // incorrect zero snapshot. Instead we stay hidden and let the incremental
   // fetch + fallback snapshot path handle it.
+  // ─── countIncoming: deduplicated live-count incrementer ──────────────────
+  // Updated every render so it always closes over the current setUnreadDisplayCount.
+  // Called by the realtime handler and incremental fetch merge paths.
+  // Accessed via a stable ref so fetchMessages/realtime closures never need it
+  // as an explicit dependency.
+  countIncomingRef.current = (msg: Message) => {
+    if (!unreadAtOpenRef.current?.firstMsgId) return; // no active unread session
+    if (msg.user_id === currentUserId) return;         // own message — never count
+    if (msg.id.startsWith("temp-")) return;             // optimistic bubble
+    if (countedUnreadIdsRef.current.has(msg.id)) return; // already counted
+    countedUnreadIdsRef.current.add(msg.id);
+    setUnreadDisplayCount((prev) => prev + 1);
+  };
+
   useIsomorphicLayoutEffect(() => {
     // ── Reset scroll / unread / visibility state for this community ──────────
     // These MUST be reset in the layout phase so the scroll layout effect (also
     // in the layout phase) sees a clean slate before snapshotReady flips true.
     initialScrollDoneRef.current = false;
     unreadAtOpenRef.current = null;
+    countedUnreadIdsRef.current = new Set();
+    setUnreadDisplayCount(0);
     setSnapshotReady(false);
     setInitialPositionResolved(false);
 
@@ -336,6 +374,10 @@ export function CommunityChat({
       firstMsgId: unreadMsgs[0]?.id ?? null,
       count: unreadMsgs.length,
     };
+    // Initialize the live count and the dedup set from the initial unread msgs
+    // so incoming messages can be counted without double-counting these ones.
+    countedUnreadIdsRef.current = new Set(unreadMsgs.map((m) => m.id));
+    setUnreadDisplayCount(unreadMsgs.length);
     // Trigger re-render so the divider element appears in the DOM; the scroll
     // layout effect below will then position the viewport before paint.
     setSnapshotReady(true);
@@ -429,6 +471,9 @@ export function CommunityChat({
             const existingIds = new Set(existing.map((m) => m.id));
             const toAdd = incoming.filter((m) => !existingIds.has(m.id));
             if (toAdd.length > 0) {
+              // Count any genuinely new messages toward the active unread session.
+              // countIncomingRef deduplicates across realtime/polling/reconnect paths.
+              toAdd.forEach((m) => countIncomingRef.current(m));
               const cacheSnapshot = [
                 ...existing.filter((m) => !m.id.startsWith("temp-")),
                 ...toAdd,
@@ -602,18 +647,10 @@ export function CommunityChat({
     const firstMsgId = unreadMsgs[0]?.id ?? null;
     const count = unreadMsgs.length;
 
-    console.log("[UnreadSnapshot CREATED]", {
-      communityId,
-      lastReadAt,
-      firstMsgId,
-      count,
-      messageCount: messages.length,
-      existsInMessages: firstMsgId
-        ? messages.some((m) => m.id === firstMsgId)
-        : "n/a",
-    });
-
     unreadAtOpenRef.current = { firstMsgId, count };
+    // Initialize the live count and the dedup set from the initial unread msgs.
+    countedUnreadIdsRef.current = new Set(unreadMsgs.map((m) => m.id));
+    setUnreadDisplayCount(count);
     // setSnapshotReady → re-render → divider element appears in DOM at the
     // correct position → Effect 2 fires and performs the initial scroll.
     setSnapshotReady(true);
@@ -810,6 +847,28 @@ export function CommunityChat({
             realtimeInsertPendingRef.current = true;
           }
 
+          // Resolve sender info OUTSIDE the setMessages updater so it is
+          // available for countIncomingRef (which calls setUnreadDisplayCount
+          // and cannot be invoked from inside another state-updater function).
+          const senderMember = membersRef.current.find(
+            (m) => m.user_id === newRow.user_id
+          );
+          const users = senderMember?.users ?? null;
+          const incoming: Message = {
+            id: newRow.id,
+            content: newRow.content,
+            created_at: newRow.created_at,
+            user_id: newRow.user_id,
+            users,
+            status: "sent",
+          };
+
+          // Count this message toward the active unread session.
+          // countIncomingRef guards against: own messages, no active session,
+          // and already-counted IDs — so duplicate events from polling or
+          // reconnect catch-up never inflate the count.
+          countIncomingRef.current(incoming);
+
           setMessages((prev) => {
             // Already in state (optimistic send or duplicate event) — skip.
             if (prev.some((m) => m.id === newRow.id)) return prev;
@@ -819,21 +878,6 @@ export function CommunityChat({
             const withoutTemp = prev.filter(
               (m) => !(m.id.startsWith("temp-") && m.user_id === newRow.user_id)
             );
-
-            // Resolve sender info from the members list we already have.
-            const senderMember = membersRef.current.find(
-              (m) => m.user_id === newRow.user_id
-            );
-            const users = senderMember?.users ?? null;
-
-            const incoming: Message = {
-              id: newRow.id,
-              content: newRow.content,
-              created_at: newRow.created_at,
-              user_id: newRow.user_id,
-              users,
-              status: "sent",
-            };
 
             const next = [...withoutTemp, incoming].sort(
               (a, b) =>
@@ -1057,9 +1101,11 @@ export function CommunityChat({
   const firstUnreadMsgId: string | null = snapshotReady
     ? (unreadAtOpenRef.current?.firstMsgId ?? null)
     : null;
-  const unreadDisplayCount: number = snapshotReady
-    ? (unreadAtOpenRef.current?.count ?? 0)
-    : 0;
+  // unreadDisplayCount is now a useState (declared above). It starts at 0,
+  // is set from the snapshot on open, and can be incremented by incoming
+  // messages from other users via countIncomingRef. When snapshotReady is
+  // false the divider does not render (firstUnreadMsgId is null) so the
+  // stale pre-snapshot value of 0 is never visible.
 
   // Resolve display data: prefer live community state, fall back to sidebar
   // cache so the header renders immediately even before fetchMeta completes.
