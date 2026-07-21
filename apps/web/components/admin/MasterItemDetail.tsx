@@ -25,8 +25,6 @@ interface MasterItemDetailProps {
   readOnly?: boolean;
 }
 
-import { compressImage } from "@/lib/compressImage";
-
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start gap-4 py-3 border-b border-border last:border-0">
