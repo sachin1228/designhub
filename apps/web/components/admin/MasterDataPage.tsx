@@ -5,6 +5,8 @@ import { Plus, Search, X, ChevronRight, ImagePlus } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import { useRouter } from "next/navigation";
 
+import { compressImage } from "@/lib/compressImage";
+
 export interface MasterItem {
   id: string;
   name: string;
@@ -137,8 +139,13 @@ export function MasterDataPage({ title, entity, apiBase, basePath, responseKey, 
   async function uploadImage(file: File): Promise<string | null> {
     setImageUploading(true);
     try {
+      // Compress raster images before upload (skip SVG — vector files need no compression).
+      let uploadFile: File | Blob = file;
+      if (file.type !== "image/svg+xml") {
+        try { uploadFile = await compressImage(file); } catch { /* fall back to original */ }
+      }
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", uploadFile, file.name);
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) { setAddError(data.error ?? "Image upload failed."); return null; }

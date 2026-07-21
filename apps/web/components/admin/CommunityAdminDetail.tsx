@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Pencil, Check, X, Globe, Lock, Trash2,
-  Users, MessageSquare, Upload, ImagePlus, Spinner as SpinnerIcon,
+  Users, MessageSquare, Upload, ImagePlus,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 
