@@ -52,7 +52,7 @@ export default async function CommunityPage({ params }: Props) {
       currentUserId={userId}
       initialMeta={ssrData?.meta}
       initialMessages={ssrData?.messages}
-      initialUnreadCount={ssrData?.unreadCount}
+      initialLastReadAt={ssrData?.lastReadAt}
     />
   );
 }

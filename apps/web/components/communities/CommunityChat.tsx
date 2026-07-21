@@ -22,7 +22,7 @@ import {
   META_STALE_MS,
   MSG_STALE_MS,
   sidebarStore,
-  unreadOnOpen,
+  lastReadAtOnOpen,
   type CachedMessage,
   type CachedMeta,
 } from "@/lib/communities/cache";
@@ -94,7 +94,7 @@ export function CommunityChat({
   currentUserId,
   initialMeta,
   initialMessages,
-  initialUnreadCount: initialUnreadCountProp,
+  initialLastReadAt,
 }: {
   communityId: string;
   currentUserId: string;
@@ -102,8 +102,14 @@ export function CommunityChat({
   initialMeta?: CachedMeta;
   /** Provided only on hard browser refresh (SSR). Undefined on client navigation. */
   initialMessages?: CachedMessage[];
-  /** Unread message count from SSR — seeds the divider on hard refresh before sidebarStore is warm. */
-  initialUnreadCount?: number;
+  /**
+   * The user's last_read_at for this community at the time of the hard refresh.
+   * Used to position the unread divider by timestamp comparison (more reliable
+   * than count-from-end, which mismatches when the user also sent messages).
+   * null = user never opened this community before.
+   * undefined = client-side navigation; lastReadAtOnOpen map is used instead.
+   */
+  initialLastReadAt?: string | null;
 }) {
   // ─── Initial state — always start empty to avoid SSR/client hydration mismatch ──
   //
@@ -138,14 +144,15 @@ export function CommunityChat({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const initialScrollDoneRef = useRef(false);
   const unreadDividerRef = useRef<HTMLDivElement>(null);
-  /**
-   * True only during the very first run of the communityId effect (initial mount).
-   * Prevents the effect from overwriting the SSR-seeded initialUnreadCount with 0
-   * when unreadOnOpen is still empty (hard-refresh timing race).
-   */
-  const isFirstMountRef = useRef(true);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
-  const [initialUnreadCount, setInitialUnreadCount] = useState(0);
+  /**
+   * The last_read_at timestamp captured the moment this community was opened.
+   * Used to find the first unread message by timestamp comparison (immune to the
+   * count-mismatch bug where message_count only counted other users' messages).
+   * null  = community was never read before (all messages are "new").
+   * undefined = not yet known (divider is hidden until we get the value).
+   */
+  const [lastReadAt, setLastReadAt] = useState<string | null | undefined>(undefined);
 
   /**
    * Tracks the *currently mounted* communityId.
@@ -205,14 +212,16 @@ export function CommunityChat({
 
     if (cachedMeta || initialMeta) setLoading(false);
 
-    // Case 2 (hard refresh): seed the unread count from the SSR prop so the
-    // divider is positioned correctly before sidebarStore / unreadOnOpen is warm.
-    // On client-nav the communityId effect handles this via unreadOnOpen instead.
-    if (!cachedMsgs?.length && initialUnreadCountProp && initialUnreadCountProp > 0) {
-      setInitialUnreadCount(initialUnreadCountProp);
+    // Case 2 (hard refresh): seed lastReadAt from the SSR prop so the divider
+    // is positioned correctly before lastReadAtOnOpen is populated.
+    // On client-nav the communityId effect handles this via lastReadAtOnOpen.
+    // Only seed when there are no cached messages; if the cache is warm, the
+    // communityId effect's lastReadAtOnOpen read is authoritative.
+    if (!cachedMsgs?.length && initialLastReadAt !== undefined) {
+      setLastReadAt(initialLastReadAt);
     }
 
-    // communityId, initialMeta, initialMessages, initialUnreadCountProp are stable
+    // communityId, initialMeta, initialMessages, initialLastReadAt are stable
     // for this component instance (from page params, never change after mount).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -370,18 +379,18 @@ export function CommunityChat({
     initialScrollDoneRef.current = false;
     setShowScrollToBottom(false);
 
-    const isFirst = isFirstMountRef.current;
-    isFirstMountRef.current = false;
-
-    // CommunitiesPanel snapshots the count into unreadOnOpen synchronously when
-    // the active community changes.  Read it here; if it's 0 on first mount the
-    // SSR-seeded value from useIsomorphicLayoutEffect is already in state —
-    // don't overwrite it.  On subsequent navigations always update.
-    const unread = unreadOnOpen.get(communityId) ?? 0;
-    unreadOnOpen.delete(communityId);
-    if (!isFirst || unread > 0) {
-      setInitialUnreadCount(unread);
+    // CommunitiesPanel stores last_read_at (captured BEFORE marking read) into
+    // lastReadAtOnOpen synchronously when the active community changes.
+    // Read it here and clear it so subsequent navigations start fresh.
+    // Use .has() to distinguish "not yet captured" (undefined → skip) from
+    // "captured as null" (community was never read before → show all as unread).
+    if (lastReadAtOnOpen.has(communityId)) {
+      setLastReadAt(lastReadAtOnOpen.get(communityId) ?? null);
+      lastReadAtOnOpen.delete(communityId);
     }
+    // If lastReadAtOnOpen doesn't have the key yet (race: sidebarStore was null
+    // when CommunitiesPanel's effect fired), the scroll effect's late-arrival
+    // check below will pick it up once the PATCH response resolves.
 
     let cancelled = false;
 
@@ -449,26 +458,29 @@ export function CommunityChat({
     if (!messages.length) return;
 
     if (!initialScrollDoneRef.current) {
-      // Late-fallback: CommunitiesPanel's effect may have fired AFTER the
-      // communityId effect (sibling effects have no guaranteed order).
-      // If unreadOnOpen still has a value, consume it now and re-render so
-      // the divider element exists in the DOM before we try to scroll to it.
-      if (initialUnreadCount === 0) {
-        const late = unreadOnOpen.get(communityId);
-        if (late && late > 0) {
-          unreadOnOpen.delete(communityId);
-          setInitialUnreadCount(late);
-          // Don't mark done — the state update triggers a re-render which
-          // fires this effect again (with initialScrollDoneRef still false),
-          // at which point the divider element will exist and we can scroll.
+      // Late-fallback: CommunitiesPanel's activeCommunityId effect and the PATCH
+      // response may resolve AFTER the communityId effect (sibling effects have
+      // no guaranteed order, and the PATCH is async).
+      // If lastReadAtOnOpen now has a value that we haven't consumed yet, consume
+      // it and re-render so the divider element exists in the DOM before scrolling.
+      if (lastReadAt === undefined) {
+        if (lastReadAtOnOpen.has(communityId)) {
+          setLastReadAt(lastReadAtOnOpen.get(communityId) ?? null);
+          lastReadAtOnOpen.delete(communityId);
+          // Don't mark done — the state update triggers a re-render which fires
+          // this effect again (with initialScrollDoneRef still false), at which
+          // point lastReadAt is set and the divider element exists in the DOM.
           return;
         }
+        // lastReadAtOnOpen still not populated (PATCH in flight) — skip for now.
+        // We'll fall through and scroll to bottom; if the divider appears later
+        // it won't be scrolled to (acceptable UX vs. perpetually blocking scroll).
       }
 
       initialScrollDoneRef.current = true;
       // Give React one animation frame to finish laying out messages in the DOM
       requestAnimationFrame(() => {
-        if (initialUnreadCount > 0 && unreadDividerRef.current) {
+        if (unreadDividerRef.current) {
           // Stop at the unread divider — WhatsApp-style
           unreadDividerRef.current.scrollIntoView({ behavior: "instant", block: "start" });
         } else {
@@ -489,7 +501,7 @@ export function CommunityChat({
       // User is scrolled up reading history — show the ↓ button instead
       setShowScrollToBottom(true);
     }
-  }, [messages, initialUnreadCount]);
+  }, [messages, lastReadAt]);
 
   // ─── Show / hide scroll-to-bottom button on manual scroll ────────────────
   useEffect(() => {
@@ -829,13 +841,41 @@ export function CommunityChat({
   }, []);
 
   // ─── Unread divider: find the id of the first unread message ─────────────
-  // Uses the unread count captured when this community was opened.
-  // Temp (optimistic) messages are excluded from the count.
+  // Uses the last_read_at timestamp captured when this community was opened
+  // (BEFORE last_read_at was updated on the server).  Timestamp comparison is
+  // immune to the count-mismatch bug: the old count-from-end approach used
+  // message_count which only counted other users' messages, but indexed into
+  // ALL messages — wrong position whenever the current user also sent messages.
+  //
+  // lastReadAt === undefined  → not yet known, hide divider
+  // lastReadAt === null       → community never read, first message is divider
+  // lastReadAt === ISO string → first message after that timestamp is divider
+  //
+  // Temp (optimistic) messages are excluded so they never act as the boundary.
   const realMessages = messages.filter((m) => !m.id.startsWith("temp-"));
-  const firstUnreadMsgId =
-    initialUnreadCount > 0 && realMessages.length >= initialUnreadCount
-      ? realMessages[realMessages.length - initialUnreadCount].id
-      : null;
+  const firstUnreadMsgId: string | null = (() => {
+    if (lastReadAt === undefined) return null; // not yet known
+    if (lastReadAt === null) {
+      // Never read — all messages are unread; put divider before first message
+      return realMessages[0]?.id ?? null;
+    }
+    const lastReadTime = new Date(lastReadAt).getTime();
+    const first = realMessages.find(
+      (m) => new Date(m.created_at).getTime() > lastReadTime
+    );
+    return first?.id ?? null;
+  })();
+
+  // Count for the pill label: messages from other users after last_read_at.
+  const unreadDisplayCount = (() => {
+    if (!firstUnreadMsgId || lastReadAt === undefined) return 0;
+    const lastReadTime = lastReadAt === null ? -Infinity : new Date(lastReadAt).getTime();
+    return realMessages.filter(
+      (m) =>
+        m.user_id !== currentUserId &&
+        new Date(m.created_at).getTime() > lastReadTime
+    ).length;
+  })();
 
   // Resolve display data: prefer live community state, fall back to sidebar
   // cache so the header renders immediately even before fetchMeta completes.
@@ -990,7 +1030,9 @@ export function CommunityChat({
                     >
                       <div className="flex-1 h-px bg-border/60" />
                       <span className="font-body text-xs text-foreground-muted bg-surface-raised border border-border/60 rounded-full px-4 py-1 shadow-sm select-none whitespace-nowrap">
-                        {initialUnreadCount} unread message{initialUnreadCount !== 1 ? "s" : ""}
+                        {unreadDisplayCount > 0
+                          ? `${unreadDisplayCount} unread message${unreadDisplayCount !== 1 ? "s" : ""}`
+                          : "New messages"}
                       </span>
                       <div className="flex-1 h-px bg-border/60" />
                     </div>
