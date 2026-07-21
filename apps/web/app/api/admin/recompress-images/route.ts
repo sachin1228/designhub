@@ -57,7 +57,7 @@ async function compressBuffer(input: Buffer): Promise<Buffer | null> {
 }
 
 export interface RecompressResult {
-  id: string;
+  id: string | null;
   table: string;
   oldUrl: string;
   newUrl: string | null;
