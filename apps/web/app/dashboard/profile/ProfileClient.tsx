@@ -24,47 +24,152 @@ import { Spinner } from "@/components/ui/Spinner";
 import { compressImage } from "@/lib/compressImage";
 import Avatar from "boring-avatars";
 
-// ─── Avatar preview helpers (reused from signup) ─────────────────────────
+// ─── Avatar preview helpers (mirrored from signup step 4) ────────────────
 
-const ALL_DICEBEAR_STYLES = [
-  "adventurer","adventurer-neutral","avataaars","avataaars-neutral",
-  "big-ears","big-ears-neutral","big-smile","bottts","bottts-neutral",
-  "croodles","croodles-neutral","dylan","fun-emoji","glass","icons",
-  "identicon","initials","lorelei","lorelei-neutral","micah","miniavs",
-  "notionists","notionists-neutral","open-peeps","personas","pixel-art",
-  "pixel-art-neutral","rings","shapes","thumbs",
+const ALL_DICEBEAR_STYLES: { style: string; label: string }[] = [
+  { style: "adventurer",          label: "Adventurer" },
+  { style: "adventurer-neutral",  label: "Adventurer Neutral" },
+  { style: "avataaars",           label: "Avataaars" },
+  { style: "avataaars-neutral",   label: "Avataaars Neutral" },
+  { style: "big-ears",            label: "Big Ears" },
+  { style: "big-ears-neutral",    label: "Big Ears Neutral" },
+  { style: "big-smile",           label: "Big Smile" },
+  { style: "bottts",              label: "Bottts" },
+  { style: "bottts-neutral",      label: "Bottts Neutral" },
+  { style: "croodles",            label: "Croodles" },
+  { style: "croodles-neutral",    label: "Croodles Neutral" },
+  { style: "dylan",               label: "Dylan" },
+  { style: "fun-emoji",           label: "Fun Emoji" },
+  { style: "glass",               label: "Glass" },
+  { style: "identicon",           label: "Identicon" },
+  { style: "initials",            label: "Initials" },
+  { style: "lorelei",             label: "Lorelei" },
+  { style: "lorelei-neutral",     label: "Lorelei Neutral" },
+  { style: "micah",               label: "Micah" },
+  { style: "miniavs",             label: "Miniavs" },
+  { style: "notionists",          label: "Notionists" },
+  { style: "notionists-neutral",  label: "Notionists Neutral" },
+  { style: "open-peeps",          label: "Open Peeps" },
+  { style: "personas",            label: "Personas" },
+  { style: "pixel-art",           label: "Pixel Art" },
+  { style: "pixel-art-neutral",   label: "Pixel Art Neutral" },
+  { style: "rings",               label: "Rings" },
+  { style: "shapes",              label: "Shapes" },
+  { style: "thumbs",              label: "Thumbs" },
 ];
 
-const ALL_BORING_STYLES = ["marble","beam","pixel","sunset","ring","bauhaus","triangles"];
+const ALL_BORING_STYLES: { style: string; label: string }[] = [
+  { style: "marble",    label: "Marble" },
+  { style: "beam",      label: "Beam" },
+  { style: "pixel",     label: "Pixel" },
+  { style: "sunset",    label: "Sunset" },
+  { style: "ring",      label: "Ring" },
+  { style: "bauhaus",   label: "Bauhaus" },
+  { style: "triangles", label: "Triangles" },
+];
+
+const ALL_ROBOHASH_SETS: { set: string; label: string }[] = [
+  { set: "set1", label: "Robots" },
+  { set: "set2", label: "Monsters" },
+  { set: "set3", label: "Robot Heads" },
+  { set: "set4", label: "Kittens" },
+];
+
+const ALL_MULTIAVATAR_SEEDS: string[] = [
+  "Alex","Jamie","Riley","Morgan",
+  "Casey","Quinn","Avery","Blake",
+  "Taylor","Jordan","Phoenix","Sage",
+  "Drew","Reese","Dakota","Finley",
+  "Rowan","Skylar","Lennon","Remy",
+];
+
+const ALL_AVATAAARS_CONFIGS: { id: string; label: string; params: string }[] = [
+  { id: "sharp",   label: "Sharp",   params: "topType=ShortHairShortWaved&accessoriesType=Blank&hairColor=BrownDark&facialHairType=Blank&clotheType=BlazerShirt&clotheColor=Black&eyeType=Default&eyebrowType=Default&mouthType=Smile&skinColor=Light" },
+  { id: "bun",     label: "Bun",     params: "topType=LongHairBun&accessoriesType=Blank&hairColor=Auburn&facialHairType=Blank&clotheType=Hoodie&clotheColor=Blue01&eyeType=Happy&eyebrowType=RaisedExcited&mouthType=Smile&skinColor=Pale" },
+  { id: "curly",   label: "Curly",   params: "topType=LongHairCurly&accessoriesType=Blank&hairColor=Black&facialHairType=Blank&clotheType=ShirtScoopNeck&clotheColor=PastelBlue&eyeType=Wink&eyebrowType=Default&mouthType=Smile&skinColor=Brown" },
+  { id: "dreads",  label: "Dreads",  params: "topType=LongHairDreads&accessoriesType=Blank&hairColor=Black&facialHairType=Blank&clotheType=GraphicShirt&clotheColor=Gray01&eyeType=Default&eyebrowType=Default&mouthType=Default&skinColor=DarkBrown" },
+  { id: "wavy",    label: "Wavy",    params: "topType=LongHairFro&accessoriesType=Blank&hairColor=Blonde&facialHairType=Blank&clotheType=CollarSweater&clotheColor=PastelOrange&eyeType=Squint&eyebrowType=Default&mouthType=Smile&skinColor=Tanned" },
+  { id: "shaggy",  label: "Shaggy",  params: "topType=ShortHairShaggy&accessoriesType=Blank&hairColor=BlondeGolden&facialHairType=BeardLight&clotheType=ShirtCrewNeck&clotheColor=Blue01&eyeType=Default&eyebrowType=Default&mouthType=Default&skinColor=Light" },
+  { id: "glasses", label: "Glasses", params: "topType=ShortHairSides&accessoriesType=Prescription01&hairColor=Brown&facialHairType=Blank&clotheType=BlazerSweater&clotheColor=Black&eyeType=Default&eyebrowType=Default&mouthType=Twinkle&skinColor=Pale" },
+  { id: "hat",     label: "Hat",     params: "topType=WinterHat1&accessoriesType=Blank&hatColor=Blue01&facialHairType=Blank&clotheType=Overall&clotheColor=PastelGreen&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Light" },
+  { id: "turban",  label: "Turban",  params: "topType=Turban&accessoriesType=Blank&hatColor=PastelOrange&facialHairType=Blank&clotheType=ShirtCrewNeck&clotheColor=PastelYellow&eyeType=Default&eyebrowType=Default&mouthType=Smile&skinColor=Tanned" },
+  { id: "hijab",   label: "Hijab",   params: "topType=Hijab&accessoriesType=Blank&hatColor=Blue02&facialHairType=Blank&clotheType=BlazerShirt&clotheColor=Black&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Brown" },
+  { id: "flat",    label: "Flat",    params: "topType=ShortHairShortFlat&accessoriesType=Blank&hairColor=Red&facialHairType=Blank&clotheType=Hoodie&clotheColor=PastelRed&eyeType=Default&eyebrowType=Default&mouthType=Smile&skinColor=Light" },
+  { id: "mohawk",  label: "Mohawk",  params: "topType=ShortHairFrizzle&accessoriesType=Sunglasses&hairColor=SilverGray&facialHairType=Blank&clotheType=GraphicShirt&clotheColor=Gray02&eyeType=Default&eyebrowType=Default&mouthType=Smile&skinColor=DarkBrown" },
+];
+
+type AvatarSource = "dicebear" | "boring-avatars" | "robohash" | "avataaars" | "multiavatar";
 
 interface AvatarOption {
   id: string;
-  source: "dicebear" | "boring-avatars" | "robohash" | "upload";
+  source: AvatarSource;
   style: string;
   label: string;
   dbUrl: string;
   seed: string;
 }
 
-function buildAvatarOptions(name: string): AvatarOption[] {
-  const seed = name || "designer";
-  const dicebear = ALL_DICEBEAR_STYLES.map((style) => ({
-    id: `dicebear-${style}`,
-    source: "dicebear" as const,
-    style,
-    label: style.replace(/-/g, " "),
-    dbUrl: `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}`,
-    seed,
+function getAllAvatarOptions(name: string) {
+  const baseName = name || "designer";
+  const seedNames = Array.from({ length: 6 }, (_, i) =>
+    i === 0 ? baseName : `${baseName} ${i + 1}`
+  );
+
+  const dicebear = ALL_DICEBEAR_STYLES.flatMap(({ style, label }) =>
+    seedNames.map((seedName, i) => ({
+      id: `dicebear-${style}-${i}`,
+      source: "dicebear" as AvatarSource,
+      style,
+      label: i === 0 ? label : `${label} ${i + 1}`,
+      dbUrl: `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seedName)}`,
+      seed: seedName,
+    }))
+  );
+  const boring = ALL_BORING_STYLES.flatMap(({ style, label }) =>
+    seedNames.map((seedName, i) => ({
+      id: `boring-${style}-${i}`,
+      source: "boring-avatars" as AvatarSource,
+      style,
+      label: i === 0 ? label : `${label} ${i + 1}`,
+      dbUrl: `boring://${style}/${encodeURIComponent(seedName)}`,
+      seed: seedName,
+    }))
+  );
+  const robohash = ALL_ROBOHASH_SETS.flatMap(({ set, label }) =>
+    seedNames.map((seedName, i) => ({
+      id: `robohash-${set}-${i}`,
+      source: "robohash" as AvatarSource,
+      style: set,
+      label: i === 0 ? label : `${label} ${i + 1}`,
+      dbUrl: `https://robohash.org/${encodeURIComponent(seedName)}?set=${set}&size=200x200`,
+      seed: seedName,
+    }))
+  );
+  const avataaars = ALL_AVATAAARS_CONFIGS.map(({ id, label, params }) => ({
+    id: `avataaars-${id}`,
+    source: "avataaars" as AvatarSource,
+    style: "avataaars",
+    label,
+    dbUrl: `https://avataaars.io/?avatarStyle=Circle&${params}`,
+    seed: label,
   }));
-  const boring = ALL_BORING_STYLES.map((style) => ({
-    id: `boring-${style}`,
-    source: "boring-avatars" as const,
-    style,
-    label: style,
-    dbUrl: `boring://${style}/${encodeURIComponent(seed)}`,
-    seed,
+  const multiavatar = ALL_MULTIAVATAR_SEEDS.map((seedName) => ({
+    id: `multiavatar-${seedName}`,
+    source: "multiavatar" as AvatarSource,
+    style: "open-peeps",
+    label: seedName,
+    dbUrl: `https://api.dicebear.com/9.x/open-peeps/svg?seed=${encodeURIComponent(seedName)}`,
+    seed: seedName,
   }));
-  return [...dicebear, ...boring];
+  return { dicebear, boring, robohash, avataaars, multiavatar };
+}
+
+function getAvatarLibLabel(source: AvatarSource) {
+  if (source === "dicebear")       return "DiceBear";
+  if (source === "boring-avatars") return "Boring Avs";
+  if (source === "robohash")       return "Robohash";
+  if (source === "avataaars")      return "Avataaars";
+  return "Multiavatar";
 }
 
 function AvatarPreview({ opt, size = 60 }: { opt: AvatarOption; size?: number }) {
@@ -199,6 +304,7 @@ export function ProfileClient({
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [avatarTab, setAvatarTab] = useState<"generated" | "upload">("generated");
+  const [activeAvatarLibTab, setActiveAvatarLibTab] = useState<AvatarSource>("dicebear");
   const [pickedAvatar, setPickedAvatar] = useState<AvatarOption | null>(null);
   const [uploadBlob, setUploadBlob] = useState<Blob | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
@@ -214,7 +320,17 @@ export function ProfileClient({
   const [interestsOpen, setInterestsOpen] = useState(false);
   const interestsRef = useRef<HTMLDivElement>(null);
 
-  const avatarOptions = useMemo(() => buildAvatarOptions(name || initialName), [name, initialName]);
+  const avatarLibOptions = useMemo(() => getAllAvatarOptions(name || initialName), [name, initialName]);
+  const avatarLibTabs: { key: AvatarSource; label: string; count: number }[] = [
+    { key: "dicebear",        label: getAvatarLibLabel("dicebear"),        count: avatarLibOptions.dicebear.length },
+    { key: "boring-avatars",  label: getAvatarLibLabel("boring-avatars"),  count: avatarLibOptions.boring.length },
+    { key: "robohash",        label: getAvatarLibLabel("robohash"),        count: avatarLibOptions.robohash.length },
+    { key: "avataaars",       label: getAvatarLibLabel("avataaars"),       count: avatarLibOptions.avataaars.length },
+    { key: "multiavatar",     label: getAvatarLibLabel("multiavatar"),     count: avatarLibOptions.multiavatar.length },
+  ];
+  const visibleAvatarOptions = activeAvatarLibTab === "boring-avatars"
+    ? avatarLibOptions.boring
+    : avatarLibOptions[activeAvatarLibTab as keyof typeof avatarLibOptions] as AvatarOption[];
 
   // Close interests dropdown on outside click
   useEffect(() => {
@@ -650,25 +766,54 @@ export function ProfileClient({
               )}
 
               {avatarTab === "generated" ? (
-                <div className="max-h-[380px] overflow-y-auto">
-                  <div className="grid grid-cols-4 gap-2.5">
-                    {avatarOptions.map((opt) => {
-                      const isSel = pickedAvatar?.id === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          onClick={() => { setPickedAvatar(opt); setUploadBlob(null); if (uploadPreview) URL.revokeObjectURL(uploadPreview); setUploadPreview(null); }}
-                          className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all ${
-                            isSel ? "ring-2 ring-accent bg-accent/10" : "hover:bg-surface-raised"
-                          }`}
-                        >
-                          <AvatarPreview opt={opt} size={52} />
-                          <span className="font-body text-[9px] text-foreground-subtle truncate w-full text-center capitalize">
-                            {opt.label}
-                          </span>
-                        </button>
-                      );
-                    })}
+                <div className="overflow-hidden rounded-xl border border-border">
+                  {/* Library tabs */}
+                  <div className="flex gap-1 border-b border-border bg-surface px-2 py-2">
+                    {avatarLibTabs.map((tab) => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveAvatarLibTab(tab.key)}
+                        className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 font-body text-xs font-medium transition-colors ${
+                          activeAvatarLibTab === tab.key
+                            ? "bg-accent text-accent-foreground"
+                            : "text-foreground-muted hover:bg-surface-raised hover:text-foreground"
+                        }`}
+                      >
+                        <span className="truncate">{tab.label}</span>
+                        <span className="shrink-0 opacity-70">{tab.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {/* Grid */}
+                  <div className="max-h-[310px] overflow-y-auto p-3">
+                    <div className="grid grid-cols-4 gap-2.5">
+                      {visibleAvatarOptions.map((opt) => {
+                        const isSel = pickedAvatar?.id === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => { setPickedAvatar(opt); setUploadBlob(null); if (uploadPreview) URL.revokeObjectURL(uploadPreview); setUploadPreview(null); }}
+                            className={`relative flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-xl p-1.5 transition-all focus:outline-none ${
+                              isSel ? "ring-2 ring-accent bg-accent/10" : "hover:bg-surface-raised"
+                            }`}
+                          >
+                            <AvatarPreview opt={opt} size={52} />
+                            <span className="w-full truncate text-center font-body text-[10px] leading-none text-foreground-subtle">
+                              {opt.label}
+                            </span>
+                            {isSel && (
+                              <span className="absolute bottom-6 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent">
+                                <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                                </svg>
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : (
