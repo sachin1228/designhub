@@ -47,7 +47,7 @@ function ReactionPills({
   if (!reactions || reactions.length === 0) return null;
 
   return (
-    <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+    <div className={`flex flex-wrap gap-1 mt-1 absolute -bottom-[14px] left-[12px] ${isMe ? "justify-end" : "justify-start"}`}>
       {reactions.map(({ emoji, user_ids }) => {
         const iMine = user_ids.includes(currentUserId);
         return (
@@ -92,7 +92,7 @@ export function MessageBubble({
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
         >
-          <div className="max-w-[65%]">
+           <div className="relative">
             <div
               onClick={() => onPress(msg)}
               className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 cursor-pointer select-none
@@ -143,7 +143,7 @@ export function MessageBubble({
             <ChatAvatar name={sender.name} url={sender.avatar_url} size={7} />
           )}
         </div>
-        <div className="max-w-[65%]">
+        <div className="max-w-[65%] relative">
           {!isSameAuthor && sender && (
             <p className="font-body text-[11px] font-medium text-foreground-muted mb-0.5 ml-0.5">
               {sender.name}
