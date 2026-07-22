@@ -1,7 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getMasterImageMap } from "@/lib/master-data-cache";
-import type { CachedMeta, CachedMessage } from "./cache";
+import type { CachedMeta, CachedMessage, MessageReaction } from "./cache";
 
 export interface SSRCommunityData {
   meta: CachedMeta;
@@ -16,20 +16,13 @@ export interface SSRCommunityData {
 }
 
 /**
- * Fetches community metadata AND latest messages in parallel, server-side.
+ * Fetches community metadata AND latest messages (with reactions) in parallel,
+ * server-side.
  *
  * Called only during hard browser refresh (not on client-side navigation).
  * Eliminates the client-side loading waterfall: instead of the browser
  * downloading JS → hydrating → making 2 API calls, the data is embedded
  * in the SSR props and the cache is seeded immediately on hydration.
- *
- * Database round trips:
- *   Round 1 — membership + community row + recent messages  (all parallel)
- *   Round 2 — image lookup + member rows + member count
- *              + message sender users + message sender profiles  (all parallel)
- *   Round 3 — member user info  (sequential after round 2 member rows)
- *
- * Returns null when the user is not a member or the community does not exist.
  */
 export async function fetchCommunitySSRData(
   communityId: string,
@@ -71,15 +64,17 @@ export async function fetchCommunitySSRData(
     user_id: string;
   }[];
   const uniqueMsgUserIds = [...new Set(msgs.map((m) => m.user_id))];
-  // ─── Round 2: image (cached) + member rows + count + msg sender info (parallel) ─
+  const messageIds       = msgs.map((m) => m.id);
+
+  // ─── Round 2: image + member rows + count + msg sender info + reactions (parallel) ─
   const [
     masterImgMap,
     { data: memberRows },
     { count: memberCount },
     { data: msgUsers },
     { data: msgProfiles },
+    { data: reactionRows },
   ] = await Promise.all([
-    // Cached master table lookup — zero DB round-trip on warm cache
     getMasterImageMap(community.type as string),
     db
       .from("community_members")
@@ -100,6 +95,12 @@ export async function fetchCommunitySSRData(
           .select("user_id, avatar_url")
           .in("user_id", uniqueMsgUserIds)
       : Promise.resolve({ data: [] as { user_id: string; avatar_url: string | null }[] }),
+    messageIds.length
+      ? db
+          .from("message_reactions")
+          .select("message_id, user_id, emoji")
+          .in("message_id", messageIds)
+      : Promise.resolve({ data: [] as { message_id: string; user_id: string; emoji: string }[] }),
   ]);
 
   const resolvedImageUrl: string | null =
@@ -136,6 +137,18 @@ export async function fetchCommunitySSRData(
       : null,
   }));
 
+  // ─── Assemble reactions map ───────────────────────────────────────────────
+  const reactionsMap: Record<string, MessageReaction[]> = {};
+  for (const r of reactionRows ?? []) {
+    if (!reactionsMap[r.message_id]) reactionsMap[r.message_id] = [];
+    const group = reactionsMap[r.message_id].find((g) => g.emoji === r.emoji);
+    if (group) {
+      group.user_ids.push(r.user_id);
+    } else {
+      reactionsMap[r.message_id].push({ emoji: r.emoji, user_ids: [r.user_id] });
+    }
+  }
+
   // ─── Assemble messages ────────────────────────────────────────────────────
   const msgUserMap: Record<string, { name: string; avatar_url: string | null }> = {};
   const msgAvatarMap = Object.fromEntries(
@@ -147,7 +160,11 @@ export async function fetchCommunitySSRData(
   const messages: CachedMessage[] = msgs
     .slice()
     .reverse()
-    .map((m) => ({ ...m, users: msgUserMap[m.user_id] ?? null }));
+    .map((m) => ({
+      ...m,
+      users: msgUserMap[m.user_id] ?? null,
+      reactions: reactionsMap[m.id] ?? [],
+    }));
 
   const meta: CachedMeta = {
     community: {
@@ -161,10 +178,6 @@ export async function fetchCommunitySSRData(
     fetchedAt: Date.now(),
   };
 
-  // ─── Unread count ─────────────────────────────────────────────────────────
-  // Count how many of the fetched messages were sent after the user last read
-  // this community. Used by CommunityChat to position the unread divider on
-  // hard refresh (when the sidebarStore / unreadOnOpen map is not yet warm).
   const lastReadAt: string | null =
     (membership as unknown as { last_read_at: string | null }).last_read_at ?? null;
 

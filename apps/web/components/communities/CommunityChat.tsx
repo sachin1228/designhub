@@ -2,8 +2,8 @@
 
 import { useState, useLayoutEffect, useEffect, useCallback, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
-import { sidebarStore } from "@/lib/communities/cache";
-import type { CachedMessage, CachedMeta } from "@/lib/communities/cache";
+import { sidebarStore, msgCache } from "@/lib/communities/cache";
+import type { CachedMessage, CachedMeta, MessageReaction } from "@/lib/communities/cache";
 import { fmtDate } from "./chat/chatUtils";
 import { ChatHeader } from "./chat/ChatHeader";
 import { ChatInput } from "./chat/ChatInput";
@@ -41,25 +41,40 @@ export function CommunityChat({
 
   // ── Message action slider state ───────────────────────────────────────────
   const [activeMessage, setActiveMessage] = useState<CachedMessage | null>(null);
-  const [sliderIsMe, setSliderIsMe] = useState(false);
+  const [sliderIsMe, setSliderIsMe]       = useState(false);
 
   const handleMessagePress = useCallback((msg: CachedMessage) => {
     setActiveMessage(msg);
     setSliderIsMe(msg.user_id === currentUserId);
   }, [currentUserId]);
 
-  const handleSliderClose = useCallback(() => {
-    setActiveMessage(null);
-  }, []);
+  const handleSliderClose = useCallback(() => setActiveMessage(null), []);
 
-  const handleReply = useCallback((msg: CachedMessage) => {
-    // Reply logic will be wired dynamically later
-    console.log("Reply to:", msg.id);
+  const handleReply = useCallback((_msg: CachedMessage) => {
+    // Reply — wired in a follow-up
   }, []);
 
   const handleCopy = useCallback((msg: CachedMessage) => {
     navigator.clipboard.writeText(msg.content).catch(() => {});
   }, []);
+
+  // Optimistic + server-reconciled reaction update
+  const handleReactionToggled = useCallback(
+    (msgId: string, reactions: MessageReaction[]) => {
+      setMessages((prev) => {
+        const next = prev.map((m) =>
+          m.id === msgId ? { ...m, reactions } : m
+        );
+        msgCache.set(communityId, next);
+        // Keep the active message in sync so the slider shows the right active state
+        setActiveMessage((cur) =>
+          cur?.id === msgId ? { ...cur, reactions } : cur
+        );
+        return next;
+      });
+    },
+    [communityId]
+  );
 
   // ── Data fetching + message state ─────────────────────────────────────────
   const {
@@ -217,13 +232,16 @@ export function CommunityChat({
             onSend={handleSend}
           />
 
-          {/* Message action slider — rendered inside the relative container */}
+          {/* Message action slider */}
           <MessageActionSlider
             message={activeMessage}
             isMe={sliderIsMe}
+            currentUserId={currentUserId}
+            communityId={communityId}
             onClose={handleSliderClose}
             onReply={handleReply}
             onCopy={handleCopy}
+            onReactionToggled={handleReactionToggled}
           />
         </div>
 

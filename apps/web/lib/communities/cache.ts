@@ -4,6 +4,11 @@
  * React context, Redux, or external libraries.
  */
 
+export interface MessageReaction {
+  emoji: string;
+  user_ids: string[];
+}
+
 export interface CachedMessage {
   id: string;
   content: string;
@@ -11,6 +16,7 @@ export interface CachedMessage {
   user_id: string;
   users: { name: string; avatar_url: string | null } | null;
   status?: "sending" | "sent" | "failed";
+  reactions?: MessageReaction[];
 }
 
 export interface CachedMeta {
@@ -163,6 +169,50 @@ export function invalidateOnLeave(communityId: string): void {
   msgCache.delete(communityId);
   metaCache.delete(communityId);
   msgFetchedAt.delete(communityId);
+}
+
+// ─── Reaction helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Apply a reaction INSERT event to a message's reactions array.
+ * Returns a new array (immutable update).
+ */
+export function applyReactionInsert(
+  reactions: MessageReaction[],
+  emoji: string,
+  userId: string,
+): MessageReaction[] {
+  // Remove any existing reaction from this user (one-reaction-per-user rule)
+  const without = reactions.map((r) => ({
+    ...r,
+    user_ids: r.user_ids.filter((uid) => uid !== userId),
+  })).filter((r) => r.user_ids.length > 0);
+
+  const existing = without.find((r) => r.emoji === emoji);
+  if (existing) {
+    return without.map((r) =>
+      r.emoji === emoji ? { ...r, user_ids: [...r.user_ids, userId] } : r
+    );
+  }
+  return [...without, { emoji, user_ids: [userId] }];
+}
+
+/**
+ * Apply a reaction DELETE event to a message's reactions array.
+ * Returns a new array (immutable update).
+ */
+export function applyReactionDelete(
+  reactions: MessageReaction[],
+  emoji: string,
+  userId: string,
+): MessageReaction[] {
+  return reactions
+    .map((r) =>
+      r.emoji === emoji
+        ? { ...r, user_ids: r.user_ids.filter((uid) => uid !== userId) }
+        : r
+    )
+    .filter((r) => r.user_ids.length > 0);
 }
 
 // ─── Existing chat caches (unchanged) ─────────────────────────────────────────

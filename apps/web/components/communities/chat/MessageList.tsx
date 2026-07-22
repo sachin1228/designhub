@@ -120,6 +120,7 @@ export function MessageList({
                 isSameAuthor={isSameAuthor}
                 isFirstUnread={isFirstUnread}
                 unreadDivider={dividerNode}
+                currentUserId={currentUserId}
                 onPress={onMessagePress}
               />
             );

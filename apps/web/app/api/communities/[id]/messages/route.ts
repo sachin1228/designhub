@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
+import type { MessageReaction } from "@/lib/communities/cache";
 
 const PAGE_SIZE = 50;
 
@@ -53,15 +54,31 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch messages." }, { status: 500 });
   }
 
-  // Batch-fetch unique senders in one round-trip
-  const uniqueUserIds = [...new Set((data ?? []).map((m) => m.user_id))];
+  const rows = data ?? [];
+
+  // Batch-fetch unique senders + reactions in parallel
+  const uniqueUserIds = [...new Set(rows.map((m) => m.user_id))];
+  const messageIds    = rows.map((m) => m.id);
+
   const userMap: Record<string, { name: string; avatar_url: string | null }> = {};
 
+  const [usersResult, reactionsResult] = await Promise.all([
+    uniqueUserIds.length
+      ? Promise.all([
+          db.from("users").select("id, name").in("id", uniqueUserIds),
+          db.from("designer_profiles").select("user_id, avatar_url").in("user_id", uniqueUserIds),
+        ])
+      : Promise.resolve([{ data: [] as { id: string; name: string }[] }, { data: [] as { user_id: string; avatar_url: string | null }[] }]),
+    messageIds.length
+      ? db.from("message_reactions").select("message_id, user_id, emoji").in("message_id", messageIds)
+      : Promise.resolve({ data: [] as { message_id: string; user_id: string; emoji: string }[] }),
+  ]);
+
   if (uniqueUserIds.length) {
-    const [{ data: users }, { data: profiles }] = await Promise.all([
-      db.from("users").select("id, name").in("id", uniqueUserIds),
-      db.from("designer_profiles").select("user_id, avatar_url").in("user_id", uniqueUserIds),
-    ]);
+    const [{ data: users }, { data: profiles }] = usersResult as [
+      { data: { id: string; name: string }[] | null },
+      { data: { user_id: string; avatar_url: string | null }[] | null },
+    ];
     const avatarMap: Record<string, string | null> = {};
     for (const p of profiles ?? []) avatarMap[p.user_id] = p.avatar_url;
     for (const u of users ?? []) {
@@ -69,10 +86,26 @@ export async function GET(
     }
   }
 
+  // Group reactions by message_id → emoji → user_ids
+  const reactionsMap: Record<string, MessageReaction[]> = {};
+  for (const r of (reactionsResult.data ?? [])) {
+    if (!reactionsMap[r.message_id]) reactionsMap[r.message_id] = [];
+    const group = reactionsMap[r.message_id].find((g) => g.emoji === r.emoji);
+    if (group) {
+      group.user_ids.push(r.user_id);
+    } else {
+      reactionsMap[r.message_id].push({ emoji: r.emoji, user_ids: [r.user_id] });
+    }
+  }
+
   // Return oldest-first for display
-  const messages = (data ?? [])
+  const messages = rows
     .reverse()
-    .map((m) => ({ ...m, users: userMap[m.user_id] ?? null }));
+    .map((m) => ({
+      ...m,
+      users: userMap[m.user_id] ?? null,
+      reactions: reactionsMap[m.id] ?? [],
+    }));
 
   return NextResponse.json({ messages });
 }
@@ -136,6 +169,7 @@ export async function POST(
         users: user
           ? { name: user.name, avatar_url: profile?.avatar_url ?? null }
           : null,
+        reactions: [],
       },
     },
     { status: 201 }

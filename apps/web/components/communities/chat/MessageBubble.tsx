@@ -4,7 +4,7 @@ import { Fragment } from "react";
 import { Clock, CheckCheck } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
-import type { CachedMessage } from "@/lib/communities/cache";
+import type { CachedMessage, MessageReaction } from "@/lib/communities/cache";
 
 interface MessageBubbleProps {
   msg: CachedMessage;
@@ -12,7 +12,43 @@ interface MessageBubbleProps {
   isSameAuthor: boolean;
   isFirstUnread: boolean;
   unreadDivider: React.ReactNode;
+  currentUserId: string;
   onPress: (msg: CachedMessage) => void;
+}
+
+function ReactionPills({
+  reactions,
+  currentUserId,
+  isMe,
+}: {
+  reactions: MessageReaction[];
+  currentUserId: string;
+  isMe: boolean;
+}) {
+  if (!reactions || reactions.length === 0) return null;
+
+  return (
+    <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+      {reactions.map(({ emoji, user_ids }) => {
+        const iMine = user_ids.includes(currentUserId);
+        return (
+          <span
+            key={emoji}
+            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-medium select-none
+              ${iMine
+                ? "bg-accent/30 border border-accent/60 text-accent-foreground"
+                : "bg-surface-raised border border-white/10 text-foreground"
+              }`}
+          >
+            {emoji}
+            {user_ids.length > 1 && (
+              <span className="text-[10px] opacity-70">{user_ids.length}</span>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 export function MessageBubble({
@@ -21,23 +57,26 @@ export function MessageBubble({
   isSameAuthor,
   isFirstUnread,
   unreadDivider,
+  currentUserId,
   onPress,
 }: MessageBubbleProps) {
-  const sender = msg.users;
+  const sender    = msg.users;
+  const reactions = msg.reactions ?? [];
 
   if (isMe) {
     return (
       <Fragment>
         {unreadDivider}
         <div
-          className={`flex justify-end ${
+          className={`flex flex-col items-end ${
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
         >
           <div className="max-w-[65%]">
             <div
               onClick={() => onPress(msg)}
-              className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 transition-opacity cursor-pointer select-none active:scale-[0.97] ${
+              className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 cursor-pointer select-none
+                active:scale-[0.97] transition-transform ${
                 msg.status === "sending"
                   ? "bg-accent opacity-70"
                   : msg.status === "failed"
@@ -48,7 +87,6 @@ export function MessageBubble({
               <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
                 {msg.content}
               </p>
-              {/* time + status on its own line, right-aligned */}
               <div className="flex items-center justify-end gap-1 mt-1">
                 <span className="font-mono text-[10px] text-accent-foreground/60">
                   {fmtTime(msg.created_at)}
@@ -64,6 +102,7 @@ export function MessageBubble({
                 )}
               </div>
             </div>
+            <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe />
           </div>
         </div>
       </Fragment>
@@ -96,11 +135,11 @@ export function MessageBubble({
             <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
               {msg.content}
             </p>
-            {/* time on its own line, right-aligned */}
             <p className="font-mono text-[10px] text-foreground-muted text-right mt-1">
               {fmtTime(msg.created_at)}
             </p>
           </div>
+          <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} />
         </div>
       </div>
     </Fragment>

@@ -1,31 +1,37 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Reply, Copy } from "lucide-react";
-import type { CachedMessage } from "@/lib/communities/cache";
+import type { CachedMessage, MessageReaction } from "@/lib/communities/cache";
 
 interface MessageActionSliderProps {
   message: CachedMessage | null;
   isMe: boolean;
+  currentUserId: string;
+  communityId: string;
   onClose: () => void;
   onReply: (msg: CachedMessage) => void;
   onCopy: (msg: CachedMessage) => void;
+  onReactionToggled: (msgId: string, reactions: MessageReaction[]) => void;
 }
 
 const REACTIONS = [
-  { emoji: "❤️", label: "Love",    bg: "bg-red-500" },
-  { emoji: "👍", label: "Like",    bg: "bg-green-500" },
-  { emoji: "👎", label: "Dislike", bg: "bg-orange-500" },
-  { emoji: "😮", label: "Wow",     bg: "bg-purple-500" },
-  { emoji: "🔥", label: "Fire",    bg: "bg-blue-500" },
+  { emoji: "❤️", label: "Love",    bg: "bg-red-500",    activeBg: "bg-red-400"    },
+  { emoji: "👍", label: "Like",    bg: "bg-green-500",  activeBg: "bg-green-400"  },
+  { emoji: "👎", label: "Dislike", bg: "bg-orange-500", activeBg: "bg-orange-400" },
+  { emoji: "😮", label: "Wow",     bg: "bg-purple-500", activeBg: "bg-purple-400" },
+  { emoji: "🔥", label: "Fire",    bg: "bg-blue-500",   activeBg: "bg-blue-400"   },
 ];
 
 export function MessageActionSlider({
   message,
   isMe,
+  currentUserId,
+  communityId,
   onClose,
   onReply,
   onCopy,
+  onReactionToggled,
 }: MessageActionSliderProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -40,15 +46,74 @@ export function MessageActionSlider({
 
   // Prevent body scroll while open
   useEffect(() => {
-    if (message) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = message ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [message]);
 
+  const handleReaction = useCallback(
+    async (emoji: string) => {
+      if (!message) return;
+      const msgId = message.id;
+
+      // Optimistic update: toggle immediately in UI
+      const existing = (message.reactions ?? []).find(
+        (r) => r.emoji === emoji && r.user_ids.includes(currentUserId)
+      );
+      let optimistic: MessageReaction[];
+      if (existing) {
+        // Remove current user from this emoji
+        optimistic = (message.reactions ?? [])
+          .map((r) =>
+            r.emoji === emoji
+              ? { ...r, user_ids: r.user_ids.filter((id) => id !== currentUserId) }
+              : r
+          )
+          .filter((r) => r.user_ids.length > 0);
+      } else {
+        // Remove any prior reaction from current user, then add new one
+        const withoutUser = (message.reactions ?? [])
+          .map((r) => ({ ...r, user_ids: r.user_ids.filter((id) => id !== currentUserId) }))
+          .filter((r) => r.user_ids.length > 0);
+        const group = withoutUser.find((r) => r.emoji === emoji);
+        if (group) {
+          optimistic = withoutUser.map((r) =>
+            r.emoji === emoji ? { ...r, user_ids: [...r.user_ids, currentUserId] } : r
+          );
+        } else {
+          optimistic = [...withoutUser, { emoji, user_ids: [currentUserId] }];
+        }
+      }
+      onReactionToggled(msgId, optimistic);
+      onClose();
+
+      // Sync with server (realtime will propagate to other clients)
+      try {
+        const res = await fetch(
+          `/api/communities/${communityId}/messages/${msgId}/reactions`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ emoji }),
+          }
+        );
+        if (res.ok) {
+          const { reactions } = await res.json();
+          // Server is authoritative — reconcile if needed
+          onReactionToggled(msgId, reactions);
+        }
+      } catch {
+        // Network error — realtime will correct state when reconnected
+      }
+    },
+    [message, currentUserId, communityId, onReactionToggled, onClose]
+  );
+
   const isOpen = !!message;
+
+  // Which emoji does the current user have on this message (if any)?
+  const myEmoji = message?.reactions?.find((r) =>
+    r.user_ids.includes(currentUserId)
+  )?.emoji;
 
   return (
     <>
@@ -73,7 +138,7 @@ export function MessageActionSlider({
         aria-modal="true"
         aria-label="Message actions"
       >
-        <div className="bg-[#111113] rounded-t-3xl border-t border-white/10 shadow-2xl pb-safe">
+        <div className="bg-[#111113] rounded-t-3xl border-t border-white/10 shadow-2xl">
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
             <div className="w-10 h-1 rounded-full bg-white/20" />
@@ -90,20 +155,21 @@ export function MessageActionSlider({
 
           {/* Emoji reactions */}
           <div className="flex items-center justify-around px-6 py-5">
-            {REACTIONS.map(({ emoji, label, bg }) => (
-              <button
-                key={label}
-                onClick={() => {
-                  // Reaction handler — will be wired dynamically later
-                  onClose();
-                }}
-                className={`${bg} w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg
-                  active:scale-90 hover:scale-110 transition-transform duration-150`}
-                aria-label={label}
-              >
-                {emoji}
-              </button>
-            ))}
+            {REACTIONS.map(({ emoji, label, bg, activeBg }) => {
+              const isActive = myEmoji === emoji;
+              return (
+                <button
+                  key={label}
+                  onClick={() => handleReaction(emoji)}
+                  className={`${isActive ? activeBg : bg} w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg
+                    active:scale-90 hover:scale-110 transition-transform duration-150
+                    ${isActive ? "ring-2 ring-white/60 ring-offset-2 ring-offset-[#111113]" : ""}`}
+                  aria-label={`${isActive ? "Remove" : "Add"} ${label} reaction`}
+                >
+                  {emoji}
+                </button>
+              );
+            })}
           </div>
 
           {/* Action rows */}
