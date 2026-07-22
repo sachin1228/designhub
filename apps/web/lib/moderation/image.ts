@@ -1,5 +1,10 @@
 import OpenAI from "openai";
 import type { ModerationResult } from "./types";
+import { getAvailableModel } from "./model-probe";
+
+// Thresholds
+const AUTO_REJECT_THRESHOLD = 0.85;
+const REVIEW_THRESHOLD = 0.60;
 
 // Labels that trigger immediate rejection
 const REJECT_LABELS = new Set([
@@ -21,30 +26,31 @@ const REVIEW_LABELS = new Set([
   "self-harm/instructions",
 ]);
 
-// Thresholds (can be overridden by DB settings later)
-const AUTO_REJECT_THRESHOLD = 0.85;
-const REVIEW_THRESHOLD = 0.60;
-
-let _openai: OpenAI | null = null;
-function getClient(): OpenAI | null {
+function buildClient(): OpenAI | null {
   if (!process.env.OPENAI_API_KEY) return null;
-  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  return _openai;
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+// Detect actual MIME type from magic bytes so the data URL is accurate.
+function detectMime(buffer: Buffer): string {
+  if (buffer[0] === 0x89 && buffer[1] === 0x50) return "image/png";
+  if (buffer[0] === 0x47 && buffer[1] === 0x49) return "image/gif";
+  if (buffer[0] === 0x52 && buffer[1] === 0x49) return "image/webp";
+  return "image/jpeg";
 }
 
 // ── NudeNet ───────────────────────────────────────────────────────────────────
 // Throws on any failure so the caller can fail closed.
 async function callNudeNet(
-  _buffer: Buffer,
+  buffer: Buffer,
 ): Promise<{ explicit: boolean; confidence: number; detections: unknown[] }> {
   const nudeNetUrl = process.env.NUDENET_URL;
   if (!nudeNetUrl) {
-    // NudeNet is required. No URL = service unavailable = fail closed.
     throw new Error("NUDENET_URL is not configured — image moderation service unavailable");
   }
   console.log("[moderateImage] NudeNet request started:", nudeNetUrl);
   const form = new FormData();
-  form.append("file", new Blob([_buffer.buffer as ArrayBuffer]), "image.webp");
+  form.append("file", new Blob([buffer.buffer as ArrayBuffer]), "image.webp");
   const res = await fetch(`${nudeNetUrl}/moderate-image`, {
     method: "POST",
     body: form,
@@ -58,26 +64,26 @@ async function callNudeNet(
 
 // ── Main image moderator ──────────────────────────────────────────────────────
 export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
-  const openai = getClient();
+  const modelInfo = await getAvailableModel();
 
-  // ── 1. OpenAI image moderation ────────────────────────────────────────────
-  if (openai) {
-    console.log("[moderateImage] OpenAI request started");
+  // ── 1. OpenAI image moderation (only if model supports images) ────────────
+  if (modelInfo?.supportsImages) {
+    const openai = buildClient()!;
+    const mimeType = detectMime(buffer);
+    const b64 = buffer.toString("base64");
+
+    console.log(`[moderateImage] OpenAI request started — model: ${modelInfo.model}, mime: ${mimeType}`);
     try {
-      // Detect actual MIME type from magic bytes so the data URL is accurate.
-      let mimeType = "image/jpeg";
-      if (buffer[0] === 0x89 && buffer[1] === 0x50) mimeType = "image/png";
-      else if (buffer[0] === 0x47 && buffer[1] === 0x49) mimeType = "image/gif";
-      else if (buffer[0] === 0x52 && buffer[1] === 0x49) mimeType = "image/webp";
-
-      const b64 = buffer.toString("base64");
       const res = await openai.moderations.create({
-        model: "omni-moderation-latest",
+        model: modelInfo.model,
         input: [{ type: "image_url", image_url: { url: `data:${mimeType};base64,${b64}` } }],
       });
 
       const result = res.results[0];
-      console.log("[moderateImage] OpenAI response — flagged:", result.flagged, "categories:", JSON.stringify(result.categories));
+      console.log(
+        `[moderateImage] OpenAI response — flagged: ${result.flagged}`,
+        "categories:", JSON.stringify(result.categories),
+      );
 
       if (result.flagged) {
         const scores = result.category_scores as unknown as Record<string, number>;
@@ -86,9 +92,7 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
           .filter(([, v]) => v)
           .map(([k]) => k);
 
-        const isHardReject = flaggedCats.some((c) => REJECT_LABELS.has(c)) || maxScore >= AUTO_REJECT_THRESHOLD;
-
-        if (isHardReject) {
+        if (flaggedCats.some((c) => REJECT_LABELS.has(c)) || maxScore >= AUTO_REJECT_THRESHOLD) {
           console.log("[moderateImage] Decision: REJECTED by OpenAI — categories:", flaggedCats, "maxScore:", maxScore);
           return {
             allowed: false,
@@ -100,8 +104,7 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
           };
         }
 
-        const isReview = flaggedCats.some((c) => REVIEW_LABELS.has(c)) || maxScore >= REVIEW_THRESHOLD;
-        if (isReview) {
+        if (flaggedCats.some((c) => REVIEW_LABELS.has(c)) || maxScore >= REVIEW_THRESHOLD) {
           console.log("[moderateImage] Decision: REVIEW by OpenAI — categories:", flaggedCats, "maxScore:", maxScore);
           return {
             allowed: true,
@@ -112,32 +115,51 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
             rawResponse: result,
           };
         }
-      }
-    } catch (err: any) {
-      if (err?.status === 403) {
-        // 403 = this key/project can't use omni-moderation-latest for images.
-        // Fall through to NudeNet which is purpose-built for image content.
-        console.warn("[moderateImage] OpenAI 403 — omni-moderation-latest unavailable for images, falling through to NudeNet");
-      } else {
-        // Any other OpenAI error — FAIL CLOSED.
-        console.error("[moderateImage] OpenAI error (fail-closed):", err);
+
+        // Flagged but below all thresholds — treat as review to be safe.
+        console.log("[moderateImage] Decision: REVIEW by OpenAI (below thresholds but flagged)");
         return {
-          allowed: false,
-          status: "rejected",
-          reason: "Image moderation service error. Please try again.",
+          allowed: true,
+          status: "review",
+          reason: "Image flagged for manual review.",
           provider: "openai",
+          confidence: maxScore,
+          rawResponse: result,
         };
       }
+
+      // OpenAI cleared the image — approved without needing NudeNet.
+      console.log("[moderateImage] Decision: APPROVED by OpenAI");
+      return { allowed: true, status: "approved", reason: "", provider: "openai" };
+
+    } catch (err: any) {
+      // Runtime error (not a model-access issue — probe already confirmed access).
+      console.error(
+        `[moderateImage] OpenAI runtime error (fail-closed) — model: ${modelInfo.model}`,
+        `HTTP ${err?.status ?? "?"}:`,
+        err?.error?.message ?? err?.message ?? err,
+      );
+      return {
+        allowed: false,
+        status: "rejected",
+        reason: "Image moderation service error. Please try again.",
+        provider: "openai",
+      };
     }
   }
 
-  // ── 2. NudeNet check ──────────────────────────────────────────────────────
+  // ── 2. NudeNet (used when OpenAI model doesn't support images) ────────────
+  if (modelInfo && !modelInfo.supportsImages) {
+    console.log(`[moderateImage] Model ${modelInfo.model} does not support images — falling through to NudeNet`);
+  } else if (!modelInfo) {
+    console.error("[moderateImage] No OpenAI moderation model available — falling through to NudeNet");
+  }
+
   let nudeNet: { explicit: boolean; confidence: number; detections: unknown[] };
   try {
     nudeNet = await callNudeNet(buffer);
-  } catch (err) {
-    // NudeNet failed or not configured — FAIL CLOSED. Do not upload.
-    console.error("[moderateImage] NudeNet error (fail-closed):", err);
+  } catch (err: any) {
+    console.error("[moderateImage] NudeNet error (fail-closed):", err?.message ?? err);
     return {
       allowed: false,
       status: "rejected",
@@ -158,8 +180,7 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
         rawResponse: nudeNet,
       };
     }
-    // Any explicit detection (even below AUTO_REJECT_THRESHOLD) goes to review,
-    // not silently approved.
+    // Any explicit detection below AUTO_REJECT goes to review, never silently approved.
     console.log("[moderateImage] Decision: REVIEW by NudeNet — confidence:", nudeNet.confidence);
     return {
       allowed: true,
@@ -171,6 +192,6 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
     };
   }
 
-  console.log("[moderateImage] Decision: APPROVED");
+  console.log("[moderateImage] Decision: APPROVED by NudeNet");
   return { allowed: true, status: "approved", reason: "", provider: "nudenet" };
 }

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { ModerationResult } from "./types";
+import { getAvailableModel } from "./model-probe";
 
 // ── Custom business-rule patterns ────────────────────────────────────────────
 
@@ -90,11 +91,9 @@ function applyCustomRules(text: string): { blocked: boolean; reason: string } {
 
 // ── OpenAI moderation ────────────────────────────────────────────────────────
 
-let _openai: OpenAI | null = null;
-function getClient(): OpenAI | null {
+function buildClient(): OpenAI | null {
   if (!process.env.OPENAI_API_KEY) return null;
-  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  return _openai;
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
 export async function moderateText(text: string): Promise<ModerationResult> {
@@ -103,30 +102,28 @@ export async function moderateText(text: string): Promise<ModerationResult> {
     return { allowed: true, status: "approved", reason: "", provider: "none" };
   }
 
-  const openai = getClient();
-
   // ── 1. OpenAI moderation ──────────────────────────────────────────────────
-  if (openai) {
-    console.log("[moderateText] OpenAI request started");
+  const modelInfo = await getAvailableModel();
+
+  if (modelInfo) {
+    const openai = buildClient()!;
+    console.log(`[moderateText] OpenAI request started — model: ${modelInfo.model}`);
     try {
-      // Try omni-moderation-latest first; fall back to text-moderation-latest on 403.
-      let res;
-      try {
-        res = await openai.moderations.create({ model: "omni-moderation-latest", input: trimmed });
-      } catch (omniErr: any) {
-        if (omniErr?.status === 403) {
-          console.warn("[moderateText] omni-moderation-latest 403 — falling back to text-moderation-latest");
-          res = await openai.moderations.create({ model: "text-moderation-latest", input: trimmed });
-        } else {
-          throw omniErr;
-        }
-      }
+      const res = await openai.moderations.create({
+        model: modelInfo.model,
+        input: trimmed,
+      });
 
       const result = res.results[0];
-      console.log("[moderateText] OpenAI response — flagged:", result.flagged, "categories:", JSON.stringify(result.categories));
+      console.log(
+        `[moderateText] OpenAI response — flagged: ${result.flagged}`,
+        "categories:", JSON.stringify(result.categories),
+      );
 
       if (result.flagged) {
-        const maxScore = Math.max(...Object.values(result.category_scores as unknown as Record<string, number>));
+        const maxScore = Math.max(
+          ...Object.values(result.category_scores as unknown as Record<string, number>),
+        );
         console.log("[moderateText] Decision: REJECTED by OpenAI — maxScore:", maxScore);
         return {
           allowed: false,
@@ -139,9 +136,14 @@ export async function moderateText(text: string): Promise<ModerationResult> {
       }
 
       console.log("[moderateText] OpenAI: not flagged — continuing to custom rules");
-    } catch (err) {
-      // Both OpenAI models failed — FAIL CLOSED.
-      console.error("[moderateText] OpenAI error (fail-closed):", err);
+    } catch (err: any) {
+      // The probe already confirmed this model works; a runtime error here is
+      // transient (network, rate-limit, etc.) — FAIL CLOSED.
+      console.error(
+        `[moderateText] OpenAI runtime error (fail-closed) — model: ${modelInfo.model}`,
+        `HTTP ${err?.status ?? "?"}:`,
+        err?.error?.message ?? err?.message ?? err,
+      );
       return {
         allowed: false,
         status: "rejected",
@@ -149,6 +151,15 @@ export async function moderateText(text: string): Promise<ModerationResult> {
         provider: "openai",
       };
     }
+  } else {
+    // No model available — fail closed.
+    console.error("[moderateText] No OpenAI moderation model available (fail-closed).");
+    return {
+      allowed: false,
+      status: "rejected",
+      reason: "Message moderation service is unavailable. Please try again later.",
+      provider: "openai",
+    };
   }
 
   // ── 2. Custom business rules ──────────────────────────────────────────────
