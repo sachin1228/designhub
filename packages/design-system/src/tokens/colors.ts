@@ -3,24 +3,21 @@
  * These are the foundation of the design system; do not use them directly
  * in UI code. Reference semantic tokens from `themes/` instead.
  *
- * Scales follow the Geist / Vercel convention:
- * lower numbers = lighter shades, higher numbers = darker shades.
+ * Official Geist blue scale — 100 = darkest, 1000 = lightest.
+ * Source: vercel.com/geist/colors
  */
 
-/**
- * Geist Blue — official Vercel / Geist blue palette.
- * Primary accent is blue-700.
- */
 export const blue = {
-  100: "#cce7ff",
-  200: "#99ceff",
-  300: "#66b5ff",
-  400: "#339dff",
-  500: "#0084ff",
-  600: "#006bdb",
-  700: "#0057b7", // ← primary brand accent (light mode)
-  800: "#004494", // ← hover (darker shade of 700)
-  900: "#003070",
+  100:  "#000b1f", // deepest navy
+  200:  "#00254d",
+  300:  "#003c85",
+  400:  "#0057b7",
+  500:  "#006bdb",
+  600:  "#0070f3", // ← PRIMARY brand accent (light mode)
+  700:  "#52a8ff", // ← dark-mode accent (lighter for legibility)
+  800:  "#adcfff",
+  900:  "#d9ecff",
+  1000: "#f0f8ff", // barely-there tint — soft backgrounds
 } as const;
 
 /** Geist Neutral — clean, cool-neutral grays */
@@ -51,7 +48,7 @@ export const dark = {
 } as const;
 
 /** Brand signal */
-export const signal = blue[700] as const;
+export const signal = blue[600] as const;
 
 export const colors = {
   blue,

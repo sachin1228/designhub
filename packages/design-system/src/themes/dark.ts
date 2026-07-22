@@ -1,41 +1,35 @@
 import { neutral, blue, signal, dark } from "../tokens/colors";
 
 /**
- * Dark theme — Geist near-black with blue-400 as accent (lighter for dark bg legibility).
+ * Dark theme — Geist blue-700 (#52a8ff) as accent (lighter for dark bg legibility),
+ * blue-600 (#0070f3) as hover (slightly darker).
  */
 export const darkTheme = {
-  /** Page and panel backgrounds */
-  background:        dark[900],     // #0A0A0A
-  backgroundSubtle:  dark[800],     // #111111
+  background:        dark[900],
+  backgroundSubtle:  dark[800],
 
-  /** Card / elevated surfaces */
-  surface:           dark[800],     // #111111
-  surfaceRaised:     dark[700],     // #1A1A1A
+  surface:           dark[800],
+  surfaceRaised:     dark[700],
 
-  /** Text */
-  foreground:        dark[100],     // #EDEDED
-  foregroundMuted:   dark[400],     // #737373
-  foregroundSubtle:  neutral[500],  // #737373
+  foreground:        dark[100],
+  foregroundMuted:   dark[400],
+  foregroundSubtle:  neutral[500],
 
-  /** Accent — blue-400 for legibility on dark backgrounds */
-  accent:            blue[400],     // #339dff
-  accentHover:       blue[300],     // #66b5ff — lighter on hover (dark-mode convention)
-  accentSoft:        dark[700],     // #1A1A1A — subtle tinted bg
-  accentForeground:  neutral[0],    // #FFFFFF
+  accent:            blue[700],     // #52a8ff — lighter for dark bg
+  accentHover:       blue[600],     // #0070f3 — hover goes slightly darker
+  accentSoft:        dark[700],
+  accentForeground:  neutral[0],
 
-  /** Borders */
-  border:            dark[600],     // #2E2E2E
-  borderSubtle:      dark[700],     // #1A1A1A
+  border:            dark[600],
+  borderSubtle:      dark[700],
 
-  /** Brand signal */
-  signal,                           // #0057b7
+  signal,
 
-  /** Always-dark overlay panel */
-  overlay:           dark[900],     // #0A0A0A
-  overlayRaised:     dark[800],     // #111111
-  overlayElevated:   dark[700],     // #1A1A1A
-  overlayForeground: dark[100],     // #EDEDED
-  overlayMuted:      dark[400],     // #737373
+  overlay:           dark[900],
+  overlayRaised:     dark[800],
+  overlayElevated:   dark[700],
+  overlayForeground: dark[100],
+  overlayMuted:      dark[400],
 } as const;
 
 export type DarkTheme = typeof darkTheme;

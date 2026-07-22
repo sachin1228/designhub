@@ -1,115 +1,93 @@
 /**
  * @draft/design-system — CSS custom properties
  *
- * Geist / Vercel design language, Geist blue-700 as primary accent.
- *   - semantic tokens only (no raw values in UI code)
- *   - light mode in :root, dark mode via prefers-color-scheme
- *   - no JS toggle required
- *
- * Import this file once in your global stylesheet.
+ * Official Geist blue scale. blue-600 (#0070f3) is primary accent.
  */
 
 /* ─── Light mode (default) ─────────────────────────────────────────── */
 :root {
   color-scheme: light dark;
 
-  /* Backgrounds */
   --color-background:        #FAFAFA;
   --color-background-subtle: #F5F5F5;
 
-  /* Surfaces */
   --color-surface:           #FFFFFF;
   --color-surface-raised:    #F5F5F5;
 
-  /* Foreground / text */
   --color-foreground:        #0A0A0A;
   --color-foreground-muted:  #525252;
   --color-foreground-subtle: #737373;
 
-  /* Accent — Geist blue-700 */
-  --color-accent:            #0057b7;
-  --color-accent-rgb:        0 87 183;    /* RGB channels for opacity modifiers */
-  --color-accent-hover:      #004494;     /* blue-800 — darker shade on hover */
-  --color-accent-soft:       #cce7ff;     /* blue-100 — tinted bg */
+  /* Accent — Geist blue-600 */
+  --color-accent:            #0070f3;
+  --color-accent-rgb:        0 112 243;   /* RGB channels for opacity modifiers */
+  --color-accent-hover:      #006bdb;     /* blue-500 — darker shade on hover */
+  --color-accent-soft:       #f0f8ff;     /* blue-1000 — tinted bg */
   --color-accent-foreground: #FFFFFF;
 
-  /* Borders */
   --color-border:            #EAEAEA;
   --color-border-subtle:     #F5F5F5;
 
-  /* Brand signal */
-  --color-signal:            #0057b7;
+  --color-signal:            #0070f3;
 
-  /* Always-dark overlay panel */
   --color-overlay:            #0A0A0A;
   --color-overlay-raised:     #111111;
   --color-overlay-elevated:   #1A1A1A;
   --color-overlay-foreground: #EDEDED;
   --color-overlay-muted:      #737373;
 
-  /* Shadows — Geist style: subtle, border-contrast-first */
   --shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
   --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --shadow-card: 0 0 0 1px var(--color-border), 0 2px 4px rgb(0 0 0 / 0.04);
 
-  /* Radius */
   --radius-sm:   4px;
   --radius-md:   6px;
   --radius-lg:   8px;
   --radius-xl:   12px;
   --radius-full: 9999px;
 
-  /* Grid pattern variables */
   --grid-line-color: rgba(0, 0, 0, 0.06);
   --grid-dot-color:  rgba(0, 0, 0, 0.12);
   --grid-size:       28px;
 }
 
-/* ─── Dark mode (system-driven, no toggle) ──────────────────────────── */
+/* ─── Dark mode ─────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Backgrounds */
     --color-background:        #0A0A0A;
     --color-background-subtle: #111111;
 
-    /* Surfaces */
     --color-surface:           #111111;
     --color-surface-raised:    #1A1A1A;
 
-    /* Foreground / text */
     --color-foreground:        #EDEDED;
     --color-foreground-muted:  #737373;
     --color-foreground-subtle: #525252;
 
-    /* Accent — blue-400 for legibility on dark backgrounds */
-    --color-accent:            #339dff;
-    --color-accent-rgb:        51 157 255;   /* RGB channels for opacity modifiers */
-    --color-accent-hover:      #66b5ff;      /* blue-300 — lighter on hover (dark convention) */
+    /* Accent — Geist blue-700 (#52a8ff) for dark-bg legibility */
+    --color-accent:            #52a8ff;
+    --color-accent-rgb:        82 168 255;
+    --color-accent-hover:      #0070f3;   /* blue-600 — hover goes slightly darker */
     --color-accent-soft:       #1A1A1A;
     --color-accent-foreground: #FFFFFF;
 
-    /* Borders */
     --color-border:            #2E2E2E;
     --color-border-subtle:     #1A1A1A;
 
-    /* Signal stays vivid */
-    --color-signal:            #0057b7;
+    --color-signal:            #0070f3;
 
-    /* Overlay panel */
     --color-overlay:            #0A0A0A;
     --color-overlay-raised:     #111111;
     --color-overlay-elevated:   #1A1A1A;
     --color-overlay-foreground: #EDEDED;
     --color-overlay-muted:      #737373;
 
-    /* Shadows — rely on border contrast on dark bg */
     --shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.40);
     --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.50), 0 1px 2px -1px rgb(0 0 0 / 0.40);
     --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.60), 0 2px 4px -2px rgb(0 0 0 / 0.48);
     --shadow-card: 0 0 0 1px var(--color-border), 0 2px 8px rgb(0 0 0 / 0.50);
 
-    /* Grid */
     --grid-line-color: rgba(255, 255, 255, 0.04);
     --grid-dot-color:  rgba(255, 255, 255, 0.08);
   }

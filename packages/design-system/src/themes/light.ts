@@ -1,42 +1,35 @@
 import { neutral, blue, signal, dark } from "../tokens/colors";
 
 /**
- * Light theme — semantic color mappings.
- * Geist design language with blue-700 as primary accent.
+ * Light theme — Geist blue-600 (#0070f3) as primary accent,
+ * blue-500 (#006bdb) as hover (darker shade).
  */
 export const lightTheme = {
-  /** Page and panel backgrounds */
-  background:        neutral[50],   // #FAFAFA
-  backgroundSubtle:  neutral[100],  // #F5F5F5
+  background:        neutral[50],
+  backgroundSubtle:  neutral[100],
 
-  /** Card / elevated surfaces */
-  surface:           neutral[0],    // #FFFFFF
-  surfaceRaised:     neutral[100],  // #F5F5F5
+  surface:           neutral[0],
+  surfaceRaised:     neutral[100],
 
-  /** Text */
-  foreground:        neutral[1000], // #0A0A0A
-  foregroundMuted:   neutral[600],  // #525252
-  foregroundSubtle:  neutral[500],  // #737373
+  foreground:        neutral[1000],
+  foregroundMuted:   neutral[600],
+  foregroundSubtle:  neutral[500],
 
-  /** Accent — Geist blue-700 */
-  accent:            blue[700],     // #0057b7
-  accentHover:       blue[800],     // #004494 — darker shade on hover
-  accentSoft:        blue[100],     // #cce7ff — tinted bg
-  accentForeground:  neutral[0],    // #FFFFFF
+  accent:            blue[600],     // #0070f3 — Geist blue-600
+  accentHover:       blue[500],     // #006bdb — darker shade on hover
+  accentSoft:        blue[1000],    // #f0f8ff — tinted bg
+  accentForeground:  neutral[0],
 
-  /** Borders */
-  border:            neutral[200],  // #EAEAEA
-  borderSubtle:      neutral[100],  // #F5F5F5
+  border:            neutral[200],
+  borderSubtle:      neutral[100],
 
-  /** Brand signal */
-  signal,                           // #0057b7
+  signal,
 
-  /** Always-dark overlay panel */
-  overlay:           dark[900],     // #0A0A0A
-  overlayRaised:     dark[800],     // #111111
-  overlayElevated:   dark[700],     // #1A1A1A
-  overlayForeground: dark[100],     // #EDEDED
-  overlayMuted:      dark[400],     // #737373
+  overlay:           dark[900],
+  overlayRaised:     dark[800],
+  overlayElevated:   dark[700],
+  overlayForeground: dark[100],
+  overlayMuted:      dark[400],
 } as const;
 
 export type LightTheme = typeof lightTheme;
