@@ -107,6 +107,7 @@ export async function moderateText(text: string): Promise<ModerationResult> {
 
   // ── 1. OpenAI moderation ──────────────────────────────────────────────────
   if (openai) {
+    console.log("[moderateText] OpenAI request started");
     try {
       const res = await openai.moderations.create({
         model: "omni-moderation-latest",
@@ -114,25 +115,38 @@ export async function moderateText(text: string): Promise<ModerationResult> {
       });
 
       const result = res.results[0];
+      console.log("[moderateText] OpenAI response — flagged:", result.flagged, "categories:", JSON.stringify(result.categories));
+
       if (result.flagged) {
+        const maxScore = Math.max(...Object.values(result.category_scores as unknown as Record<string, number>));
+        console.log("[moderateText] Decision: REJECTED by OpenAI — maxScore:", maxScore);
         return {
           allowed: false,
           status: "rejected",
           reason: "This content violates our community guidelines.",
           provider: "openai",
-          confidence: Math.max(...Object.values(result.category_scores as unknown as Record<string, number>)),
+          confidence: maxScore,
           rawResponse: result,
         };
       }
+
+      console.log("[moderateText] OpenAI: not flagged — continuing to custom rules");
     } catch (err) {
-      // Fail open — log and continue to custom rules
-      console.error("[moderateText] OpenAI error:", err);
+      // OpenAI failed — FAIL CLOSED. Do not fall through to custom rules.
+      console.error("[moderateText] OpenAI error (fail-closed):", err);
+      return {
+        allowed: false,
+        status: "rejected",
+        reason: "Message moderation service error. Please try again.",
+        provider: "openai",
+      };
     }
   }
 
   // ── 2. Custom business rules ──────────────────────────────────────────────
   const custom = applyCustomRules(trimmed);
   if (custom.blocked) {
+    console.log("[moderateText] Decision: REJECTED by custom rules");
     return {
       allowed: false,
       status: "rejected",
@@ -141,5 +155,6 @@ export async function moderateText(text: string): Promise<ModerationResult> {
     };
   }
 
+  console.log("[moderateText] Decision: APPROVED");
   return { allowed: true, status: "approved", reason: "", provider: "openai" };
 }

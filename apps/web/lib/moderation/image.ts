@@ -32,30 +32,28 @@ function getClient(): OpenAI | null {
   return _openai;
 }
 
-// ── NudeNet stub ─────────────────────────────────────────────────────────────
-// Wire up the Python FastAPI service by setting NUDENET_URL env var.
-// Until then the stub always passes (fails open).
+// ── NudeNet ───────────────────────────────────────────────────────────────────
+// Throws on any failure so the caller can fail closed.
 async function callNudeNet(
   _buffer: Buffer,
 ): Promise<{ explicit: boolean; confidence: number; detections: unknown[] }> {
   const nudeNetUrl = process.env.NUDENET_URL;
   if (!nudeNetUrl) {
-    return { explicit: false, confidence: 0, detections: [] };
+    // NudeNet is required. No URL = service unavailable = fail closed.
+    throw new Error("NUDENET_URL is not configured — image moderation service unavailable");
   }
-  try {
-    const form = new FormData();
-    form.append("file", new Blob([_buffer.buffer as ArrayBuffer]), "image.webp");
-    const res = await fetch(`${nudeNetUrl}/moderate-image`, {
-      method: "POST",
-      body: form,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) throw new Error(`NudeNet HTTP ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error("[moderateImage] NudeNet error (fail-open):", err);
-    return { explicit: false, confidence: 0, detections: [] };
-  }
+  console.log("[moderateImage] NudeNet request started:", nudeNetUrl);
+  const form = new FormData();
+  form.append("file", new Blob([_buffer.buffer as ArrayBuffer]), "image.webp");
+  const res = await fetch(`${nudeNetUrl}/moderate-image`, {
+    method: "POST",
+    body: form,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`NudeNet HTTP ${res.status}`);
+  const json = await res.json();
+  console.log("[moderateImage] NudeNet response:", JSON.stringify(json));
+  return json;
 }
 
 // ── Main image moderator ──────────────────────────────────────────────────────
@@ -64,14 +62,22 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
 
   // ── 1. OpenAI image moderation ────────────────────────────────────────────
   if (openai) {
+    console.log("[moderateImage] OpenAI request started");
     try {
+      // Detect actual MIME type from magic bytes so the data URL is accurate.
+      let mimeType = "image/jpeg";
+      if (buffer[0] === 0x89 && buffer[1] === 0x50) mimeType = "image/png";
+      else if (buffer[0] === 0x47 && buffer[1] === 0x49) mimeType = "image/gif";
+      else if (buffer[0] === 0x52 && buffer[1] === 0x49) mimeType = "image/webp";
+
       const b64 = buffer.toString("base64");
       const res = await openai.moderations.create({
         model: "omni-moderation-latest",
-        input: [{ type: "image_url", image_url: { url: `data:image/webp;base64,${b64}` } }],
+        input: [{ type: "image_url", image_url: { url: `data:${mimeType};base64,${b64}` } }],
       });
 
       const result = res.results[0];
+      console.log("[moderateImage] OpenAI response — flagged:", result.flagged, "categories:", JSON.stringify(result.categories));
 
       if (result.flagged) {
         const scores = result.category_scores as unknown as Record<string, number>;
@@ -83,6 +89,7 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
         const isHardReject = flaggedCats.some((c) => REJECT_LABELS.has(c)) || maxScore >= AUTO_REJECT_THRESHOLD;
 
         if (isHardReject) {
+          console.log("[moderateImage] Decision: REJECTED by OpenAI — categories:", flaggedCats, "maxScore:", maxScore);
           return {
             allowed: false,
             status: "rejected",
@@ -95,6 +102,7 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
 
         const isReview = flaggedCats.some((c) => REVIEW_LABELS.has(c)) || maxScore >= REVIEW_THRESHOLD;
         if (isReview) {
+          console.log("[moderateImage] Decision: REVIEW by OpenAI — categories:", flaggedCats, "maxScore:", maxScore);
           return {
             allowed: true,
             status: "review",
@@ -106,14 +114,35 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
         }
       }
     } catch (err) {
-      console.error("[moderateImage] OpenAI error (fail-open):", err);
+      // OpenAI failed — FAIL CLOSED. Do not fall through.
+      console.error("[moderateImage] OpenAI error (fail-closed):", err);
+      return {
+        allowed: false,
+        status: "rejected",
+        reason: "Image moderation service error. Please try again.",
+        provider: "openai",
+      };
     }
   }
 
-  // ── 2. NudeNet check ─────────────────────────────────────────────────────
-  const nudeNet = await callNudeNet(buffer);
+  // ── 2. NudeNet check ──────────────────────────────────────────────────────
+  let nudeNet: { explicit: boolean; confidence: number; detections: unknown[] };
+  try {
+    nudeNet = await callNudeNet(buffer);
+  } catch (err) {
+    // NudeNet failed or not configured — FAIL CLOSED. Do not upload.
+    console.error("[moderateImage] NudeNet error (fail-closed):", err);
+    return {
+      allowed: false,
+      status: "rejected",
+      reason: "Image moderation service error. Please try again.",
+      provider: "nudenet",
+    };
+  }
+
   if (nudeNet.explicit) {
     if (nudeNet.confidence >= AUTO_REJECT_THRESHOLD) {
+      console.log("[moderateImage] Decision: REJECTED by NudeNet — confidence:", nudeNet.confidence);
       return {
         allowed: false,
         status: "rejected",
@@ -123,17 +152,19 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
         rawResponse: nudeNet,
       };
     }
-    if (nudeNet.confidence >= REVIEW_THRESHOLD) {
-      return {
-        allowed: true,
-        status: "review",
-        reason: "Image flagged for manual review.",
-        provider: "nudenet",
-        confidence: nudeNet.confidence,
-        rawResponse: nudeNet,
-      };
-    }
+    // Any explicit detection (even below AUTO_REJECT_THRESHOLD) goes to review,
+    // not silently approved.
+    console.log("[moderateImage] Decision: REVIEW by NudeNet — confidence:", nudeNet.confidence);
+    return {
+      allowed: true,
+      status: "review",
+      reason: "Image flagged for manual review.",
+      provider: "nudenet",
+      confidence: nudeNet.confidence,
+      rawResponse: nudeNet,
+    };
   }
 
-  return { allowed: true, status: "approved", reason: "", provider: "openai" };
+  console.log("[moderateImage] Decision: APPROVED");
+  return { allowed: true, status: "approved", reason: "", provider: "nudenet" };
 }
