@@ -4,7 +4,7 @@ import { Fragment } from "react";
 import { Clock, CheckCheck } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
-import type { CachedMessage, MessageReaction } from "@/lib/communities/cache";
+import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
 
 interface MessageBubbleProps {
   msg: CachedMessage;
@@ -14,6 +14,25 @@ interface MessageBubbleProps {
   unreadDivider: React.ReactNode;
   currentUserId: string;
   onPress: (msg: CachedMessage) => void;
+}
+
+function ReplyBubble({ reply, isMe }: { reply: ReplyPreview; isMe: boolean }) {
+  return (
+    <div
+      className={`mb-1 px-2.5 py-1.5 rounded-xl border-l-2 text-left max-w-full
+        ${isMe
+          ? "bg-black/20 border-white/40"
+          : "bg-black/10 border-foreground-muted/40"
+        }`}
+    >
+      <p className={`font-body text-[10px] font-semibold truncate ${isMe ? "text-accent-foreground/80" : "text-foreground-muted"}`}>
+        {reply.user_name}
+      </p>
+      <p className={`font-body text-[11px] truncate ${isMe ? "text-accent-foreground/70" : "text-foreground-muted"}`}>
+        {reply.content}
+      </p>
+    </div>
+  );
 }
 
 function ReactionPills({
@@ -62,6 +81,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const sender    = msg.users;
   const reactions = msg.reactions ?? [];
+  const replyTo   = msg.reply_to ?? null;
 
   if (isMe) {
     return (
@@ -84,6 +104,7 @@ export function MessageBubble({
                   : "bg-accent"
               }`}
             >
+              {replyTo && <ReplyBubble reply={replyTo} isMe />}
               <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
                 {msg.content}
               </p>
@@ -132,6 +153,7 @@ export function MessageBubble({
             onClick={() => onPress(msg)}
             className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 cursor-pointer select-none active:scale-[0.97] transition-transform"
           >
+            {replyTo && <ReplyBubble reply={replyTo} isMe={false} />}
             <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
               {msg.content}
             </p>
