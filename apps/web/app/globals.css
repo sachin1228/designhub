@@ -64,17 +64,17 @@
     --color-foreground-muted:  #737373;
     --color-foreground-subtle: #525252;
 
-    /* Accent — Geist blue-700 (#52a8ff) for dark-bg legibility */
-    --color-accent:            #52a8ff;
-    --color-accent-rgb:        82 168 255;
-    --color-accent-hover:      #0070f3;   /* blue-600 — hover goes slightly darker */
+    /* Accent */
+    --color-accent:            #0070F3;
+    --color-accent-rgb:        0 112 243;
+    --color-accent-hover:      #0060D1;
     --color-accent-soft:       #1A1A1A;
     --color-accent-foreground: #FFFFFF;
 
     --color-border:            #2E2E2E;
     --color-border-subtle:     #1A1A1A;
 
-    --color-signal:            #0070f3;
+    --color-signal:            #0070F3;
 
     --color-overlay:            #0A0A0A;
     --color-overlay-raised:     #111111;
