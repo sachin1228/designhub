@@ -1,0 +1,318 @@
+[moderateImage] OpenAI request started
+[moderateImage] OpenAI error (fail-closed): Error: 403 Forbidden
+    at async moderateImage (lib/moderation/image.ts:74:19)
+    at async POST (app/api/communities/[id]/messages/upload/route.ts:66:21)
+  72 |
+  73 |       const b64 = buffer.toString("base64");
+> 74 |       const res = await openai.moderations.create({
+     |                   ^
+  75 |         model: "omni-moderation-latest",
+  76 |         input: [{ type: "image_url", image_url: { url: `data:${mimeType};base64,${b64}` } }],
+  77 |       }); {
+  status: 403,
+  headers: Headers {
+    date: 'Wed, 22 Jul 2026 18:49:42 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'sachin-7liwtz',
+    'openai-project': 'proj_9e0Ykr1iVs320F9ToPd6ol3k',
+    'x-request-id': 'req_7c225f030c4a46959a03d2fd97e9c93b',
+    'openai-processing-ms': '325',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'access-control-expose-headers': 'CF-Ray',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=4SI_0g.sx1zlaYboKslC90SkxQDJzYM7RW_rPs3AfKI-1784746181.2642527-1.0.1.1-1XmnFfUYGMiuBW54aNvWj_QTTfRhFn2m5T2Zk9ognTJe2.uoRTHoNmQ2dYo.QM4NoWoP7O56TDgIDz6l94vqqE8_ovaQpxFI1BQvUlEKuKsqNG.Piipdh_dxyhRHjz0s; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 22 Jul 2026 19:19:42 GMT',
+    'content-encoding': 'br',
+    'cf-ray': 'a1f4a070eb22ff6f-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_7c225f030c4a46959a03d2fd97e9c93b',
+  error: {
+    message: 'Forbidden',
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages/upload 422 in 2.5s (next.js: 71ms, application-code: 2.4s)
+[moderateText] OpenAI request started
+[moderateText] OpenAI error (fail-closed): Error: 403 Forbidden
+    at async moderateText (lib/moderation/text.ts:112:19)
+    at async POST (app/api/communities/[id]/messages/route.ts:170:23)
+  110 |     console.log("[moderateText] OpenAI request started");
+  111 |     try {
+> 112 |       const res = await openai.moderations.create({
+      |                   ^
+  113 |         model: "omni-moderation-latest",
+  114 |         input: trimmed,
+  115 |       }); {
+  status: 403,
+  headers: Headers {
+    date: 'Wed, 22 Jul 2026 18:49:53 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'sachin-7liwtz',
+    'openai-project': 'proj_9e0Ykr1iVs320F9ToPd6ol3k',
+    'x-request-id': 'req_9d280bad238d4bf7b454496bd9e7c449',
+    'openai-processing-ms': '165',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'access-control-expose-headers': 'CF-Ray',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=iXEhBOqsI_nuIb08r2P84KkPOp2tzuJBh_uykBDo2n0-1784746193.0821445-1.0.1.1-xTepkWqJWG4F_QTjp8dfrkt7AFoZzJY8qnLDmXE3uH._uP6HFb59N12BTAaXBu13bDMNm5K0G4kEZgEFwOeIgRYJLrcBjYxGZ5iZJOfyzyX6.kamhBtCmpmqCuOKvPpb; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 22 Jul 2026 19:19:53 GMT',
+    'content-encoding': 'br',
+    'cf-ray': 'a1f4a0bacb52b66f-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_9d280bad238d4bf7b454496bd9e7c449',
+  error: {
+    message: 'Forbidden',
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages 422 in 1487ms (next.js: 7ms, application-code: 1480ms)
+[moderateText] OpenAI request started
+[moderateText] OpenAI error (fail-closed): Error: 403 Forbidden
+    at async moderateText (lib/moderation/text.ts:112:19)
+    at async POST (app/api/communities/[id]/messages/route.ts:170:23)
+  110 |     console.log("[moderateText] OpenAI request started");
+  111 |     try {
+> 112 |       const res = await openai.moderations.create({
+      |                   ^
+  113 |         model: "omni-moderation-latest",
+  114 |         input: trimmed,
+  115 |       }); {
+  status: 403,
+  headers: Headers {
+    date: 'Wed, 22 Jul 2026 18:50:02 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'sachin-7liwtz',
+    'openai-project': 'proj_9e0Ykr1iVs320F9ToPd6ol3k',
+    'x-request-id': 'req_ce9c638f23af4cce988a088296cc1124',
+    'openai-processing-ms': '254',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'access-control-expose-headers': 'CF-Ray',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=YlVcR2lVCUbtyV3wZ8IQoMPxb2V.Y5gwNE2xEr0raxs-1784746201.967958-1.0.1.1-wIgIcbrz3BXryt1ssFeiIpgguEJrxAawyTVxUEcYMiEFK6qGiP_wN3kr.nUoxzXK1C29QlaIp9oDKaSXAYb1ZJ51uJWyXJaCLjV5L6uo98C5yVGrnoKqjv7DMQosD4YX; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 22 Jul 2026 19:20:02 GMT',
+    'content-encoding': 'br',
+    'cf-ray': 'a1f4a0f248bc3fe6-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_ce9c638f23af4cce988a088296cc1124',
+  error: {
+    message: 'Forbidden',
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages 422 in 1609ms (next.js: 8ms, application-code: 1601ms)
+[moderateText] OpenAI request started
+[moderateText] OpenAI error (fail-closed): Error: 403 Forbidden
+    at async moderateText (lib/moderation/text.ts:112:19)
+    at async POST (app/api/communities/[id]/messages/route.ts:170:23)
+  110 |     console.log("[moderateText] OpenAI request started");
+  111 |     try {
+> 112 |       const res = await openai.moderations.create({
+      |                   ^
+  113 |         model: "omni-moderation-latest",
+  114 |         input: trimmed,
+  115 |       }); {
+  status: 403,
+  headers: Headers {
+    date: 'Wed, 22 Jul 2026 18:50:07 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'sachin-7liwtz',
+    'openai-project': 'proj_9e0Ykr1iVs320F9ToPd6ol3k',
+    'x-request-id': 'req_bb5882a985c64632b309f8d403d82261',
+    'openai-processing-ms': '19',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'access-control-expose-headers': 'CF-Ray',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=Z0Ial93sEY3V3UIzU14hNj1go27Fbe89ru5W73hGSXk-1784746206.932787-1.0.1.1-0XZcbcftLS_B_31.Ehci7wFCoiYL8AfrmodoyI5NvdjaGdbOkC0N1qMkAgWT2.E1O.nG.z8NnceODLnQqu4GqUyLKGdYjUTVXUzfDo7q42L3uHeVD33v78wSus_f3Fim; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 22 Jul 2026 19:20:07 GMT',
+    'content-encoding': 'br',
+    'cf-ray': 'a1f4a1115dae401b-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_bb5882a985c64632b309f8d403d82261',
+  error: {
+    message: 'Forbidden',
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages 422 in 1241ms (next.js: 7ms, application-code: 1234ms)
+[moderateText] OpenAI request started
+[moderateText] OpenAI error (fail-closed): Error: 403 Forbidden
+    at async moderateText (lib/moderation/text.ts:112:19)
+    at async POST (app/api/communities/[id]/messages/route.ts:170:23)
+  110 |     console.log("[moderateText] OpenAI request started");
+  111 |     try {
+> 112 |       const res = await openai.moderations.create({
+      |                   ^
+  113 |         model: "omni-moderation-latest",
+  114 |         input: trimmed,
+  115 |       }); {
+  status: 403,
+  headers: Headers {
+    date: 'Wed, 22 Jul 2026 18:50:21 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'sachin-7liwtz',
+    'openai-project': 'proj_9e0Ykr1iVs320F9ToPd6ol3k',
+    'x-request-id': 'req_89bb135775124b33852e0535e36b37a0',
+    'openai-processing-ms': '168',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'access-control-expose-headers': 'CF-Ray',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=6KhO4Z06oFx6TogTTKWoWvRDS8qdCqEwaB.FE.d5t3A-1784746221.1787615-1.0.1.1-5XU116ULRpsRDAokpmeRyMYMy5VKGP4dkcapthnGHyrFTc1zezBRoPh7MEAJH2BOEjYO6XdB5OL0cM88e7bRw1EiH0N4Qobg6rvsFFdZi.fVDwyAmr8AVmxuApMRPUGO; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 22 Jul 2026 19:20:21 GMT',
+    'content-encoding': 'br',
+    'cf-ray': 'a1f4a16a5cb969b3-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_89bb135775124b33852e0535e36b37a0',
+  error: {
+    message: 'Forbidden',
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages 422 in 1535ms (next.js: 10ms, application-code: 1525ms)
+[moderateText] OpenAI request started
+[moderateText] OpenAI error (fail-closed): Error: 403 Forbidden
+    at async moderateText (lib/moderation/text.ts:112:19)
+    at async POST (app/api/communities/[id]/messages/route.ts:170:23)
+  110 |     console.log("[moderateText] OpenAI request started");
+  111 |     try {
+> 112 |       const res = await openai.moderations.create({
+      |                   ^
+  113 |         model: "omni-moderation-latest",
+  114 |         input: trimmed,
+  115 |       }); {
+  status: 403,
+  headers: Headers {
+    date: 'Wed, 22 Jul 2026 18:50:32 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'sachin-7liwtz',
+    'openai-project': 'proj_9e0Ykr1iVs320F9ToPd6ol3k',
+    'x-request-id': 'req_d51739a2da864f538b4cf56dd7694f76',
+    'openai-processing-ms': '285',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'access-control-expose-headers': 'CF-Ray',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=YCfgqRKNK4C17FcY9AX6iUdWTOCb6EQNlBtuiFrpu_M-1784746231.9287646-1.0.1.1-eIW.pFLnQ5X3ukRrJjt4mH6g9qq7OG_nSL_pBmgf2Se8mRUQ7gZmyiHm6.GVKBLhvqmUiOLmFpbL5rQUrbQcHjq_mrWmAk0FgtQifrzwXKSoetSuYh494VnTaGrtVLQq; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 22 Jul 2026 19:20:32 GMT',
+    'content-encoding': 'br',
+    'cf-ray': 'a1f4a1ad883c48da-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_d51739a2da864f538b4cf56dd7694f76',
+  error: {
+    message: 'Forbidden',
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages 422 in 2.2s (next.js: 9ms, application-code: 2.2s)
+ GET /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages?after=2026-07-22T18%3A32%3A28.452439%2B00%3A00 200 in 790ms (next.js: 22ms, application-code: 767ms)
+ GET /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages?after=2026-07-22T18%3A32%3A28.452439%2B00%3A00 200 in 745ms (next.js: 5ms, application-code: 740ms)
+ GET /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages?after=2026-07-22T18%3A32%3A28.452439%2B00%3A00 200 in 719ms (next.js: 31ms, application-code: 688ms)
+[moderateImage] OpenAI request started
+[moderateImage] OpenAI error (fail-closed): Error: 403 Forbidden
+    at async moderateImage (lib/moderation/image.ts:74:19)
+    at async POST (app/api/communities/[id]/messages/upload/route.ts:66:21)
+  72 |
+  73 |       const b64 = buffer.toString("base64");
+> 74 |       const res = await openai.moderations.create({
+     |                   ^
+  75 |         model: "omni-moderation-latest",
+  76 |         input: [{ type: "image_url", image_url: { url: `data:${mimeType};base64,${b64}` } }],
+  77 |       }); {
+  status: 403,
+  headers: Headers {
+    date: 'Wed, 22 Jul 2026 18:50:49 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'sachin-7liwtz',
+    'openai-project': 'proj_9e0Ykr1iVs320F9ToPd6ol3k',
+    'x-request-id': 'req_9fd19629aaff48daa6e0bafac6daf600',
+    'openai-processing-ms': '240',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'access-control-expose-headers': 'CF-Ray',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=sUf5MNSUfUtWBIy_KqTJOnRCKjqf1Hn7QZ.E2iwpb4E-1784746248.5719352-1.0.1.1-.ahQkUFX93Xj6fq0A90.p8lyx9bl_zzX0Q1u38CTSKjzeqR1oABoI9tGT6fsa1GdxepzeH8cjfq19_tegU3Aos2V4hneiYTstOXw4JBHClbs_kTMP_q.thBuwtrjWLiy; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 22 Jul 2026 19:20:49 GMT',
+    'content-encoding': 'br',
+    'cf-ray': 'a1f4a2158e4447be-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_9fd19629aaff48daa6e0bafac6daf600',
+  error: {
+    message: 'Forbidden',
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages/upload 422 in 2.1s (next.js: 6ms, application-code: 2.1s)
