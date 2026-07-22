@@ -77,6 +77,10 @@ export function useRealtimeChat({
             realtimeInsertPendingRef.current = true;
           }
 
+          // Only show approved messages in real-time — review/rejected stay hidden
+          const rowWithStatus = newRow as typeof newRow & { moderation_status?: string };
+          if (rowWithStatus.moderation_status && rowWithStatus.moderation_status !== "approved") return;
+
           setMessages((prev) => {
             if (prev.some((m) => m.id === newRow.id)) return prev;
             const withoutTemp = prev.filter(

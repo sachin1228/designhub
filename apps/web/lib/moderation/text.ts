@@ -4,26 +4,37 @@ import type { ModerationResult } from "./types";
 // ── Custom business-rule patterns ────────────────────────────────────────────
 
 const BLOCK_PATTERNS: RegExp[] = [
-  // Referral spam / promo codes
+  // ── Explicit sexual content ───────────────────────────────────────────────
+  /\b(fuck|fucking|fucked|fucker|fucks)\b/i,
+  /\b(shit|bullshit|horseshit)\b/i,
+  /\b(cunt|pussy|cock|dick|penis|vagina|asshole|ass\s*hole)\b/i,
+  /\b(bitch|bastard|whore|slut|hoe)\b/i,
+  /\b(nude|nudity|naked|nudes|nsfw)\b/i,
+  /\bi\s+want\s+to\s+(fuck|have\s+sex|sleep\s+with)\b/i,
+  /\b(rape|raped|raping)\b/i,
+  /\b(masturbat(e|ing|ion)|orgasm|horny)\b/i,
+  /\bsex\b/i,
+  // ── Hate speech ──────────────────────────────────────────────────────────
+  /\b(nigger|nigga|faggot|fag|retard|kike|chink|spic|wetback)\b/i,
+  // ── Referral spam / promo codes ──────────────────────────────────────────
   /\bref(erral)?\s*code\b/i,
   /\binvite\s+code\b/i,
-  // Crypto promotions
+  // ── Crypto promotions ────────────────────────────────────────────────────
   /\b(crypto|bitcoin|btc|eth|ethereum|nft|token|altcoin|defi|web3\s+income)\b.{0,40}\b(invest|earn|profit|gain|return)\b/i,
   /\b(presale|ico|ido|airdrop)\b/i,
-  // Fake giveaways
+  // ── Fake giveaways ───────────────────────────────────────────────────────
   /\b(giveaway|give\s*away)\b.{0,60}\b(dm|message|click|enter)\b/i,
   /\bfree\s+(money|cash|usdt|btc|crypto|iphone|gift\s*card)\b/i,
-  // Investment scams
-  /\b(guaranteed|100%)\s*(profit|return|roi)\b/i,
+  // ── Investment scams ─────────────────────────────────────────────────────
+  /\b(guaranteed|100\s*%)\s*.{0,20}\b(profit|return|roi)\b/i,
   /\bdouble\s+your\s+(money|investment|bitcoin)\b/i,
   /\bpassive\s+income\b.{0,40}\b(telegram|whatsapp|dm)\b/i,
-  // Casino / gambling spam
+  // ── Casino / gambling spam ───────────────────────────────────────────────
   /\b(casino|betting|gambl(e|ing)|sports\s*bet)\b.{0,60}\b(earn|win|profit|bonus)\b/i,
-  // Phishing / malware signals
+  // ── Phishing / malware signals ───────────────────────────────────────────
   /\b(click\s+here|visit\s+now|limited\s+time|act\s+now)\b.{0,60}(https?:\/\/)/i,
-  // Adult advertisements
+  // ── Adult advertisements ─────────────────────────────────────────────────
   /\b(onlyfans|adult\s+content|xxx|hot\s+girls|meet\s+singles)\b/i,
-  // Excessive self-promotion (5+ identical links in one message)
 ];
 
 const LINK_SPAM_RE = /(https?:\/\/\S+)/gi;
