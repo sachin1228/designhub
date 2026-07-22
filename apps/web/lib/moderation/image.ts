@@ -113,15 +113,21 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
           };
         }
       }
-    } catch (err) {
-      // OpenAI failed — FAIL CLOSED. Do not fall through.
-      console.error("[moderateImage] OpenAI error (fail-closed):", err);
-      return {
-        allowed: false,
-        status: "rejected",
-        reason: "Image moderation service error. Please try again.",
-        provider: "openai",
-      };
+    } catch (err: any) {
+      if (err?.status === 403) {
+        // 403 = this key/project can't use omni-moderation-latest for images.
+        // Fall through to NudeNet which is purpose-built for image content.
+        console.warn("[moderateImage] OpenAI 403 — omni-moderation-latest unavailable for images, falling through to NudeNet");
+      } else {
+        // Any other OpenAI error — FAIL CLOSED.
+        console.error("[moderateImage] OpenAI error (fail-closed):", err);
+        return {
+          allowed: false,
+          status: "rejected",
+          reason: "Image moderation service error. Please try again.",
+          provider: "openai",
+        };
+      }
     }
   }
 

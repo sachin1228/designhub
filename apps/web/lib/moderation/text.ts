@@ -109,10 +109,18 @@ export async function moderateText(text: string): Promise<ModerationResult> {
   if (openai) {
     console.log("[moderateText] OpenAI request started");
     try {
-      const res = await openai.moderations.create({
-        model: "omni-moderation-latest",
-        input: trimmed,
-      });
+      // Try omni-moderation-latest first; fall back to text-moderation-latest on 403.
+      let res;
+      try {
+        res = await openai.moderations.create({ model: "omni-moderation-latest", input: trimmed });
+      } catch (omniErr: any) {
+        if (omniErr?.status === 403) {
+          console.warn("[moderateText] omni-moderation-latest 403 — falling back to text-moderation-latest");
+          res = await openai.moderations.create({ model: "text-moderation-latest", input: trimmed });
+        } else {
+          throw omniErr;
+        }
+      }
 
       const result = res.results[0];
       console.log("[moderateText] OpenAI response — flagged:", result.flagged, "categories:", JSON.stringify(result.categories));
@@ -132,7 +140,7 @@ export async function moderateText(text: string): Promise<ModerationResult> {
 
       console.log("[moderateText] OpenAI: not flagged — continuing to custom rules");
     } catch (err) {
-      // OpenAI failed — FAIL CLOSED. Do not fall through to custom rules.
+      // Both OpenAI models failed — FAIL CLOSED.
       console.error("[moderateText] OpenAI error (fail-closed):", err);
       return {
         allowed: false,
