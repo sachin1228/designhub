@@ -53,11 +53,7 @@ function ReactionPills({
         return (
           <span
             key={emoji}
-            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-medium select-none
-              ${iMine
-                ? "bg-accent/30 border border-accent/60 text-accent-foreground"
-                : "bg-surface-raised border border-white/10 text-foreground"
-              }`}
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-medium select-none bg-[#2a2a2a] border border-black text-foreground"
           >
             {emoji}
             {user_ids.length > 1 && (
