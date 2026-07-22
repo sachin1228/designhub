@@ -34,7 +34,7 @@ export function MessageBubble({
         >
           <div className="max-w-[65%]">
             <div
-              className={`relative rounded-2xl rounded-tr-sm px-3 py-2 transition-opacity ${
+              className={`rounded-2xl rounded-tr-sm px-3 py-2 transition-opacity ${
                 msg.status === "sending"
                   ? "bg-accent opacity-70"
                   : msg.status === "failed"
@@ -43,29 +43,28 @@ export function MessageBubble({
               }`}
             >
               {/*
-                Invisible spacer at the end of the text reserves space for the
-                timestamp row so it never overlaps the text (WhatsApp technique).
-                w-14 = ~56px covers time + check icon + gap.
+                flex items-end keeps text and timestamp in the same row.
+                Text grows/wraps freely; timestamp is shrink-0 and stays
+                pinned to the bottom-right — exactly like WhatsApp.
               */}
-              <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
-                {msg.content}
-                <span className="inline-block w-14" aria-hidden="true" />
-              </p>
-
-              {/* timestamp + status — sits bottom-right inside the bubble */}
-              <div className="absolute bottom-1.5 right-2.5 flex items-center gap-0.5">
-                <span className="font-mono text-[10px] text-accent-foreground/60">
-                  {fmtTime(msg.created_at)}
-                </span>
-                {msg.status === "sending" && (
-                  <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
-                )}
-                {(msg.status === "sent" || !msg.status) && (
-                  <CheckCheck size={11} className="text-accent-foreground/70" />
-                )}
-                {msg.status === "failed" && (
-                  <span className="text-[10px] text-red-200">!</span>
-                )}
+              <div className="flex items-end gap-1.5">
+                <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words flex-1 min-w-0">
+                  {msg.content}
+                </p>
+                <div className="shrink-0 flex items-center gap-0.5 mb-0.5">
+                  <span className="font-mono text-[10px] text-accent-foreground/60 whitespace-nowrap">
+                    {fmtTime(msg.created_at)}
+                  </span>
+                  {msg.status === "sending" && (
+                    <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
+                  )}
+                  {(msg.status === "sent" || !msg.status) && (
+                    <CheckCheck size={11} className="text-accent-foreground/70" />
+                  )}
+                  {msg.status === "failed" && (
+                    <span className="text-[10px] text-red-200">!</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -93,18 +92,15 @@ export function MessageBubble({
               {sender.name}
             </p>
           )}
-          {/*
-            Same spacer technique for received bubbles.
-            w-10 = ~40px covers the time text only.
-          */}
-          <div className="relative rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 py-2">
-            <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
-              {msg.content}
-              <span className="inline-block w-10" aria-hidden="true" />
-            </p>
-            <span className="absolute bottom-1.5 right-2.5 font-mono text-[10px] text-foreground-muted">
-              {fmtTime(msg.created_at)}
-            </span>
+          <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 py-2">
+            <div className="flex items-end gap-1.5">
+              <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words flex-1 min-w-0">
+                {msg.content}
+              </p>
+              <span className="shrink-0 font-mono text-[10px] text-foreground-muted whitespace-nowrap mb-0.5">
+                {fmtTime(msg.created_at)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
