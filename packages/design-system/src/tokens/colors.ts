@@ -8,20 +8,19 @@
  */
 
 /**
- * Brand Blue — palette built around #1289ff (primary brand blue).
- * HSL ≈ 214°, 100%, 54%
+ * Geist Blue — official Vercel / Geist blue palette.
+ * Primary accent is blue-700.
  */
 export const blue = {
-  50:  "#eef5ff",  // barely-there tint — soft backgrounds, hover fills
-  100: "#d9eaff",  // light tint — badge/pill backgrounds
-  200: "#bcd8ff",  // medium-light — input focus rings, outlined borders
-  300: "#8bbeff",  // medium — disabled states, decorative accents
-  400: "#4fa3ff",  // vivid light — dark-mode primary, hover on dark
-  500: "#1289ff",  // ← PRIMARY BRAND BLUE (light mode accent)
-  600: "#0070e6",  // hover — buttons, links on hover
-  700: "#0056b3",  // pressed / active state
-  800: "#003d80",  // deep blue — gradients, illustration elements
-  900: "#00264d",  // darkest — gradient endpoints, overlays
+  100: "#cce7ff",
+  200: "#99ceff",
+  300: "#66b5ff",
+  400: "#339dff",
+  500: "#0084ff",
+  600: "#006bdb",
+  700: "#0057b7", // ← primary brand accent (light mode)
+  800: "#004494", // ← hover (darker shade of 700)
+  900: "#003070",
 } as const;
 
 /** Geist Neutral — clean, cool-neutral grays */
@@ -42,17 +41,17 @@ export const neutral = {
 
 /** Geist Dark — near-black backgrounds for dark mode */
 export const dark = {
-  900: "#0A0A0A", // deepest dark (page bg)
-  800: "#111111", // surface
-  700: "#1A1A1A", // surface raised / cards
-  600: "#2E2E2E", // border on dark
-  500: "#3E3E3E", // input border on dark
-  400: "#737373", // muted text
-  100: "#EDEDED", // foreground on dark
+  900: "#0A0A0A",
+  800: "#111111",
+  700: "#1A1A1A",
+  600: "#2E2E2E",
+  500: "#3E3E3E",
+  400: "#737373",
+  100: "#EDEDED",
 } as const;
 
-/** Brand signal — same as primary blue, stays consistent in both modes */
-export const signal = "#1289ff" as const;
+/** Brand signal */
+export const signal = blue[700] as const;
 
 export const colors = {
   blue,

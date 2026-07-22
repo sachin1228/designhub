@@ -1,10 +1,10 @@
 /**
  * @draft/design-system — CSS custom properties
  *
- * Geist / Vercel design language:
+ * Geist / Vercel design language, Geist blue-700 as primary accent.
  *   - semantic tokens only (no raw values in UI code)
  *   - light mode in :root, dark mode via prefers-color-scheme
- *   - no JS toggle required — the OS/browser decides
+ *   - no JS toggle required
  *
  * Import this file once in your global stylesheet.
  */
@@ -13,7 +13,7 @@
 :root {
   color-scheme: light dark;
 
-  /* Backgrounds — off-white Geist canvas, white surfaces pop on top */
+  /* Backgrounds */
   --color-background:        #FAFAFA;
   --color-background-subtle: #F5F5F5;
 
@@ -26,28 +26,28 @@
   --color-foreground-muted:  #525252;
   --color-foreground-subtle: #737373;
 
-  /* Accent — #1289ff brand blue */
-  --color-accent:            #1289ff;
-  --color-accent-rgb:        18 137 255;  /* RGB channels for opacity modifiers */
-  --color-accent-hover:      #0070e6;
-  --color-accent-soft:       #eef5ff;
+  /* Accent — Geist blue-700 */
+  --color-accent:            #0057b7;
+  --color-accent-rgb:        0 87 183;    /* RGB channels for opacity modifiers */
+  --color-accent-hover:      #004494;     /* blue-800 — darker shade on hover */
+  --color-accent-soft:       #cce7ff;     /* blue-100 — tinted bg */
   --color-accent-foreground: #FFFFFF;
 
-  /* Borders — Geist crisp 1px borders */
+  /* Borders */
   --color-border:            #EAEAEA;
   --color-border-subtle:     #F5F5F5;
 
   /* Brand signal */
-  --color-signal:            #1289ff;
+  --color-signal:            #0057b7;
 
-  /* Always-dark overlay panel (brand canvas, code blocks, etc.) */
+  /* Always-dark overlay panel */
   --color-overlay:            #0A0A0A;
   --color-overlay-raised:     #111111;
   --color-overlay-elevated:   #1A1A1A;
   --color-overlay-foreground: #EDEDED;
   --color-overlay-muted:      #737373;
 
-  /* Shadows — Geist style: very subtle, border-contrast-first */
+  /* Shadows — Geist style: subtle, border-contrast-first */
   --shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
   --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
@@ -69,7 +69,7 @@
 /* ─── Dark mode (system-driven, no toggle) ──────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Backgrounds — Geist near-black */
+    /* Backgrounds */
     --color-background:        #0A0A0A;
     --color-background-subtle: #111111;
 
@@ -82,21 +82,21 @@
     --color-foreground-muted:  #737373;
     --color-foreground-subtle: #525252;
 
-    /* Accent — blue[400] slightly lighter for dark-mode legibility */
-    --color-accent:            #4fa3ff;
-    --color-accent-rgb:        79 163 255;   /* RGB channels for opacity modifiers */
-    --color-accent-hover:      #8bbeff;
+    /* Accent — blue-400 for legibility on dark backgrounds */
+    --color-accent:            #339dff;
+    --color-accent-rgb:        51 157 255;   /* RGB channels for opacity modifiers */
+    --color-accent-hover:      #66b5ff;      /* blue-300 — lighter on hover (dark convention) */
     --color-accent-soft:       #1A1A1A;
     --color-accent-foreground: #FFFFFF;
 
-    /* Borders — Geist dark */
+    /* Borders */
     --color-border:            #2E2E2E;
     --color-border-subtle:     #1A1A1A;
 
     /* Signal stays vivid */
-    --color-signal:            #1289ff;
+    --color-signal:            #0057b7;
 
-    /* Overlay panel — same in both modes (always dark) */
+    /* Overlay panel */
     --color-overlay:            #0A0A0A;
     --color-overlay-raised:     #111111;
     --color-overlay-elevated:   #1A1A1A;
@@ -109,7 +109,7 @@
     --shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.60), 0 2px 4px -2px rgb(0 0 0 / 0.48);
     --shadow-card: 0 0 0 1px var(--color-border), 0 2px 8px rgb(0 0 0 / 0.50);
 
-    /* Grid pattern — lighter lines on dark bg */
+    /* Grid */
     --grid-line-color: rgba(255, 255, 255, 0.04);
     --grid-dot-color:  rgba(255, 255, 255, 0.08);
   }

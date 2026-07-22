@@ -1,8 +1,7 @@
 import { neutral, blue, signal, dark } from "../tokens/colors";
 
 /**
- * Dark theme — semantic color mappings.
- * Geist near-black backgrounds, #1289ff brand blue (bright enough for dark bg).
+ * Dark theme — Geist near-black with blue-400 as accent (lighter for dark bg legibility).
  */
 export const darkTheme = {
   /** Page and panel backgrounds */
@@ -18,10 +17,10 @@ export const darkTheme = {
   foregroundMuted:   dark[400],     // #737373
   foregroundSubtle:  neutral[500],  // #737373
 
-  /** Accent — blue[400] slightly lighter for dark-mode legibility */
-  accent:            blue[400],     // #4fa3ff — vivid on dark bg
-  accentHover:       blue[300],     // #8bbeff — hover on dark
-  accentSoft:        dark[700],     // #1A1A1A — subtle tinted bg on dark
+  /** Accent — blue-400 for legibility on dark backgrounds */
+  accent:            blue[400],     // #339dff
+  accentHover:       blue[300],     // #66b5ff — lighter on hover (dark-mode convention)
+  accentSoft:        dark[700],     // #1A1A1A — subtle tinted bg
   accentForeground:  neutral[0],    // #FFFFFF
 
   /** Borders */
@@ -29,7 +28,7 @@ export const darkTheme = {
   borderSubtle:      dark[700],     // #1A1A1A
 
   /** Brand signal */
-  signal,                           // #1289ff
+  signal,                           // #0057b7
 
   /** Always-dark overlay panel */
   overlay:           dark[900],     // #0A0A0A
