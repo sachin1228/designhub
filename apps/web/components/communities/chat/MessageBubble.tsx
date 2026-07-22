@@ -12,6 +12,7 @@ interface MessageBubbleProps {
   isSameAuthor: boolean;
   isFirstUnread: boolean;
   unreadDivider: React.ReactNode;
+  onPress: (msg: CachedMessage) => void;
 }
 
 export function MessageBubble({
@@ -20,6 +21,7 @@ export function MessageBubble({
   isSameAuthor,
   isFirstUnread,
   unreadDivider,
+  onPress,
 }: MessageBubbleProps) {
   const sender = msg.users;
 
@@ -34,7 +36,8 @@ export function MessageBubble({
         >
           <div className="max-w-[65%]">
             <div
-              className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 transition-opacity ${
+              onClick={() => onPress(msg)}
+              className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 transition-opacity cursor-pointer select-none active:scale-[0.97] ${
                 msg.status === "sending"
                   ? "bg-accent opacity-70"
                   : msg.status === "failed"
@@ -86,7 +89,10 @@ export function MessageBubble({
               {sender.name}
             </p>
           )}
-          <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5">
+          <div
+            onClick={() => onPress(msg)}
+            className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 cursor-pointer select-none active:scale-[0.97] transition-transform"
+          >
             <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
               {msg.content}
             </p>

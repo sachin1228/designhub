@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useLayoutEffect, useEffect, useMemo } from "react";
+import { useState, useLayoutEffect, useEffect, useCallback, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import { sidebarStore } from "@/lib/communities/cache";
 import type { CachedMessage, CachedMeta } from "@/lib/communities/cache";
@@ -9,6 +9,7 @@ import { ChatHeader } from "./chat/ChatHeader";
 import { ChatInput } from "./chat/ChatInput";
 import { MembersPanel } from "./chat/MembersPanel";
 import { MessageList } from "./chat/MessageList";
+import { MessageActionSlider } from "./chat/MessageActionSlider";
 import { useChatData } from "./chat/useChatData";
 import { useScrollAndUnread } from "./chat/useScrollAndUnread";
 import { useRealtimeChat } from "./chat/useRealtimeChat";
@@ -37,6 +38,28 @@ export function CommunityChat({
 }) {
   const [hasMounted, setHasMounted] = useState(false);
   useIsomorphicLayoutEffect(() => { setHasMounted(true); }, []);
+
+  // ── Message action slider state ───────────────────────────────────────────
+  const [activeMessage, setActiveMessage] = useState<CachedMessage | null>(null);
+  const [sliderIsMe, setSliderIsMe] = useState(false);
+
+  const handleMessagePress = useCallback((msg: CachedMessage) => {
+    setActiveMessage(msg);
+    setSliderIsMe(msg.user_id === currentUserId);
+  }, [currentUserId]);
+
+  const handleSliderClose = useCallback(() => {
+    setActiveMessage(null);
+  }, []);
+
+  const handleReply = useCallback((msg: CachedMessage) => {
+    // Reply logic will be wired dynamically later
+    console.log("Reply to:", msg.id);
+  }, []);
+
+  const handleCopy = useCallback((msg: CachedMessage) => {
+    navigator.clipboard.writeText(msg.content).catch(() => {});
+  }, []);
 
   // ── Data fetching + message state ─────────────────────────────────────────
   const {
@@ -166,6 +189,7 @@ export function CommunityChat({
               loading={loading}
               displayCommunity={displayCommunity}
               communityId={communityId}
+              onMessagePress={handleMessagePress}
             />
           </div>
 
@@ -191,6 +215,15 @@ export function CommunityChat({
             onChange={setInput}
             onKeyDown={handleKeyDown}
             onSend={handleSend}
+          />
+
+          {/* Message action slider — rendered inside the relative container */}
+          <MessageActionSlider
+            message={activeMessage}
+            isMe={sliderIsMe}
+            onClose={handleSliderClose}
+            onReply={handleReply}
+            onCopy={handleCopy}
           />
         </div>
 
