@@ -34,7 +34,7 @@ export function MessageBubble({
         >
           <div className="max-w-[65%]">
             <div
-              className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 transition-opacity ${
+              className={`relative rounded-2xl rounded-tr-sm px-3 py-2 transition-opacity ${
                 msg.status === "sending"
                   ? "bg-accent opacity-70"
                   : msg.status === "failed"
@@ -42,11 +42,18 @@ export function MessageBubble({
                   : "bg-accent"
               }`}
             >
+              {/*
+                Invisible spacer at the end of the text reserves space for the
+                timestamp row so it never overlaps the text (WhatsApp technique).
+                w-14 = ~56px covers time + check icon + gap.
+              */}
               <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
                 {msg.content}
+                <span className="inline-block w-14" aria-hidden="true" />
               </p>
-              {/* time + status inside the bubble, bottom-right */}
-              <div className="flex items-center justify-end gap-1 mt-1">
+
+              {/* timestamp + status — sits bottom-right inside the bubble */}
+              <div className="absolute bottom-1.5 right-2.5 flex items-center gap-0.5">
                 <span className="font-mono text-[10px] text-accent-foreground/60">
                   {fmtTime(msg.created_at)}
                 </span>
@@ -86,14 +93,18 @@ export function MessageBubble({
               {sender.name}
             </p>
           )}
-          <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5">
+          {/*
+            Same spacer technique for received bubbles.
+            w-10 = ~40px covers the time text only.
+          */}
+          <div className="relative rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 py-2">
             <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
               {msg.content}
+              <span className="inline-block w-10" aria-hidden="true" />
             </p>
-            {/* time inside the bubble, bottom-right */}
-            <p className="font-mono text-[10px] text-foreground-muted mt-1 text-right">
+            <span className="absolute bottom-1.5 right-2.5 font-mono text-[10px] text-foreground-muted">
               {fmtTime(msg.created_at)}
-            </p>
+            </span>
           </div>
         </div>
       </div>
