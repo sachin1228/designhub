@@ -1,0 +1,160 @@
+sachin@sachins-MacBook-Air-2 designhub % rm -rf apps/web/.next
+npm run dev
+
+> dev
+> npm run dev --workspace=apps/web
+
+
+> web@0.1.0 dev
+> next dev -p 3000 -H 0.0.0.0
+
+▲ Next.js 16.2.11 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://0.0.0.0:3000
+- Environments: .env.local, .env
+✓ Ready in 300ms
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+ GET /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages?after=2026-07-22T18%3A32%3A28.452439%2B00%3A00 200 in 2.1s (next.js: 1304ms, application-code: 843ms)
+ GET /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages?after=2026-07-22T18%3A32%3A28.452439%2B00%3A00 200 in 760ms (next.js: 24ms, application-code: 736ms)
+ GET /dashboard/communities 200 in 4.6s (next.js: 2.5s, proxy.ts: 981ms, application-code: 1132ms)
+ GET /dashboard/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476 200 in 6.2s (next.js: 2.7s, proxy.ts: 1050ms, application-code: 2.4s)
+ GET /api/communities 200 in 1450ms (next.js: 288ms, application-code: 1163ms)
+ GET /api/communities 200 in 1409ms (next.js: 227ms, application-code: 1183ms)
+ PATCH /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/read 200 in 1677ms (next.js: 672ms, application-code: 1005ms)
+ GET /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages?after=2026-07-22T18%3A32%3A28.452439%2B00%3A00 200 in 473ms (next.js: 10ms, application-code: 463ms)
+ GET /api/communities/all 200 in 2.3s (next.js: 217ms, application-code: 2.1s)
+ GET /api/communities/d0a406ba-bb3d-4af4-9927-176bc71ad476/messages?after=2026-07-22T18%3A32%3A28.452439%2B00%3A00 200 in 446ms (next.js: 15ms, application-code: 431ms)
+ GET /api/lottie-settings 200 in 1556ms (next.js: 203ms, application-code: 1353ms)
+ GET /dashboard/communities/66229570-496f-49d3-8b49-8e2a651e97ed 200 in 343ms (next.js: 7ms, proxy.ts: 316ms, application-code: 20ms)
+ GET /api/communities/893fce62-9694-46b4-8c86-4ef9d71199e0/messages 200 in 1067ms (next.js: 13ms, application-code: 1054ms)
+ PATCH /api/communities/66229570-496f-49d3-8b49-8e2a651e97ed/read 200 in 667ms (next.js: 6ms, application-code: 661ms)
+ GET /api/communities/66229570-496f-49d3-8b49-8e2a651e97ed/messages 200 in 1138ms (next.js: 1007µs, application-code: 1137ms)
+ GET /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/messages 200 in 642ms (next.js: 3ms, application-code: 639ms)
+ GET /api/communities/66229570-496f-49d3-8b49-8e2a651e97ed 200 in 1430ms (next.js: 311ms, application-code: 1119ms)
+ GET /dashboard/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266 200 in 381ms (next.js: 5ms, proxy.ts: 355ms, application-code: 21ms)
+ GET /api/communities/893fce62-9694-46b4-8c86-4ef9d71199e0 200 in 2.1s (next.js: 557ms, application-code: 1550ms)
+ GET /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266 200 in 1281ms (next.js: 3ms, application-code: 1279ms)
+ PATCH /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/read 200 in 802ms (next.js: 5ms, application-code: 798ms)
+ GET /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/messages?after=2026-07-21T19%3A57%3A01.813572%2B00%3A00 200 in 445ms (next.js: 6ms, application-code: 439ms)
+ GET /api/communities/66229570-496f-49d3-8b49-8e2a651e97ed 200 in 891ms (next.js: 2ms, application-code: 889ms)
+ PATCH /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/read 200 in 853ms (next.js: 75ms, application-code: 778ms)
+ GET /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/messages?after=2026-07-21T19%3A57%3A01.813572%2B00%3A00 200 in 410ms (next.js: 2ms, application-code: 407ms)
+ GET /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266 200 in 946ms (next.js: 3ms, application-code: 943ms)
+ GET /api/communities/66229570-496f-49d3-8b49-8e2a651e97ed 200 in 851ms (next.js: 821µs, application-code: 850ms)
+ GET /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266 200 in 886ms (next.js: 6ms, application-code: 879ms)
+ GET /dashboard/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455 200 in 257ms (next.js: 4ms, proxy.ts: 223ms, application-code: 30ms)
+ PATCH /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455/read 200 in 780ms (next.js: 6ms, application-code: 775ms)
+ GET /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455/messages 200 in 762ms (next.js: 939µs, application-code: 761ms)
+ GET /api/communities/0dd74f1f-3e2d-4f8b-8f90-20f884a2c6bc/messages 200 in 1156ms (next.js: 4ms, application-code: 1152ms)
+ GET /api/communities/0dd74f1f-3e2d-4f8b-8f90-20f884a2c6bc 200 in 1194ms (next.js: 10ms, application-code: 1184ms)
+ GET /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455 200 in 976ms (next.js: 3ms, application-code: 974ms)
+ GET /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455 200 in 885ms (next.js: 6ms, application-code: 879ms)
+ GET /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455 200 in 1199ms (next.js: 8ms, application-code: 1192ms)
+ GET /dashboard/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266 200 in 246ms (next.js: 6ms, proxy.ts: 221ms, application-code: 19ms)
+ PATCH /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/read 200 in 667ms (next.js: 7ms, application-code: 660ms)
+ GET /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/messages?after=2026-07-21T19%3A57%3A01.813572%2B00%3A00 200 in 552ms (next.js: 14ms, application-code: 538ms)
+ PATCH /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/read 200 in 705ms (next.js: 7ms, application-code: 698ms)
+ GET /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/messages?after=2026-07-21T19%3A57%3A01.813572%2B00%3A00 200 in 441ms (next.js: 3ms, application-code: 438ms)
+[moderateText] OpenAI request started
+[moderateText] OpenAI error (fail-closed): Error: 403 Forbidden
+    at async moderateText (lib/moderation/text.ts:112:19)
+    at async POST (app/api/communities/[id]/messages/route.ts:170:23)
+  110 |     console.log("[moderateText] OpenAI request started");
+  111 |     try {
+> 112 |       const res = await openai.moderations.create({
+      |                   ^
+  113 |         model: "omni-moderation-latest",
+  114 |         input: trimmed,
+  115 |       }); {
+  status: 403,
+  headers: Headers {
+    date: 'Wed, 22 Jul 2026 19:13:05 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'sachin-7liwtz',
+    'openai-project': 'proj_9e0Ykr1iVs320F9ToPd6ol3k',
+    'x-request-id': 'req_8179bcd6122c42e38f8623b49ec81c99',
+    'openai-processing-ms': '199',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'access-control-expose-headers': 'CF-Ray',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=w.83tA66CtKazx1ld0kH5XR00rRiDz01Jea.4fD8YFA-1784747584.5690513-1.0.1.1-p5BQSNBxFpMKhrJDD9t20q4VH32gXQZrKYTpzlQrrshRQpi.9HjVVnUXZ10mNPst9Svq.nXs9ZP_m6Pzj8HC.6vc7Zvbys0AUxgxfyrUE2L_LIYwMMojqAKpsYJliVzF; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 22 Jul 2026 19:43:05 GMT',
+    'content-encoding': 'br',
+    'cf-ray': 'a1f4c2b38e4847c6-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_8179bcd6122c42e38f8623b49ec81c99',
+  error: {
+    message: 'Forbidden',
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/communities/10c8d05c-3139-40cb-b3ed-bb4608cd1266/messages 422 in 1852ms (next.js: 7ms, application-code: 1845ms)
+ GET /dashboard/communities/0dd74f1f-3e2d-4f8b-8f90-20f884a2c6bc 200 in 353ms (next.js: 6ms, proxy.ts: 325ms, application-code: 22ms)
+ PATCH /api/communities/0dd74f1f-3e2d-4f8b-8f90-20f884a2c6bc/read 200 in 944ms (next.js: 7ms, application-code: 937ms)
+ PATCH /api/communities/0dd74f1f-3e2d-4f8b-8f90-20f884a2c6bc/read 200 in 663ms (next.js: 2ms, application-code: 661ms)
+ GET /api/communities/0dd74f1f-3e2d-4f8b-8f90-20f884a2c6bc/messages?after=2026-07-21T20%3A00%3A00.300904%2B00%3A00 200 in 676ms (next.js: 9ms, application-code: 667ms)
+ GET /api/communities/0dd74f1f-3e2d-4f8b-8f90-20f884a2c6bc/messages?after=2026-07-21T20%3A00%3A00.300904%2B00%3A00 200 in 449ms (next.js: 6ms, application-code: 443ms)
+ GET /dashboard/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455 200 in 245ms (next.js: 5ms, proxy.ts: 210ms, application-code: 30ms)
+ PATCH /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455/read 200 in 678ms (next.js: 6ms, application-code: 671ms)
+ GET /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455/messages?after=2026-07-21T20%3A00%3A09.57315%2B00%3A00 200 in 445ms (next.js: 4ms, application-code: 441ms)
+ PATCH /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455/read 200 in 624ms (next.js: 3ms, application-code: 621ms)
+ GET /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455/messages?after=2026-07-21T20%3A00%3A09.57315%2B00%3A00 200 in 438ms (next.js: 1136µs, application-code: 437ms)
+[moderateText] OpenAI request started
+[moderateText] OpenAI error (fail-closed): Error: 403 Forbidden
+    at async moderateText (lib/moderation/text.ts:112:19)
+    at async POST (app/api/communities/[id]/messages/route.ts:170:23)
+  110 |     console.log("[moderateText] OpenAI request started");
+  111 |     try {
+> 112 |       const res = await openai.moderations.create({
+      |                   ^
+  113 |         model: "omni-moderation-latest",
+  114 |         input: trimmed,
+  115 |       }); {
+  status: 403,
+  headers: Headers {
+    date: 'Wed, 22 Jul 2026 19:13:20 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'sachin-7liwtz',
+    'openai-project': 'proj_9e0Ykr1iVs320F9ToPd6ol3k',
+    'x-request-id': 'req_3be417d4581743d1a8d1c1fe4fa1ce30',
+    'openai-processing-ms': '257',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'access-control-expose-headers': 'CF-Ray',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'set-cookie': '__cf_bm=xV90mMvc70ZxrXPhZ6.L0XGT5wsA6GYhGwTj9Ix2.78-1784747599.632464-1.0.1.1-LD8_f0vtUvJi1pnbGOwW6MvdMW.6iVd8NwTEdM0K8._rrk1xPkWrvI2U6eSFsfsrFyKJg2abBSfO3b0xoE4FDqSVrP.9_4NycuujTulBxpvTxo4ju7Tq6Y6BRRXtw72u; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 22 Jul 2026 19:43:20 GMT',
+    'content-encoding': 'br',
+    'cf-ray': 'a1f4c311baf1a6dc-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_3be417d4581743d1a8d1c1fe4fa1ce30',
+  error: {
+    message: 'Forbidden',
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/communities/e9a7f946-9bbd-45f3-bb91-783542bbb455/messages 422 in 2.1s (next.js: 9ms, application-code: 2.1s)
+ GET /api/communities/50cba75c-2da9-4c8a-9731-c836e9b75570/messages 200 in 893ms (next.js: 10ms, application-code: 884ms)
+ GET /api/communities/50cba75c-2da9-4c8a-9731-c836e9b75570 200 in 1236ms (next.js: 17ms, application-code: 1219ms)
