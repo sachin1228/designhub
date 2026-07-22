@@ -1,0 +1,215 @@
+The moderation system is NOT working correctly.
+
+Do NOT add new features.
+
+Do NOT refactor the system.
+
+Your job is to DEBUG and FIX the existing implementation.
+
+==================================================
+ISSUES
+==================================================
+
+1. Explicit nude images are still uploaded.
+
+2. Explicit sexual text is still being accepted.
+
+This means either:
+
+- OpenAI Moderation is not being called.
+- OpenAI response is ignored.
+- Wrong response fields are checked.
+- NudeNet is not running.
+- Upload/save continues even after moderation fails.
+- There is a fail-open path.
+
+==================================================
+YOUR TASK
+==================================================
+
+Audit the complete moderation pipeline.
+
+Trace every code path from:
+
+Image Upload
+
+↓
+
+OpenAI Moderation
+
+↓
+
+NudeNet
+
+↓
+
+Cloudflare R2 Upload
+
+↓
+
+Database
+
+and
+
+Message
+
+↓
+
+OpenAI Moderation
+
+↓
+
+Database
+
+↓
+
+Realtime Broadcast
+
+Verify every step actually executes.
+
+==================================================
+VERIFY OPENAI
+==================================================
+
+Check that:
+
+- omni-moderation-latest is used.
+- The request is successful.
+- The response is parsed correctly.
+- "flagged" is checked.
+- Category results are checked.
+- Unsafe content immediately stops execution.
+- Content is NOT saved after a failed moderation.
+
+==================================================
+VERIFY NUDENET
+==================================================
+
+Check that:
+
+- FastAPI service is running.
+- NUDENET_URL exists.
+- The endpoint is called.
+- The response is parsed.
+- explicit=true blocks upload.
+- Errors do NOT allow upload.
+
+If NudeNet is unavailable:
+
+DO NOT upload.
+
+Return an error instead.
+
+==================================================
+FAIL CLOSED
+==================================================
+
+There must be NO code path where moderation failure still allows content.
+
+If:
+
+OpenAI errors
+
+OpenAI timeout
+
+NudeNet errors
+
+NudeNet timeout
+
+Unexpected exception
+
+The request must fail.
+
+Never fail open.
+
+==================================================
+TEXT
+==================================================
+
+Verify moderation runs BEFORE:
+
+- inserting into database
+- broadcasting via realtime
+- updating caches
+
+==================================================
+IMAGE
+==================================================
+
+Verify moderation runs BEFORE:
+
+- uploading to Cloudflare R2
+- generating public URLs
+- saving image metadata
+
+==================================================
+DEBUG LOGS
+==================================================
+
+Temporarily log:
+
+OpenAI request started
+
+OpenAI response
+
+flagged value
+
+categories
+
+NudeNet request started
+
+NudeNet response
+
+Decision
+
+Database save
+
+R2 upload
+
+Realtime broadcast
+
+==================================================
+TESTS
+==================================================
+
+Test with:
+
+Safe text
+
+Explicit sexual text
+
+Violent threats
+
+Hate speech
+
+Safe image
+
+Explicit nude image
+
+Pornographic image
+
+Document every result.
+
+==================================================
+OUTPUT
+==================================================
+
+DO NOT immediately change code.
+
+First report:
+
+1. Current moderation flow.
+
+2. Whether OpenAI Moderation is actually working.
+
+3. Whether NudeNet is actually working.
+
+4. Exactly why explicit text is accepted.
+
+5. Exactly why explicit images are accepted.
+
+6. The minimal files that need to be changed.
+
+Only then implement the smallest possible fix.
+
+Do not rewrite the moderation system.
