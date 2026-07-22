@@ -92,38 +92,41 @@ export function MessageBubble({
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
         >
-           <div className="relative">
-            <div
-              onClick={() => onPress(msg)}
-              className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 cursor-pointer select-none
-                active:scale-[0.97] transition-transform ${
-                msg.status === "sending"
-                  ? "bg-accent opacity-70"
-                  : msg.status === "failed"
-                  ? "bg-red-500/80"
-                  : "bg-accent"
-              }`}
-            >
-              {replyTo && <ReplyBubble reply={replyTo} isMe />}
-              <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
-                {msg.content}
-              </p>
-              <div className="flex items-center justify-end gap-1 mt-1">
-                <span className="font-mono text-[10px] text-accent-foreground/60">
-                  {fmtTime(msg.created_at)}
-                </span>
-                {msg.status === "sending" && (
-                  <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
-                )}
-                {(msg.status === "sent" || !msg.status) && (
-                  <CheckCheck size={11} className="text-accent-foreground/70" />
-                )}
-                {msg.status === "failed" && (
-                  <span className="text-[10px] text-red-200">!</span>
-                )}
+          <div className="max-w-[65%]">
+            <div className="relative">
+              <div
+                onClick={() => onPress(msg)}
+                className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 cursor-pointer select-none
+                  active:scale-[0.97] transition-transform ${
+                  msg.status === "sending"
+                    ? "bg-accent opacity-70"
+                    : msg.status === "failed"
+                    ? "bg-red-500/80"
+                    : "bg-accent"
+                }`}
+              >
+                {replyTo && <ReplyBubble reply={replyTo} isMe />}
+                <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
+                  {msg.content}
+                </p>
+                <div className="flex items-center justify-end gap-1 mt-1">
+                  <span className="font-mono text-[10px] text-accent-foreground/60">
+                    {fmtTime(msg.created_at)}
+                  </span>
+                  {msg.status === "sending" && (
+                    <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
+                  )}
+                  {(msg.status === "sent" || !msg.status) && (
+                    <CheckCheck size={11} className="text-accent-foreground/70" />
+                  )}
+                  {msg.status === "failed" && (
+                    <span className="text-[10px] text-red-200">!</span>
+                  )}
+                </div>
               </div>
+              <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe />
             </div>
-            <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe />
+            {reactions.length > 0 && <div className="h-5" />}
           </div>
         </div>
       </Fragment>
@@ -143,25 +146,28 @@ export function MessageBubble({
             <ChatAvatar name={sender.name} url={sender.avatar_url} size={7} />
           )}
         </div>
-        <div className="max-w-[65%] relative">
+        <div className="max-w-[65%]">
           {!isSameAuthor && sender && (
             <p className="font-body text-[11px] font-medium text-foreground-muted mb-0.5 ml-0.5">
               {sender.name}
             </p>
           )}
-          <div
-            onClick={() => onPress(msg)}
-            className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 cursor-pointer select-none active:scale-[0.97] transition-transform"
-          >
-            {replyTo && <ReplyBubble reply={replyTo} isMe={false} />}
-            <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
-              {msg.content}
-            </p>
-            <p className="font-mono text-[10px] text-foreground-muted text-right mt-1">
-              {fmtTime(msg.created_at)}
-            </p>
+          <div className="relative">
+            <div
+              onClick={() => onPress(msg)}
+              className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 cursor-pointer select-none active:scale-[0.97] transition-transform"
+            >
+              {replyTo && <ReplyBubble reply={replyTo} isMe={false} />}
+              <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
+                {msg.content}
+              </p>
+              <p className="font-mono text-[10px] text-foreground-muted text-right mt-1">
+                {fmtTime(msg.created_at)}
+              </p>
+            </div>
+            <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} />
           </div>
-          <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} />
+          {reactions.length > 0 && <div className="h-5" />}
         </div>
       </div>
     </Fragment>
