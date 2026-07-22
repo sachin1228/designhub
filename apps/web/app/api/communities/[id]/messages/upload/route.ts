@@ -3,6 +3,8 @@ import { requireSession } from "@/lib/auth/session";
 import { createServiceClient } from "@/lib/supabase/service";
 import { compressChatImage } from "@/lib/image-utils";
 import { uploadToR2 } from "@/lib/r2";
+import { moderateImage } from "@/lib/moderation";
+import { logModeration } from "@/lib/moderation/logger";
 
 const MAX_INPUT_BYTES = 20 * 1024 * 1024; // 20 MB raw upload limit
 
@@ -60,6 +62,23 @@ export async function POST(
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
+  // ── Image moderation — must happen BEFORE compression or upload ───────────
+  const modResult = await moderateImage(buffer);
+
+  await logModeration({
+    result: modResult,
+    contentType: "image",
+    contentPreview: `chat/${communityId}/ (pre-upload)`,
+    userId,
+    communityId,
+  });
+
+  if (!modResult.allowed) {
+    return NextResponse.json({ error: modResult.reason }, { status: 422 });
+  }
+  // modResult.status can be "approved" or "review" here — both get uploaded;
+  // review images won't be visible until the message is approved in the queue.
+
   let compressed;
   try {
     compressed = await compressChatImage(buffer);
@@ -71,7 +90,14 @@ export async function POST(
 
   try {
     const url = await uploadToR2(key, compressed.data, compressed.contentType);
-    return NextResponse.json({ url }, { status: 201 });
+    return NextResponse.json(
+      {
+        url,
+        // Pass the moderation status so the caller can include it in the message POST
+        moderation_status: modResult.status,
+      },
+      { status: 201 }
+    );
   } catch (err) {
     console.error("[chat-image-upload] R2 error:", err);
     return NextResponse.json({ error: "Upload failed." }, { status: 500 });

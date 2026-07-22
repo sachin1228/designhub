@@ -1,0 +1,373 @@
+Build a production-ready AI Moderation System for my Next.js community platform.
+
+The moderation system must run on the backend before any user-generated content is saved or uploaded.
+
+==================================================
+CONTENT TO MODERATE
+==================================================
+
+Moderate all user-generated content:
+
+- Chat messages
+- Posts
+- Comments
+- Usernames
+- User bios
+- Community names
+- Image uploads
+
+==================================================
+TEXT MODERATION
+==================================================
+
+Use OpenAI Moderation API (omni-moderation-latest).
+
+For every text submission:
+
+1. Send the content to OpenAI Moderation.
+2. If flagged for unsafe content:
+   - Reject immediately.
+   - Do not save to the database.
+   - Return:
+     "This content violates our community guidelines."
+
+If OpenAI passes:
+
+Apply custom business rules.
+
+Reject:
+
+- Referral spam
+- Crypto promotions
+- Fake giveaways
+- Investment scams
+- Phishing
+- Malware links
+- Adult advertisements
+- Casino/Gambling spam
+- Excessive self-promotion
+- Link spam
+- Duplicate/repeated messages
+
+Allow:
+
+- Design discussions
+- Portfolio links
+- Figma links
+- Behance
+- Dribbble
+- GitHub
+- Hiring posts
+- Job discussions
+- Design critiques
+- Constructive feedback
+
+==================================================
+IMAGE MODERATION
+==================================================
+
+Every uploaded image must be scanned BEFORE uploading to Cloudflare R2.
+
+Pipeline:
+
+User Upload
+
+↓
+
+OpenAI Moderation
+
+↓
+
+If passed
+
+↓
+
+NudeNet
+
+↓
+
+If passed
+
+↓
+
+Upload to Cloudflare R2
+
+↓
+
+Save metadata
+
+Reject immediately if:
+
+- Explicit nudity
+- Sexual activity
+- Pornography
+- Child sexual content
+- Graphic gore
+- Hate symbols
+
+Flag for manual review:
+
+- Artistic nudity
+- Medical images
+- Educational anatomy
+- Breastfeeding
+- Statues
+
+Allow:
+
+- UI screenshots
+- Design work
+- Logos
+- Avatars
+- Product images
+- Portfolio images
+- Travel photos
+
+==================================================
+NUDENET
+==================================================
+
+Create a Python FastAPI microservice.
+
+Endpoint:
+
+POST /moderate-image
+
+Input:
+
+multipart/form-data
+
+Return:
+
+{
+  "explicit": false,
+  "confidence": 0.98,
+  "detections": []
+}
+
+==================================================
+BACKEND MODERATION SERVICE
+==================================================
+
+Create reusable services:
+
+moderateText(text)
+
+Returns:
+
+{
+  allowed: boolean,
+  reason: string
+}
+
+moderateImage(file)
+
+Returns:
+
+{
+  allowed: boolean,
+  reason: string
+}
+
+All API endpoints must use these services before saving content.
+
+==================================================
+DATABASE
+==================================================
+
+Store moderation metadata:
+
+- moderation_status
+- moderation_provider
+- confidence
+- reason
+- timestamp
+
+Possible status:
+
+approved
+
+rejected
+
+review
+
+==================================================
+SECURITY
+==================================================
+
+Moderation must happen ONLY on the backend.
+
+Never trust frontend validation.
+
+Never upload images before moderation succeeds.
+
+==================================================
+LOGGING
+==================================================
+
+Log:
+
+- Provider
+- Decision
+- Confidence
+- Timestamp
+
+Do not store image contents in logs.
+
+==================================================
+ADMIN MODERATION PANEL
+==================================================
+
+Create an admin dashboard.
+
+Dashboard:
+
+- Total users
+- Posts today
+- Messages today
+- Images uploaded
+- Approved content
+- Rejected content
+- Content under review
+- Warned users
+- Banned users
+
+==================================================
+MODERATION QUEUE
+==================================================
+
+Display all flagged content.
+
+Include:
+
+- Posts
+- Comments
+- Chat messages
+- Images
+
+Each item should show:
+
+- Content preview
+- User
+- Community
+- AI provider
+- Confidence
+- Reason
+- Status
+
+Actions:
+
+- Approve
+- Reject
+- Delete
+- Warn User
+- Ban User
+- Add Moderator Note
+
+==================================================
+USER MODERATION
+==================================================
+
+For each user display:
+
+- Username
+- Join date
+- Reputation
+- Warnings
+- Temporary bans
+- Permanent bans
+- Moderation history
+
+Actions:
+
+- Warn
+- Temporary Mute
+- Temporary Ban
+- Permanent Ban
+- View User Content
+
+==================================================
+IMAGE REVIEW
+==================================================
+
+Show flagged images.
+
+Display:
+
+- Image preview
+- OpenAI result
+- NudeNet result
+- Confidence
+- Upload date
+- Uploaded by
+
+Actions:
+
+- Approve
+- Reject
+- Delete
+- Ban uploader
+
+==================================================
+REPORTS
+==================================================
+
+Users can report:
+
+- Spam
+- Harassment
+- Hate
+- Violence
+- Nudity
+- Scam
+- Copyright
+- Other
+
+Admins can:
+
+- View reports
+- Resolve reports
+- Approve report
+- Reject report
+
+==================================================
+AUDIT LOG
+==================================================
+
+Record every moderator action.
+
+Store:
+
+- Moderator
+- Action
+- Target user
+- Timestamp
+- Reason
+
+==================================================
+SETTINGS
+==================================================
+
+Allow admins to configure:
+
+- Enable/Disable OpenAI Moderation
+- Enable/Disable NudeNet
+- Auto Reject Threshold
+- Manual Review Threshold
+- Maximum image size
+- Allowed image formats
+
+==================================================
+TECHNICAL REQUIREMENTS
+==================================================
+
+- Next.js + TypeScript
+- Python FastAPI for NudeNet
+- Modular architecture
+- Fully typed
+- Reusable services
+- Backend-only moderation
+- Responsive admin UI
+- Role-based access (Super Admin, Admin, Moderator)
+- Pagination, filtering and search
+- Easy to extend with additional moderation providers later

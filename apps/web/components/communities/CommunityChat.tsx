@@ -10,6 +10,7 @@ import { ChatInput } from "./chat/ChatInput";
 import { MembersPanel } from "./chat/MembersPanel";
 import { MessageList } from "./chat/MessageList";
 import { MessageActionSlider } from "./chat/MessageActionSlider";
+import { ReportModal } from "./chat/ReportModal";
 import { useChatData } from "./chat/useChatData";
 import { useScrollAndUnread } from "./chat/useScrollAndUnread";
 import { useRealtimeChat } from "./chat/useRealtimeChat";
@@ -55,8 +56,9 @@ export function CommunityChat({
   const handleClearReply = useCallback(() => setReplyTo(null), []);
 
   // ── Message action slider state ───────────────────────────────────────────
-  const [activeMessage, setActiveMessage] = useState<CachedMessage | null>(null);
-  const [sliderIsMe, setSliderIsMe]       = useState(false);
+  const [activeMessage, setActiveMessage]   = useState<CachedMessage | null>(null);
+  const [sliderIsMe, setSliderIsMe]         = useState(false);
+  const [reportMessageId, setReportMessageId] = useState<string | null>(null);
 
   const handleMessagePress = useCallback((msg: CachedMessage) => {
     setActiveMessage(msg);
@@ -67,6 +69,10 @@ export function CommunityChat({
 
   const handleCopy = useCallback((msg: CachedMessage) => {
     navigator.clipboard.writeText(msg.content).catch(() => {});
+  }, []);
+
+  const handleReport = useCallback((msg: CachedMessage) => {
+    setReportMessageId(msg.id);
   }, []);
 
   const handleReactionToggled = useCallback(
@@ -245,8 +251,18 @@ export function CommunityChat({
             onClose={handleSliderClose}
             onReply={handleReply}
             onCopy={handleCopy}
+            onReport={handleReport}
             onReactionToggled={handleReactionToggled}
           />
+
+          {/* Report modal */}
+          {reportMessageId && (
+            <ReportModal
+              messageId={reportMessageId}
+              communityId={communityId}
+              onClose={() => setReportMessageId(null)}
+            />
+          )}
         </div>
 
         <MembersPanel members={members} />

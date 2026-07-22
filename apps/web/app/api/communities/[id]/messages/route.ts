@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
+import { moderateText } from "@/lib/moderation";
+import { logModeration } from "@/lib/moderation/logger";
 import type { MessageReaction, ReplyPreview } from "@/lib/communities/cache";
 
 const PAGE_SIZE = 50;
@@ -45,10 +47,12 @@ export async function GET(
   const before = searchParams.get("before");
   const after  = searchParams.get("after");
 
+  // Only show approved messages to regular users
   let msgQuery = db
     .from("community_messages")
     .select("id, content, created_at, user_id, reply_to_id, image_url")
     .eq("community_id", communityId)
+    .eq("moderation_status", "approved")
     .order("created_at", { ascending: false });
 
   if (after)        msgQuery = msgQuery.gt("created_at", after);
@@ -158,6 +162,27 @@ export async function POST(
   if (!content && !image_url) return NextResponse.json({ error: "Message cannot be empty." }, { status: 422 });
   if (content.length > 2000)  return NextResponse.json({ error: "Message too long." },        { status: 422 });
 
+  // ── Text moderation (only when there is text content) ────────────────────
+  let moderationStatus: "approved" | "rejected" | "review" = "approved";
+  let moderationLogId: string | null = null;
+
+  if (content) {
+    const modResult = await moderateText(content);
+
+    moderationLogId = await logModeration({
+      result: modResult,
+      contentType: "message",
+      contentPreview: content,
+      userId,
+      communityId,
+    });
+
+    if (!modResult.allowed) {
+      return NextResponse.json({ error: modResult.reason }, { status: 422 });
+    }
+    moderationStatus = modResult.status;
+  }
+
   // Validate reply_to_id belongs to this community (if provided)
   if (reply_to_id) {
     const { data: parent } = await db
@@ -166,18 +191,42 @@ export async function POST(
       .eq("id", reply_to_id)
       .eq("community_id", communityId)
       .maybeSingle();
-    if (!parent) reply_to_id = null; // silently ignore invalid reply
+    if (!parent) reply_to_id = null;
   }
 
   const { data: inserted, error: insertErr } = await db
     .from("community_messages")
-    .insert({ community_id: communityId, user_id: userId, content: content || null, reply_to_id, image_url })
-    .select("id, content, created_at, user_id, reply_to_id, image_url")
+    .insert({
+      community_id: communityId,
+      user_id: userId,
+      content: content || null,
+      reply_to_id,
+      image_url,
+      moderation_status: moderationStatus,
+      moderation_log_id: moderationLogId,
+    })
+    .select("id, content, created_at, user_id, reply_to_id, image_url, moderation_status")
     .single();
 
   if (insertErr || !inserted) {
     console.error("[POST message] insert error:", insertErr);
     return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
+  }
+
+  // Back-fill content_id on the moderation log now that we have the message id
+  if (moderationLogId) {
+    db.from("moderation_logs")
+      .update({ content_id: inserted.id })
+      .eq("id", moderationLogId)
+      .then(() => {});
+  }
+
+  // If message is under review, tell the user politely
+  if (moderationStatus === "review") {
+    return NextResponse.json(
+      { error: "Your message is under review and will appear once approved." },
+      { status: 202 }
+    );
   }
 
   const [{ data: user }, { data: profile }, replyMap] = await Promise.all([

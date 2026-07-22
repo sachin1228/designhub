@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { Reply, Copy } from "lucide-react";
+import { Reply, Copy, Flag } from "lucide-react";
 import type { CachedMessage, MessageReaction } from "@/lib/communities/cache";
 
 interface MessageActionSliderProps {
@@ -12,6 +12,7 @@ interface MessageActionSliderProps {
   onClose: () => void;
   onReply: (msg: CachedMessage) => void;
   onCopy: (msg: CachedMessage) => void;
+  onReport: (msg: CachedMessage) => void;
   onReactionToggled: (msgId: string, reactions: MessageReaction[]) => void;
 }
 
@@ -31,6 +32,7 @@ export function MessageActionSlider({
   onClose,
   onReply,
   onCopy,
+  onReport,
   onReactionToggled,
 }: MessageActionSliderProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -197,6 +199,20 @@ export function MessageActionSlider({
               <Copy size={18} className="text-foreground-muted shrink-0" />
               <span className="font-body text-sm text-foreground">Copy</span>
             </button>
+
+            {/* Report — only for other people's messages */}
+            {!isMe && (
+              <button
+                className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-white/[0.05] active:bg-white/10 transition-colors"
+                onClick={() => {
+                  if (message) onReport(message);
+                  onClose();
+                }}
+              >
+                <Flag size={18} className="text-red-400 shrink-0" />
+                <span className="font-body text-sm text-red-400">Report</span>
+              </button>
+            )}
           </div>
 
           {/* Safe-area spacer for mobile */}
