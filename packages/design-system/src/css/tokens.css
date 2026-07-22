@@ -1,7 +1,7 @@
 /**
  * @draft/design-system — CSS custom properties
  *
- * Official Geist blue scale. blue-700 (#52a8ff) is primary accent.
+ * Primary accent: #0070F3. Hover: #0060D1.
  */
 
 /* ─── Light mode (default) ─────────────────────────────────────────── */
@@ -18,17 +18,17 @@
   --color-foreground-muted:  #525252;
   --color-foreground-subtle: #737373;
 
-  /* Accent — Geist blue-700 */
-  --color-accent:            #52a8ff;
-  --color-accent-rgb:        82 168 255;  /* RGB channels for opacity modifiers */
-  --color-accent-hover:      #adcfff;     /* blue-800 — hover shade */
-  --color-accent-soft:       #f0f8ff;     /* blue-1000 — tinted bg */
+  /* Accent */
+  --color-accent:            #0070F3;
+  --color-accent-rgb:        0 112 243;   /* RGB channels for opacity modifiers */
+  --color-accent-hover:      #0060D1;     /* darker hover shade */
+  --color-accent-soft:       #f0f8ff;     /* tinted bg */
   --color-accent-foreground: #FFFFFF;
 
   --color-border:            #EAEAEA;
   --color-border-subtle:     #F5F5F5;
 
-  --color-signal:            #52a8ff;
+  --color-signal:            #0070F3;
 
   --color-overlay:            #0A0A0A;
   --color-overlay-raised:     #111111;

@@ -13,8 +13,8 @@ export const blue = {
   300:  "#003c85",
   400:  "#0057b7",
   500:  "#006bdb",
-  600:  "#0070f3",
-  700:  "#52a8ff", // ← PRIMARY brand accent
+  600:  "#0070F3", // ← PRIMARY brand accent
+  700:  "#52a8ff",
   800:  "#adcfff",
   900:  "#d9ecff",
   1000: "#f0f8ff", // barely-there tint — soft backgrounds
@@ -48,7 +48,7 @@ export const dark = {
 } as const;
 
 /** Brand signal */
-export const signal = blue[700] as const;
+export const signal = blue[600] as const;
 
 export const colors = {
   blue,

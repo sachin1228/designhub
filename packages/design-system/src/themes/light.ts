@@ -1,8 +1,7 @@
 import { neutral, blue, signal, dark } from "../tokens/colors";
 
 /**
- * Light theme — Geist blue-700 (#52a8ff) as primary accent,
- * blue-800 (#adcfff) as hover shade.
+ * Light theme — #0070F3 as primary accent, #0060D1 as hover.
  */
 export const lightTheme = {
   background:        neutral[50],
@@ -15,8 +14,8 @@ export const lightTheme = {
   foregroundMuted:   neutral[600],
   foregroundSubtle:  neutral[500],
 
-  accent:            blue[700],     // #52a8ff — Geist blue-700
-  accentHover:       blue[800],     // #adcfff — hover shade
+  accent:            "#0070F3" as const,
+  accentHover:       "#0060D1" as const,
   accentSoft:        blue[1000],    // #f0f8ff — tinted bg
   accentForeground:  neutral[0],
 
