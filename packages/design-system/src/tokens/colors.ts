@@ -7,18 +7,21 @@
  * lower numbers = lighter shades, higher numbers = darker shades.
  */
 
-/** Geist Blue — primary brand accent (replaces orange) */
+/**
+ * Brand Blue — palette built around #1289ff (primary brand blue).
+ * HSL ≈ 214°, 100%, 54%
+ */
 export const blue = {
-  50:  "#eff6ff",
-  100: "#dbeafe",
-  200: "#bfdbfe",
-  300: "#93c5fd",
-  400: "#60a5fa",
-  500: "#0070f3", // primary brand accent (light mode) — Vercel signature blue
-  600: "#0060df", // hover
-  700: "#004bad",
-  800: "#003082",
-  900: "#001a57",
+  50:  "#eef5ff",  // barely-there tint — soft backgrounds, hover fills
+  100: "#d9eaff",  // light tint — badge/pill backgrounds
+  200: "#bcd8ff",  // medium-light — input focus rings, outlined borders
+  300: "#8bbeff",  // medium — disabled states, decorative accents
+  400: "#4fa3ff",  // vivid light — dark-mode primary, hover on dark
+  500: "#1289ff",  // ← PRIMARY BRAND BLUE (light mode accent)
+  600: "#0070e6",  // hover — buttons, links on hover
+  700: "#0056b3",  // pressed / active state
+  800: "#003d80",  // deep blue — gradients, illustration elements
+  900: "#00264d",  // darkest — gradient endpoints, overlays
 } as const;
 
 /** Geist Neutral — clean, cool-neutral grays */
@@ -48,8 +51,8 @@ export const dark = {
   100: "#EDEDED", // foreground on dark
 } as const;
 
-/** Brand signal — vivid blue, stays consistent in both modes */
-export const signal = "#0070f3" as const;
+/** Brand signal — same as primary blue, stays consistent in both modes */
+export const signal = "#1289ff" as const;
 
 export const colors = {
   blue,

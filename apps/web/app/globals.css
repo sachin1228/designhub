@@ -27,11 +27,11 @@
   --color-foreground-muted:  #525252;
   --color-foreground-subtle: #737373;
 
-  /* Accent — Vercel / Geist blue */
-  --color-accent:            #0070f3;
-  --color-accent-rgb:        0 112 243;   /* RGB channels for opacity modifiers (space-sep for modern rgb()) */
-  --color-accent-hover:      #0060df;
-  --color-accent-soft:       #eff6ff;
+  /* Accent — #1289ff brand blue */
+  --color-accent:            #1289ff;
+  --color-accent-rgb:        18 137 255;  /* RGB channels for opacity modifiers (space-sep for modern rgb()) */
+  --color-accent-hover:      #0070e6;
+  --color-accent-soft:       #eef5ff;
   --color-accent-foreground: #FFFFFF;
 
   /* Borders — Geist crisp 1px borders */
@@ -39,7 +39,7 @@
   --color-border-subtle:     #F5F5F5;
 
   /* Brand signal */
-  --color-signal:            #0070f3;
+  --color-signal:            #1289ff;
 
   /* Always-dark overlay panel (brand canvas side) */
   --color-overlay:            #0A0A0A;
@@ -83,10 +83,10 @@
     --color-foreground-muted:  #737373;
     --color-foreground-subtle: #525252;
 
-    /* Accent — lighter blue for dark-mode legibility */
-    --color-accent:            #60a5fa;
-    --color-accent-rgb:        96 165 250;   /* RGB channels for opacity modifiers (space-sep for modern rgb()) */
-    --color-accent-hover:      #93c5fd;
+    /* Accent — blue[400] slightly lighter for dark-mode legibility */
+    --color-accent:            #4fa3ff;
+    --color-accent-rgb:        79 163 255;   /* RGB channels for opacity modifiers (space-sep for modern rgb()) */
+    --color-accent-hover:      #8bbeff;
     --color-accent-soft:       #1A1A1A;
     --color-accent-foreground: #FFFFFF;
 
@@ -95,7 +95,7 @@
     --color-border-subtle:     #1A1A1A;
 
     /* Signal stays vivid */
-    --color-signal:            #0070f3;
+    --color-signal:            #1289ff;
 
     /* Overlay panel — same in both modes (always dark) */
     --color-overlay:            #0A0A0A;
