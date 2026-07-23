@@ -369,21 +369,6 @@ function MessageHoverActions({
               <span>Reply</span>
             </button>
 
-            {isMe && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteClick();
-                  setMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors"
-                role="menuitem"
-              >
-                <Trash2 size={14} className="shrink-0" />
-                <span>Delete</span>
-              </button>
-            )}
-
             {canCopy && (
               <button
                 onClick={(e) => {
@@ -397,6 +382,24 @@ function MessageHoverActions({
                 <Copy size={14} className="text-foreground-muted shrink-0" />
                 <span>Copy</span>
               </button>
+            )}
+
+            {isMe && (
+              <>
+                <div className="h-px bg-white/[0.08]" role="separator" />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteClick();
+                    setMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                  role="menuitem"
+                >
+                  <Trash2 size={14} className="shrink-0" />
+                  <span>Delete</span>
+                </button>
+              </>
             )}
           </div>
         )}
