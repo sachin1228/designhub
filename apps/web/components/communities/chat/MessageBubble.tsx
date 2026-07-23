@@ -332,7 +332,14 @@ function MessageHoverActions({
       )}
 
       {/* Reply, copy, and delete menu */}
-      <div className="relative" ref={menuRef}>
+      <div
+        className={`relative ${
+          isMe
+            ? "after:absolute after:top-1/2 after:right-[-4px] after:h-px after:w-1 after:bg-white/20"
+            : "after:absolute after:top-1/2 after:left-[-4px] after:h-px after:w-1 after:bg-white/20"
+        }`}
+        ref={menuRef}
+      >
         <button
           onClick={(e) => { e.stopPropagation(); onMenuOpenChange(!menuOpen); }}
           className={`
@@ -357,19 +364,15 @@ function MessageHoverActions({
               ${isMe ? "right-0" : "left-0"}
             `}
           >
-            {/* Keep the menu visually connected to the message it controls. */}
+            {/* Dropdown dot and stem connect back to the chevron. */}
             <span
               aria-hidden="true"
               className={`
-                pointer-events-none absolute top-5 h-px w-2 bg-white/20
-                ${isMe ? "right-[-8px]" : "left-[-8px]"}
+                pointer-events-none absolute top-[-8px] left-1/2 h-2 w-px -translate-x-1/2 bg-white/20
               `}
             >
               <span
-                className={`
-                  absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-white/30
-                  ${isMe ? "right-[-3px]" : "left-[-3px]"}
-                `}
+                className="absolute top-[-3px] left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/40"
               />
             </span>
 
