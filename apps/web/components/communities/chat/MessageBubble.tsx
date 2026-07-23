@@ -62,26 +62,38 @@ function ReactionPills({
   reactions,
   currentUserId,
   isMe,
+  msgId,
+  onReaction,
 }: {
   reactions: MessageReaction[];
   currentUserId: string;
   isMe: boolean;
+  msgId: string;
+  onReaction: (msgId: string, emoji: string) => void;
 }) {
   if (!reactions || reactions.length === 0) return null;
 
   return (
     <div className={`flex flex-wrap gap-1 mt-1 absolute -bottom-[14px] left-[12px] ${isMe ? "justify-end" : "justify-start"}`}>
       {reactions.map(({ emoji, user_ids }) => {
+        const iMine = user_ids.includes(currentUserId);
         return (
-          <span
+          <button
             key={emoji}
-            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-medium select-none bg-[#2a2a2a] border border-black text-foreground"
+            onClick={(e) => { e.stopPropagation(); onReaction(msgId, emoji); }}
+            title={iMine ? "Remove reaction" : undefined}
+            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-medium
+              border transition-colors duration-100
+              ${iMine
+                ? "bg-accent/20 border-accent/50 text-foreground ring-1 ring-accent/30"
+                : "bg-[#2a2a2a] border-black text-foreground hover:bg-[#333] hover:border-white/20"
+              }`}
           >
             {emoji}
             {user_ids.length > 1 && (
               <span className="text-[10px] opacity-70">{user_ids.length}</span>
             )}
-          </span>
+          </button>
         );
       })}
     </div>
@@ -185,13 +197,10 @@ function MessageHoverActions({
         {/* Emoji picker popup — appears above the message row */}
         {pickerOpen && (
           <div
-            className={`
-              absolute bottom-full mb-2 z-40
-              ${isMe ? "right-0" : "left-0"}
+            className="absolute bottom-full mb-2 z-40 left-1/2 -translate-x-1/2
               flex items-center gap-0.5
               bg-[#1c1c1e] border border-white/[0.08] rounded-2xl shadow-2xl px-1.5 py-1
-              animate-in fade-in slide-in-from-bottom-2 duration-150
-            `}
+              animate-in fade-in slide-in-from-bottom-2 duration-150"
           >
             {REACTIONS.map(({ emoji, label, bg }) => {
               const isActive = myEmoji === emoji;
@@ -353,7 +362,7 @@ export function MessageBubble({
                       )}
                     </div>
                   </div>
-                  <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe />
+                  <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe msgId={msg.id} onReaction={onReaction} />
                 </div>
               </div>
               {reactions.length > 0 && <div className="h-5" />}
@@ -406,7 +415,7 @@ export function MessageBubble({
                   {fmtTime(msg.created_at)}
                 </p>
               </div>
-              <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} />
+              <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} msgId={msg.id} onReaction={onReaction} />
             </div>
             {/* Actions sit to the RIGHT of received bubbles */}
             <MessageHoverActions
