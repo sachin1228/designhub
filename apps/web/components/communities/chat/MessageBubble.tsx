@@ -218,6 +218,8 @@ function MessageHoverActions({
   onReply,
   onCopy,
   onDeleteClick,
+  menuOpen,
+  onMenuOpenChange,
 }: {
   msg: CachedMessage;
   isMe: boolean;
@@ -227,9 +229,10 @@ function MessageHoverActions({
   onReply: (msg: CachedMessage) => void;
   onCopy: (msg: CachedMessage) => void;
   onDeleteClick: () => void;
+  menuOpen: boolean;
+  onMenuOpenChange: (open: boolean) => void;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const myEmoji = msg.reactions?.find((r) => r.user_ids.includes(currentUserId))?.emoji;
@@ -252,11 +255,11 @@ function MessageHoverActions({
     if (!menuOpen) return;
     const handlePointerDown = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
+        onMenuOpenChange(false);
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") onMenuOpenChange(false);
     };
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
@@ -264,7 +267,7 @@ function MessageHoverActions({
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [menuOpen]);
+  }, [menuOpen, onMenuOpenChange]);
 
   // No actions on deleted or still-sending messages
   if (isDeleted || msg.status === "sending") return null;
@@ -331,7 +334,7 @@ function MessageHoverActions({
       {/* Reply, copy, and delete menu */}
       <div className="relative" ref={menuRef}>
         <button
-          onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+          onClick={(e) => { e.stopPropagation(); onMenuOpenChange(!menuOpen); }}
           className={`
             w-7 h-7 rounded-full flex items-center justify-center
             transition-colors duration-100
@@ -350,57 +353,76 @@ function MessageHoverActions({
         {menuOpen && (
           <div
             className={`
-              absolute top-full mt-1 z-40 min-w-32 overflow-hidden
-              bg-[#1c1c1e] border border-white/[0.08] rounded-xl shadow-2xl
+              absolute top-full mt-2 z-40 min-w-32
               ${isMe ? "right-0" : "left-0"}
             `}
-            role="menu"
           >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onReply(msg);
-                setMenuOpen(false);
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-white/[0.08] transition-colors"
-              role="menuitem"
+            {/* Keep the menu visually connected to the message it controls. */}
+            <span
+              aria-hidden="true"
+              className={`
+                pointer-events-none absolute top-5 h-px w-2 bg-white/20
+                ${isMe ? "right-[-8px]" : "left-[-8px]"}
+              `}
             >
-              <Reply size={14} className="text-foreground-muted shrink-0" />
-              <span>Reply</span>
-            </button>
+              <span
+                className={`
+                  absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-white/30
+                  ${isMe ? "right-[-3px]" : "left-[-3px]"}
+                `}
+              />
+            </span>
 
-            {canCopy && (
+            <div
+              className="overflow-hidden bg-[#1c1c1e] border border-white/[0.08] rounded-xl shadow-2xl"
+              role="menu"
+            >
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onCopy(msg);
-                  setMenuOpen(false);
+                  onReply(msg);
+                  onMenuOpenChange(false);
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-white/[0.08] transition-colors"
                 role="menuitem"
               >
-                <Copy size={14} className="text-foreground-muted shrink-0" />
-                <span>Copy</span>
+                <Reply size={14} className="text-foreground-muted shrink-0" />
+                <span>Reply</span>
               </button>
-            )}
 
-            {isMe && (
-              <>
-                <div className="h-px bg-white/[0.08]" role="separator" />
+              {canCopy && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDeleteClick();
-                    setMenuOpen(false);
+                    onCopy(msg);
+                    onMenuOpenChange(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-white/[0.08] transition-colors"
                   role="menuitem"
                 >
-                  <Trash2 size={14} className="shrink-0" />
-                  <span>Delete</span>
+                  <Copy size={14} className="text-foreground-muted shrink-0" />
+                  <span>Copy</span>
                 </button>
-              </>
-            )}
+              )}
+
+              {isMe && (
+                <>
+                  <div className="h-px bg-white/[0.08]" role="separator" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteClick();
+                      onMenuOpenChange(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                    role="menuitem"
+                  >
+                    <Trash2 size={14} className="shrink-0" />
+                    <span>Delete</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -446,6 +468,7 @@ export function MessageBubble({
   onDelete,
 }: MessageBubbleProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const sender    = msg.users;
   const reactions = msg.reactions ?? [];
@@ -502,10 +525,14 @@ export function MessageBubble({
                     onReply={onReply}
                     onCopy={onCopy}
                     onDeleteClick={() => setDeleteConfirmOpen(true)}
+                    menuOpen={menuOpen}
+                    onMenuOpenChange={setMenuOpen}
                   />
                   <div className="relative min-w-0">
                     <div
-                      className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 select-none ${
+                      className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
+                        menuOpen ? "ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" : ""
+                      } ${
                         msg.status === "sending"
                           ? "bg-accent opacity-70"
                           : msg.status === "failed"
@@ -588,7 +615,9 @@ export function MessageBubble({
             /* group scoped here — hover only triggers on [bubble + actions], not the full row */
             <div className="group flex items-center gap-1">
               <div className="relative min-w-0">
-                <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 select-none">
+                <div className={`rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
+                  menuOpen ? "ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" : ""
+                }`}>
                   {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
                   {imageUrl && (
                     <BubbleImage
@@ -619,6 +648,8 @@ export function MessageBubble({
                 onReply={onReply}
                 onCopy={onCopy}
                 onDeleteClick={() => setDeleteConfirmOpen(true)}
+                menuOpen={menuOpen}
+                onMenuOpenChange={setMenuOpen}
               />
             </div>
           )}
