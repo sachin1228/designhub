@@ -265,10 +265,12 @@ function MessageHoverActions({
 
     const updateMenuPlacement = () => {
       const root = menuRef.current;
-      const trigger = root?.querySelector<HTMLButtonElement>(
+      if (!root) return;
+
+      const trigger = root.querySelector<HTMLButtonElement>(
         '[aria-label="More message actions"]'
       );
-      const menu = root?.querySelector<HTMLElement>('[role="menu"]');
+      const menu = root.querySelector<HTMLElement>('[role="menu"]');
       if (!trigger || !menu) return;
 
       const triggerRect = trigger.getBoundingClientRect();
