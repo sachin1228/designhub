@@ -220,6 +220,9 @@ function MessageHoverActions({
   onDeleteClick,
   menuOpen,
   onMenuOpenChange,
+  showReaction = true,
+  showMenu = true,
+  insideBubble = false,
 }: {
   msg: CachedMessage;
   isMe: boolean;
@@ -231,6 +234,9 @@ function MessageHoverActions({
   onDeleteClick: () => void;
   menuOpen: boolean;
   onMenuOpenChange: (open: boolean) => void;
+  showReaction?: boolean;
+  showMenu?: boolean;
+  insideBubble?: boolean;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -252,7 +258,7 @@ function MessageHoverActions({
 
   // Close the action menu when clicking outside or pressing Escape.
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!showMenu || !menuOpen) return;
     const handlePointerDown = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onMenuOpenChange(false);
@@ -267,17 +273,21 @@ function MessageHoverActions({
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [menuOpen, onMenuOpenChange]);
+  }, [menuOpen, onMenuOpenChange, showMenu]);
 
   // No actions on deleted or still-sending messages
   if (isDeleted || msg.status === "sending") return null;
 
   return (
     <div
-      className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150"
+      className={
+        insideBubble
+          ? "absolute top-1 right-1 z-30 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150"
+          : "flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150"
+      }
     >
       {/* Emoji reaction button — only for non-deleted messages */}
-      {!isDeleted && (
+      {showReaction && !isDeleted && (
         <div className="relative" ref={pickerRef}>
           {pickerOpen && (
             <div
@@ -332,14 +342,8 @@ function MessageHoverActions({
       )}
 
       {/* Reply, copy, and delete menu */}
-      <div
-        className={`relative ${
-          isMe
-            ? "after:absolute after:top-1/2 after:right-[-4px] after:h-px after:w-1 after:bg-white/20"
-            : "after:absolute after:top-1/2 after:left-[-4px] after:h-px after:w-1 after:bg-white/20"
-        }`}
-        ref={menuRef}
-      >
+      {showMenu && (
+      <div className="relative" ref={menuRef}>
         <button
           onClick={(e) => { e.stopPropagation(); onMenuOpenChange(!menuOpen); }}
           className={`
@@ -368,7 +372,8 @@ function MessageHoverActions({
             <span
               aria-hidden="true"
               className={`
-                pointer-events-none absolute top-[-8px] left-1/2 h-2 w-px -translate-x-1/2 bg-white/20
+                pointer-events-none absolute top-[-8px] h-2 w-px bg-white/20
+                ${isMe ? "right-3.5" : "left-3.5"}
               `}
             >
               <span
@@ -429,6 +434,7 @@ function MessageHoverActions({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
@@ -530,10 +536,11 @@ export function MessageBubble({
                     onDeleteClick={() => setDeleteConfirmOpen(true)}
                     menuOpen={menuOpen}
                     onMenuOpenChange={setMenuOpen}
+                    showMenu={false}
                   />
                   <div className="relative min-w-0">
                     <div
-                      className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
+                      className={`relative rounded-2xl rounded-tr-sm px-3 pr-10 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
                         menuOpen ? "ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" : ""
                       } ${
                         msg.status === "sending"
@@ -571,6 +578,20 @@ export function MessageBubble({
                           <span className="text-[10px] text-red-200">!</span>
                         )}
                       </div>
+                      <MessageHoverActions
+                        msg={msg}
+                        isMe
+                        isDeleted={isDeleted}
+                        currentUserId={currentUserId}
+                        onReaction={onReaction}
+                        onReply={onReply}
+                        onCopy={onCopy}
+                        onDeleteClick={() => setDeleteConfirmOpen(true)}
+                        menuOpen={menuOpen}
+                        onMenuOpenChange={setMenuOpen}
+                        showReaction={false}
+                        insideBubble
+                      />
                     </div>
                     <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe msgId={msg.id} onReaction={onReaction} />
                   </div>
@@ -618,7 +639,7 @@ export function MessageBubble({
             /* group scoped here — hover only triggers on [bubble + actions], not the full row */
             <div className="group flex items-center gap-1">
               <div className="relative min-w-0">
-                <div className={`rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
+                <div className={`relative rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pr-10 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
                   menuOpen ? "ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" : ""
                 }`}>
                   {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
@@ -638,6 +659,20 @@ export function MessageBubble({
                   <p className="font-mono text-[10px] text-foreground-muted text-right mt-1">
                     {fmtTime(msg.created_at)}
                   </p>
+                  <MessageHoverActions
+                    msg={msg}
+                    isMe={false}
+                    isDeleted={isDeleted}
+                    currentUserId={currentUserId}
+                    onReaction={onReaction}
+                    onReply={onReply}
+                    onCopy={onCopy}
+                    onDeleteClick={() => setDeleteConfirmOpen(true)}
+                    menuOpen={menuOpen}
+                    onMenuOpenChange={setMenuOpen}
+                    showReaction={false}
+                    insideBubble
+                  />
                 </div>
                 <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} msgId={msg.id} onReaction={onReaction} />
               </div>
@@ -653,6 +688,7 @@ export function MessageBubble({
                 onDeleteClick={() => setDeleteConfirmOpen(true)}
                 menuOpen={menuOpen}
                 onMenuOpenChange={setMenuOpen}
+                showMenu={false}
               />
             </div>
           )}
