@@ -176,16 +176,9 @@ function MessageHoverActions({
   }, [pickerOpen]);
 
   return (
-    /* Positioned beside the bubble: left of "me" bubbles, right of others */
+    /* Inline beside the bubble — group is on the [actions+bubble] wrapper, not the whole row */
     <div
-      className={`
-        absolute top-1/2 -translate-y-1/2 z-30
-        ${isMe ? "right-full pr-2" : "left-full pl-2"}
-        flex items-center gap-0.5
-        opacity-0 group-hover:opacity-100
-        pointer-events-none group-hover:pointer-events-auto
-        transition-opacity duration-150
-      `}
+      className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150"
     >
       {/* Emoji reaction button — clicking opens picker above the bubble */}
       <div className="relative" ref={pickerRef}>
@@ -299,10 +292,9 @@ export function MessageBubble({
     return (
       <Fragment>
         {unreadDivider}
-        {/* `group` enables child group-hover: utilities */}
         <div
           data-message-id={msg.id}
-          className={`group flex flex-col items-end w-full px-5 transition-colors duration-300 ${rowHighlight} ${
+          className={`flex flex-col items-end w-full px-5 transition-colors duration-300 ${rowHighlight} ${
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
         >
@@ -311,8 +303,9 @@ export function MessageBubble({
               <RetryIndicator onRetry={() => onRetrySend(msg.id)} />
             )}
             <div className="max-w-[65%]">
-              <div className="relative">
-                {/* Hover toolbar — floats above bubble */}
+              {/* group scoped here — hover only triggers on [actions + bubble], not the full row */}
+              <div className="group flex items-center gap-1 justify-end">
+                {/* Actions sit to the LEFT of sent bubbles */}
                 <MessageHoverActions
                   msg={msg}
                   isMe
@@ -321,46 +314,47 @@ export function MessageBubble({
                   onReply={onReply}
                   onCopy={onCopy}
                 />
-
-                <div
-                  className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 select-none ${
-                    msg.status === "sending"
-                      ? "bg-accent opacity-70"
-                      : msg.status === "failed"
-                      ? "bg-red-500/80"
-                      : "bg-accent"
-                  }`}
-                >
-                  {replyTo && <ReplyBubble reply={replyTo} isMe onReplyClick={onReplyClick} />}
-                  {imageUrl && (
-                    <BubbleImage
-                      url={imageUrl}
-                      isMe
-                      uploading={uploading}
-                      onCancel={() => onCancelSend(msg.id)}
-                    />
-                  )}
-                  {msg.content && (
-                    <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
-                      {msg.content}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-end gap-1 mt-1">
-                    <span className="font-mono text-[10px] text-accent-foreground/60">
-                      {fmtTime(msg.created_at)}
-                    </span>
-                    {msg.status === "sending" && (
-                      <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
+                <div className="relative min-w-0">
+                  <div
+                    className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 select-none ${
+                      msg.status === "sending"
+                        ? "bg-accent opacity-70"
+                        : msg.status === "failed"
+                        ? "bg-red-500/80"
+                        : "bg-accent"
+                    }`}
+                  >
+                    {replyTo && <ReplyBubble reply={replyTo} isMe onReplyClick={onReplyClick} />}
+                    {imageUrl && (
+                      <BubbleImage
+                        url={imageUrl}
+                        isMe
+                        uploading={uploading}
+                        onCancel={() => onCancelSend(msg.id)}
+                      />
                     )}
-                    {(msg.status === "sent" || !msg.status) && (
-                      <CheckCheck size={11} className="text-accent-foreground/70" />
+                    {msg.content && (
+                      <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
+                        {msg.content}
+                      </p>
                     )}
-                    {msg.status === "failed" && (
-                      <span className="text-[10px] text-red-200">!</span>
-                    )}
+                    <div className="flex items-center justify-end gap-1 mt-1">
+                      <span className="font-mono text-[10px] text-accent-foreground/60">
+                        {fmtTime(msg.created_at)}
+                      </span>
+                      {msg.status === "sending" && (
+                        <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
+                      )}
+                      {(msg.status === "sent" || !msg.status) && (
+                        <CheckCheck size={11} className="text-accent-foreground/70" />
+                      )}
+                      {msg.status === "failed" && (
+                        <span className="text-[10px] text-red-200">!</span>
+                      )}
+                    </div>
                   </div>
+                  <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe />
                 </div>
-                <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe />
               </div>
               {reactions.length > 0 && <div className="h-5" />}
             </div>
@@ -373,10 +367,9 @@ export function MessageBubble({
   return (
     <Fragment>
       {unreadDivider}
-      {/* `group` enables child group-hover: utilities */}
       <div
         data-message-id={msg.id}
-        className={`group flex items-start gap-2 w-full px-5 transition-colors duration-300 ${rowHighlight} ${
+        className={`flex items-start gap-2 w-full px-5 transition-colors duration-300 ${rowHighlight} ${
           isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
         }`}
       >
@@ -391,8 +384,31 @@ export function MessageBubble({
               {sender.name}
             </p>
           )}
-          <div className="relative">
-            {/* Hover toolbar — floats above bubble */}
+          {/* group scoped here — hover only triggers on [bubble + actions], not the full row */}
+          <div className="group flex items-center gap-1">
+            <div className="relative min-w-0">
+              <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 select-none">
+                {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
+                {imageUrl && (
+                  <BubbleImage
+                    url={imageUrl}
+                    isMe={false}
+                    uploading={uploading}
+                    onCancel={() => onCancelSend(msg.id)}
+                  />
+                )}
+                {msg.content && (
+                  <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
+                    {msg.content}
+                  </p>
+                )}
+                <p className="font-mono text-[10px] text-foreground-muted text-right mt-1">
+                  {fmtTime(msg.created_at)}
+                </p>
+              </div>
+              <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} />
+            </div>
+            {/* Actions sit to the RIGHT of received bubbles */}
             <MessageHoverActions
               msg={msg}
               isMe={false}
@@ -401,27 +417,6 @@ export function MessageBubble({
               onReply={onReply}
               onCopy={onCopy}
             />
-
-            <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 select-none">
-              {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
-              {imageUrl && (
-                <BubbleImage
-                  url={imageUrl}
-                  isMe={false}
-                  uploading={uploading}
-                  onCancel={() => onCancelSend(msg.id)}
-                />
-              )}
-              {msg.content && (
-                <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
-                  {msg.content}
-                </p>
-              )}
-              <p className="font-mono text-[10px] text-foreground-muted text-right mt-1">
-                {fmtTime(msg.created_at)}
-              </p>
-            </div>
-            <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} />
           </div>
           {reactions.length > 0 && <div className="h-5" />}
         </div>
