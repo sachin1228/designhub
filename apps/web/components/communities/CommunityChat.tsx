@@ -322,8 +322,9 @@ export function CommunityChat({
             />
           </div>
 
-          {/* Scroll-to-bottom button */}
-          {showScrollToBottom && (
+          {/* Scroll-to-bottom button — only float here when there's no reply bar.
+              When a reply is active the ↓ button lives inside the reply bar itself. */}
+          {showScrollToBottom && !replyTo && (
             <button
               onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
               className="absolute bottom-[72px] right-4 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-surface-raised shadow-lg border border-border text-foreground-muted hover:text-foreground transition-colors"
@@ -341,10 +342,12 @@ export function CommunityChat({
             placeholder={`Message ${displayCommunity?.name ?? ""}…`}
             replyTo={replyTo}
             pendingImagePreview={pendingImagePreview}
+            showScrollToBottom={showScrollToBottom}
             onChange={setInput}
             onKeyDown={handleKeyDown}
             onSend={handleSend}
             onCancelReply={handleClearReply}
+            onScrollToBottom={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
             onImageSelect={handleImageSelect}
             onImageRemove={handleImageClear}
           />
