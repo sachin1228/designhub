@@ -85,8 +85,8 @@ function ReactionPills({
             className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-medium
               border transition-colors duration-100
               ${iMine
-                ? "bg-accent/20 border-accent/50 text-foreground ring-1 ring-accent/30"
-                : "bg-[#2a2a2a] border-black text-foreground hover:bg-[#333] hover:border-white/20"
+                ? "bg-[#2a2a2a] border border-black text-foreground"
+                : "bg-[#2a2a2a] border border-black text-foreground hover:bg-[#333]"
               }`}
           >
             {emoji}
