@@ -217,25 +217,45 @@ export function CommunityChat({
   });
 
   // ── Re-anchor to bottom when reply/image bar appears or disappears ───────
-  // When the input area grows (reply preview, image preview), the scroll
-  // container shrinks. The browser keeps scrollTop unchanged, which pulls
-  // the last messages out of view and creates a black gap. Detect this with
-  // a ResizeObserver and snap back to bottom whenever the user was already there.
+  // When the input area grows (reply bar, image preview), the scroll container
+  // shrinks. The browser keeps scrollTop unchanged, so the last messages slide
+  // out of view, leaving a black gap.
+  //
+  // Strategy: track prevDist via a scroll listener so we always know the user's
+  // scroll position BEFORE the resize fires. Only snap back to bottom if the
+  // user was genuinely at the bottom (≤ 10 px) before the resize — this avoids
+  // the wrong behaviour of snapping users who intentionally scrolled up to read
+  // an older message before hitting Reply.
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    const observer = new ResizeObserver(() => {
-      const dist =
+
+    // Initialise with the current distance from the bottom
+    let prevDist =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    // Keep prevDist fresh whenever the user scrolls manually
+    const onScroll = () => {
+      prevDist =
         container.scrollHeight - container.scrollTop - container.clientHeight;
-      // If the user was effectively at the bottom (≤ 120 px) before the resize,
-      // snap them back. 120 px gives headroom for the reply bar (~56 px) + image
-      // bar (~70 px) that may appear simultaneously.
-      if (dist <= 120) {
+    };
+
+    const observer = new ResizeObserver(() => {
+      // prevDist was captured before this resize → safe to use as "was at bottom"
+      if (prevDist <= 10) {
         container.scrollTop = container.scrollHeight - container.clientHeight;
       }
+      // Update prevDist to reflect the post-snap position
+      prevDist =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
     });
+
+    container.addEventListener("scroll", onScroll, { passive: true });
     observer.observe(container);
-    return () => observer.disconnect();
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+      observer.disconnect();
+    };
   }, [scrollContainerRef]);
 
   // ── Group messages by date ────────────────────────────────────────────────
