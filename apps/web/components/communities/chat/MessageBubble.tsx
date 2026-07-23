@@ -114,7 +114,7 @@ export function MessageBubble({
         {unreadDivider}
         <div
           data-message-id={msg.id}
-          className={`flex flex-col items-end w-full -mx-5 px-5 transition-colors duration-300 ${rowHighlight} ${
+          className={`flex flex-col items-end w-full px-5 transition-colors duration-300 ${rowHighlight} ${
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
         >
@@ -167,7 +167,7 @@ export function MessageBubble({
       {unreadDivider}
       <div
         data-message-id={msg.id}
-        className={`flex items-start gap-2 w-full -mx-5 px-5 transition-colors duration-300 ${rowHighlight} ${
+        className={`flex items-start gap-2 w-full px-5 transition-colors duration-300 ${rowHighlight} ${
           isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
         }`}
       >
