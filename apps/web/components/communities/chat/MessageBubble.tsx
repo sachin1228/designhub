@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
-import { Clock, CheckCheck, X } from "lucide-react";
+import { Clock, CheckCheck, X, RefreshCw } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
 import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
@@ -17,6 +17,7 @@ interface MessageBubbleProps {
   onPress: (msg: CachedMessage) => void;
   onReplyClick: (replyId: string) => void;
   onCancelSend: (msgId: string) => void;
+  onRetrySend: (msgId: string) => void;
 }
 
 function ReplyBubble({
@@ -113,6 +114,23 @@ function BubbleImage({
   );
 }
 
+/** Retry button + "Failed" label shown beside a failed bubble. */
+function RetryIndicator({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-1 shrink-0 self-center">
+      <button
+        onClick={(e) => { e.stopPropagation(); onRetry(); }}
+        className="h-7 w-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 active:scale-90 transition-all"
+        aria-label="Retry sending"
+        title="Tap to retry"
+      >
+        <RefreshCw size={13} />
+      </button>
+      <span className="font-body text-[9px] text-red-400 leading-none">Retry</span>
+    </div>
+  );
+}
+
 export function MessageBubble({
   msg,
   isMe,
@@ -124,12 +142,14 @@ export function MessageBubble({
   onPress,
   onReplyClick,
   onCancelSend,
+  onRetrySend,
 }: MessageBubbleProps) {
   const sender    = msg.users;
   const reactions = msg.reactions ?? [];
   const replyTo   = msg.reply_to ?? null;
   const imageUrl  = msg.image_url ?? null;
   const uploading = msg.status === "sending" && !!imageUrl;
+  const failed    = msg.status === "failed";
 
   const rowHighlight = highlighted ? "bg-black/60" : "";
 
@@ -143,44 +163,51 @@ export function MessageBubble({
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
         >
-          <div className="max-w-[65%]">
-            <div className="relative">
-              <div
-                onClick={() => onPress(msg)}
-                className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 cursor-pointer select-none
-                  active:scale-[0.97] transition-all ${
-                  msg.status === "sending"
-                    ? "bg-accent opacity-70"
-                    : msg.status === "failed"
-                    ? "bg-red-500/80"
-                    : "bg-accent"
-                }`}
-              >
-                {replyTo && <ReplyBubble reply={replyTo} isMe onReplyClick={onReplyClick} />}
-                {imageUrl && <BubbleImage url={imageUrl} isMe uploading={uploading} onCancel={() => onCancelSend(msg.id)} />}
-                {msg.content && (
-                  <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
-                    {msg.content}
-                  </p>
-                )}
-                <div className="flex items-center justify-end gap-1 mt-1">
-                  <span className="font-mono text-[10px] text-accent-foreground/60">
-                    {fmtTime(msg.created_at)}
-                  </span>
-                  {msg.status === "sending" && (
-                    <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
+          {/* Wrap bubble + retry indicator in a flex row */}
+          <div className="flex items-center gap-2">
+            {/* Retry indicator sits to the LEFT of the bubble (visually on the right of the screen) */}
+            {failed && (
+              <RetryIndicator onRetry={() => onRetrySend(msg.id)} />
+            )}
+            <div className="max-w-[65%]">
+              <div className="relative">
+                <div
+                  onClick={() => onPress(msg)}
+                  className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 cursor-pointer select-none
+                    active:scale-[0.97] transition-all ${
+                    msg.status === "sending"
+                      ? "bg-accent opacity-70"
+                      : msg.status === "failed"
+                      ? "bg-red-500/80"
+                      : "bg-accent"
+                  }`}
+                >
+                  {replyTo && <ReplyBubble reply={replyTo} isMe onReplyClick={onReplyClick} />}
+                  {imageUrl && <BubbleImage url={imageUrl} isMe uploading={uploading} onCancel={() => onCancelSend(msg.id)} />}
+                  {msg.content && (
+                    <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
+                      {msg.content}
+                    </p>
                   )}
-                  {(msg.status === "sent" || !msg.status) && (
-                    <CheckCheck size={11} className="text-accent-foreground/70" />
-                  )}
-                  {msg.status === "failed" && (
-                    <span className="text-[10px] text-red-200">!</span>
-                  )}
+                  <div className="flex items-center justify-end gap-1 mt-1">
+                    <span className="font-mono text-[10px] text-accent-foreground/60">
+                      {fmtTime(msg.created_at)}
+                    </span>
+                    {msg.status === "sending" && (
+                      <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
+                    )}
+                    {(msg.status === "sent" || !msg.status) && (
+                      <CheckCheck size={11} className="text-accent-foreground/70" />
+                    )}
+                    {msg.status === "failed" && (
+                      <span className="text-[10px] text-red-200">!</span>
+                    )}
+                  </div>
                 </div>
+                <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe />
               </div>
-              <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe />
+              {reactions.length > 0 && <div className="h-5" />}
             </div>
-            {reactions.length > 0 && <div className="h-5" />}
           </div>
         </div>
       </Fragment>

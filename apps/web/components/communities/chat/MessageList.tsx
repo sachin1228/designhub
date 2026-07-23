@@ -36,6 +36,7 @@ interface MessageListProps {
   onMessagePress: (msg: CachedMessage) => void;
   onReplyClick: (replyId: string) => void;
   onCancelSend: (msgId: string) => void;
+  onRetrySend: (msgId: string) => void;
 }
 
 export function MessageList({
@@ -53,6 +54,7 @@ export function MessageList({
   onMessagePress,
   onReplyClick,
   onCancelSend,
+  onRetrySend,
 }: MessageListProps) {
   if (loading) {
     return (
@@ -131,6 +133,7 @@ export function MessageList({
                 onPress={onMessagePress}
                 onReplyClick={onReplyClick}
                 onCancelSend={onCancelSend}
+                onRetrySend={onRetrySend}
               />
             );
           })}
