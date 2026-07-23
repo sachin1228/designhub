@@ -1,7 +1,7 @@
 "use client";
 
-import { Fragment } from "react";
-import { Clock, CheckCheck, X, RefreshCw, Reply, Copy } from "lucide-react";
+import { Fragment, useState, useRef, useEffect } from "react";
+import { Clock, CheckCheck, X, RefreshCw, Reply, Copy, Smile } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
 import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
@@ -140,8 +140,8 @@ function RetryIndicator({ onRetry }: { onRetry: () => void }) {
 }
 
 /**
- * Floating action toolbar that appears on hover above the message bubble.
- * Contains emoji reactions + Reply + Copy.
+ * Side action buttons that appear beside the message bubble on hover.
+ * Shows: Emoji reaction (opens picker above bubble) + Reply + Copy.
  */
 function MessageHoverActions({
   msg,
@@ -158,47 +158,93 @@ function MessageHoverActions({
   onReply: (msg: CachedMessage) => void;
   onCopy: (msg: CachedMessage) => void;
 }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const myEmoji = msg.reactions?.find((r) => r.user_ids.includes(currentUserId))?.emoji;
   const canCopy = !!msg.content;
 
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [pickerOpen]);
+
   return (
+    /* Positioned beside the bubble: left of "me" bubbles, right of others */
     <div
       className={`
-        absolute -top-10 z-30
-        ${isMe ? "right-0" : "left-0"}
+        absolute top-1/2 -translate-y-1/2 z-30
+        ${isMe ? "right-full pr-2" : "left-full pl-2"}
         flex items-center gap-0.5
-        bg-[#1c1c1e] border border-white/[0.08] rounded-2xl shadow-2xl px-1.5 py-1
         opacity-0 group-hover:opacity-100
-        scale-95 group-hover:scale-100
         pointer-events-none group-hover:pointer-events-auto
-        transition-all duration-150 origin-bottom
+        transition-opacity duration-150
       `}
     >
-      {/* Emoji reaction buttons */}
-      {REACTIONS.map(({ emoji, label, bg }) => {
-        const isActive = myEmoji === emoji;
-        return (
-          <button
-            key={label}
-            onClick={(e) => { e.stopPropagation(); onReaction(msg.id, emoji); }}
+      {/* Emoji reaction button — clicking opens picker above the bubble */}
+      <div className="relative" ref={pickerRef}>
+        {/* Emoji picker popup — appears above the message row */}
+        {pickerOpen && (
+          <div
             className={`
-              w-7 h-7 rounded-full flex items-center justify-center text-sm
-              transition-transform duration-100 hover:scale-125 active:scale-90
-              ${isActive
-                ? `${bg} ring-2 ring-white/50 ring-offset-1 ring-offset-[#1c1c1e]`
-                : "hover:bg-white/10"
-              }
+              absolute bottom-full mb-2 z-40
+              ${isMe ? "right-0" : "left-0"}
+              flex items-center gap-0.5
+              bg-[#1c1c1e] border border-white/[0.08] rounded-2xl shadow-2xl px-1.5 py-1
+              animate-in fade-in slide-in-from-bottom-2 duration-150
             `}
-            aria-label={`${isActive ? "Remove" : "Add"} ${label} reaction`}
-            title={label}
           >
-            {emoji}
-          </button>
-        );
-      })}
+            {REACTIONS.map(({ emoji, label, bg }) => {
+              const isActive = myEmoji === emoji;
+              return (
+                <button
+                  key={label}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReaction(msg.id, emoji);
+                    setPickerOpen(false);
+                  }}
+                  className={`
+                    w-8 h-8 rounded-full flex items-center justify-center text-base
+                    transition-transform duration-100 hover:scale-125 active:scale-90
+                    ${isActive
+                      ? `${bg} ring-2 ring-white/50 ring-offset-1 ring-offset-[#1c1c1e]`
+                      : "hover:bg-white/10"
+                    }
+                  `}
+                  aria-label={`${isActive ? "Remove" : "Add"} ${label} reaction`}
+                  title={label}
+                >
+                  {emoji}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-      {/* Divider */}
-      <div className="w-px h-4 bg-white/10 mx-1 shrink-0" />
+        {/* Smiley trigger button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); setPickerOpen((v) => !v); }}
+          className={`
+            w-7 h-7 rounded-full flex items-center justify-center
+            transition-colors duration-100
+            ${pickerOpen
+              ? "bg-white/15 text-foreground"
+              : "text-foreground-muted hover:text-foreground hover:bg-white/10"
+            }
+          `}
+          aria-label="React to message"
+          title="React"
+        >
+          <Smile size={14} />
+        </button>
+      </div>
 
       {/* Reply */}
       <button
@@ -207,7 +253,7 @@ function MessageHoverActions({
         aria-label="Reply"
         title="Reply"
       >
-        <Reply size={13} />
+        <Reply size={14} />
       </button>
 
       {/* Copy — only shown when there's text */}
@@ -218,7 +264,7 @@ function MessageHoverActions({
           aria-label="Copy text"
           title="Copy"
         >
-          <Copy size={13} />
+          <Copy size={14} />
         </button>
       )}
     </div>
