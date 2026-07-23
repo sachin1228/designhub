@@ -542,7 +542,7 @@ export function MessageBubble({
                   />
                   <div className="relative min-w-0">
                     <div
-                      className={`relative rounded-2xl rounded-tr-sm px-3 pr-10 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
+                      className={`relative rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
                         menuOpen ? "ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" : ""
                       } ${
                         msg.status === "sending"
@@ -641,7 +641,7 @@ export function MessageBubble({
             /* group scoped here — hover only triggers on [bubble + actions], not the full row */
             <div className="group flex items-center gap-1">
               <div className="relative min-w-0">
-                <div className={`relative rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pr-10 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
+                <div className={`relative rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
                   menuOpen ? "ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" : ""
                 }`}>
                   {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
