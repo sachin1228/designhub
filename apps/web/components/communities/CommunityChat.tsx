@@ -320,6 +320,7 @@ export function CommunityChat({
           {/* Scrollable message area */}
           <div
             ref={scrollContainerRef}
+            data-chat-scroll-container
             className="flex-1 overflow-y-auto"
             style={{
               backgroundImage: "radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px)",

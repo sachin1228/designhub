@@ -6,6 +6,8 @@ import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
 import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
 
+type MenuPlacement = "above" | "below";
+
 interface MessageBubbleProps {
   msg: CachedMessage;
   isMe: boolean;
@@ -239,6 +241,7 @@ function MessageHoverActions({
   insideBubble?: boolean;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>("above");
   const pickerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const myEmoji = msg.reactions?.find((r) => r.user_ids.includes(currentUserId))?.emoji;
@@ -255,6 +258,54 @@ function MessageHoverActions({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [pickerOpen]);
+
+  // Flip the menu to the side with enough room inside the chat viewport.
+  useEffect(() => {
+    if (!showMenu || !menuOpen) return;
+
+    const updateMenuPlacement = () => {
+      const root = menuRef.current;
+      const trigger = root?.querySelector<HTMLButtonElement>(
+        '[aria-label="More message actions"]'
+      );
+      const menu = root?.querySelector<HTMLElement>('[role="menu"]');
+      if (!trigger || !menu) return;
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const scrollViewport = root.closest<HTMLElement>(
+        "[data-chat-scroll-container]"
+      );
+      const viewportRect = scrollViewport?.getBoundingClientRect() ?? {
+        top: 0,
+        bottom: window.innerHeight,
+      };
+      const gap = 8;
+      const spaceAbove = triggerRect.top - viewportRect.top;
+      const spaceBelow = viewportRect.bottom - triggerRect.bottom;
+      const fitsAbove = spaceAbove >= menuRect.height + gap;
+      const fitsBelow = spaceBelow >= menuRect.height + gap;
+
+      setMenuPlacement(() => {
+        if (fitsAbove) return "above";
+        if (fitsBelow) return "below";
+        return spaceAbove >= spaceBelow ? "above" : "below";
+      });
+    };
+
+    const frame = requestAnimationFrame(updateMenuPlacement);
+    const scrollViewport = menuRef.current?.closest<HTMLElement>(
+      "[data-chat-scroll-container]"
+    );
+    window.addEventListener("resize", updateMenuPlacement);
+    scrollViewport?.addEventListener("scroll", updateMenuPlacement, true);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updateMenuPlacement);
+      scrollViewport?.removeEventListener("scroll", updateMenuPlacement, true);
+    };
+  }, [menuOpen, showMenu]);
 
   // Close the action menu when clicking outside or pressing Escape.
   useEffect(() => {
@@ -366,20 +417,25 @@ function MessageHoverActions({
         {menuOpen && (
           <div
             className={`
-              absolute bottom-full mb-2 z-40 min-w-32
+              absolute z-40 min-w-32
+              ${menuPlacement === "above" ? "bottom-full mb-2" : "top-full mt-2"}
               right-0
             `}
           >
-            {/* Dropdown dot and stem connect back down to the chevron. */}
+            {/* Connector flips with the menu so it always points at the chevron. */}
             <span
               aria-hidden="true"
               className={`
-                pointer-events-none absolute bottom-[-8px] h-2 w-px bg-white/20
+                pointer-events-none absolute h-2 w-px bg-white/20
+                ${menuPlacement === "above" ? "bottom-[-8px]" : "top-[-8px]"}
                 right-3.5
               `}
             >
               <span
-                className="absolute bottom-[-3px] left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/40"
+                className={`
+                  absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/40
+                  ${menuPlacement === "above" ? "bottom-[-3px]" : "top-[-3px]"}
+                `}
               />
             </span>
 
