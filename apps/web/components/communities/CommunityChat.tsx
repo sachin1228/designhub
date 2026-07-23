@@ -61,6 +61,31 @@ export function CommunityChat({
     navigator.clipboard.writeText(msg.content).catch(() => {});
   }, []);
 
+  const handleDelete = useCallback(async (msgId: string) => {
+    // Optimistic update: mark as deleted locally immediately
+    setMessages((prev) => {
+      const next = prev.map((m) =>
+        m.id === msgId
+          ? { ...m, deleted_at: new Date().toISOString(), content: "", image_url: null, reply_to: null, reactions: [] }
+          : m
+      );
+      msgCache.set(communityId, next);
+      return next;
+    });
+
+    try {
+      const res = await fetch(`/api/communities/${communityId}/messages/${msgId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        // Rollback on failure — refetch to restore correct state
+        fetchMessages();
+      }
+    } catch {
+      fetchMessages();
+    }
+  }, [communityId, fetchMessages, setMessages]);
+
   const handleReactionToggled = useCallback(
     (msgId: string, reactions: MessageReaction[]) => {
       setMessages((prev) => {
@@ -319,6 +344,7 @@ export function CommunityChat({
               onReaction={handleReaction}
               onReply={handleReply}
               onCopy={handleCopy}
+              onDelete={handleDelete}
             />
           </div>
 

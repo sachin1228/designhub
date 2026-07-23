@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState, useRef, useEffect } from "react";
-import { Clock, CheckCheck, X, RefreshCw, Reply, Copy, Smile } from "lucide-react";
+import { Clock, CheckCheck, X, RefreshCw, Reply, Copy, Smile, Trash2, Ban } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
 import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
@@ -20,6 +20,7 @@ interface MessageBubbleProps {
   onReaction: (msgId: string, emoji: string) => void;
   onReply: (msg: CachedMessage) => void;
   onCopy: (msg: CachedMessage) => void;
+  onDelete: (msgId: string) => void;
 }
 
 const REACTIONS = [
@@ -152,28 +153,84 @@ function RetryIndicator({ onRetry }: { onRetry: () => void }) {
 }
 
 /**
+ * Confirmation dialog for "Delete for everyone".
+ * Rendered as a fixed overlay so it sits above all message content.
+ */
+function DeleteConfirmDialog({
+  isMe,
+  onConfirm,
+  onCancel,
+}: {
+  isMe: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  // Close on backdrop click
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={(e) => { e.stopPropagation(); onCancel(); }}
+    >
+      <div
+        className="bg-[#1c1c1e] border border-white/[0.08] rounded-2xl shadow-2xl w-72 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 pt-5 pb-4 border-b border-white/[0.06]">
+          <p className="font-body text-base font-semibold text-foreground text-center">
+            Delete message?
+          </p>
+          <p className="font-body text-xs text-foreground-muted text-center mt-1">
+            This will delete the message for everyone in this chat.
+          </p>
+        </div>
+
+        <div className="flex flex-col">
+          <button
+            onClick={(e) => { e.stopPropagation(); onConfirm(); }}
+            className="w-full px-5 py-3.5 font-body text-sm font-semibold text-red-400 hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors text-center"
+          >
+            Delete for everyone
+          </button>
+          <div className="h-px bg-white/[0.06]" />
+          <button
+            onClick={(e) => { e.stopPropagation(); onCancel(); }}
+            className="w-full px-5 py-3.5 font-body text-sm text-foreground-muted hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors text-center"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Side action buttons that appear beside the message bubble on hover.
- * Shows: Emoji reaction (opens picker above bubble) + Reply + Copy.
+ * Shows: Emoji reaction (opens picker above bubble) + Reply + Copy + Delete (own messages).
  */
 function MessageHoverActions({
   msg,
   isMe,
+  isDeleted,
   currentUserId,
   onReaction,
   onReply,
   onCopy,
+  onDeleteClick,
 }: {
   msg: CachedMessage;
   isMe: boolean;
+  isDeleted: boolean;
   currentUserId: string;
   onReaction: (msgId: string, emoji: string) => void;
   onReply: (msg: CachedMessage) => void;
   onCopy: (msg: CachedMessage) => void;
+  onDeleteClick: () => void;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   const myEmoji = msg.reactions?.find((r) => r.user_ids.includes(currentUserId))?.emoji;
-  const canCopy = !!msg.content;
+  const canCopy = !!msg.content && !isDeleted;
 
   // Close picker when clicking outside
   useEffect(() => {
@@ -187,78 +244,81 @@ function MessageHoverActions({
     return () => document.removeEventListener("mousedown", handler);
   }, [pickerOpen]);
 
+  // No actions on deleted or still-sending messages
+  if (isDeleted || msg.status === "sending") return null;
+
   return (
-    /* Inline beside the bubble — group is on the [actions+bubble] wrapper, not the whole row */
     <div
       className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150"
     >
-      {/* Emoji reaction button — clicking opens picker above the bubble */}
-      <div className="relative" ref={pickerRef}>
-        {/* Emoji picker popup — appears above the message row */}
-        {pickerOpen && (
-          <div
-            className="absolute bottom-full mb-2 z-40 left-1/2 -translate-x-1/2
-              flex items-center gap-0.5
-              bg-[#1c1c1e] border border-white/[0.08] rounded-2xl shadow-2xl px-1.5 py-1
-              animate-in fade-in slide-in-from-bottom-2 duration-150"
+      {/* Emoji reaction button — only for non-deleted messages */}
+      {!isDeleted && (
+        <div className="relative" ref={pickerRef}>
+          {pickerOpen && (
+            <div
+              className="absolute bottom-full mb-2 z-40 left-1/2 -translate-x-1/2
+                flex items-center gap-0.5
+                bg-[#1c1c1e] border border-white/[0.08] rounded-2xl shadow-2xl px-1.5 py-1
+                animate-in fade-in slide-in-from-bottom-2 duration-150"
+            >
+              {REACTIONS.map(({ emoji, label, bg }) => {
+                const isActive = myEmoji === emoji;
+                return (
+                  <button
+                    key={label}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onReaction(msg.id, emoji);
+                      setPickerOpen(false);
+                    }}
+                    className={`
+                      w-8 h-8 rounded-full flex items-center justify-center text-base
+                      transition-transform duration-100 hover:scale-125 active:scale-90
+                      ${isActive
+                        ? `${bg} ring-2 ring-white/50 ring-offset-1 ring-offset-[#1c1c1e]`
+                        : "hover:bg-white/10"
+                      }
+                    `}
+                    aria-label={`${isActive ? "Remove" : "Add"} ${label} reaction`}
+                    title={label}
+                  >
+                    {emoji}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); setPickerOpen((v) => !v); }}
+            className={`
+              w-7 h-7 rounded-full flex items-center justify-center
+              transition-colors duration-100
+              ${pickerOpen
+                ? "bg-white/15 text-foreground"
+                : "text-foreground-muted hover:text-foreground hover:bg-white/10"
+              }
+            `}
+            aria-label="React to message"
+            title="React"
           >
-            {REACTIONS.map(({ emoji, label, bg }) => {
-              const isActive = myEmoji === emoji;
-              return (
-                <button
-                  key={label}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onReaction(msg.id, emoji);
-                    setPickerOpen(false);
-                  }}
-                  className={`
-                    w-8 h-8 rounded-full flex items-center justify-center text-base
-                    transition-transform duration-100 hover:scale-125 active:scale-90
-                    ${isActive
-                      ? `${bg} ring-2 ring-white/50 ring-offset-1 ring-offset-[#1c1c1e]`
-                      : "hover:bg-white/10"
-                    }
-                  `}
-                  aria-label={`${isActive ? "Remove" : "Add"} ${label} reaction`}
-                  title={label}
-                >
-                  {emoji}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Smiley trigger button */}
-        <button
-          onClick={(e) => { e.stopPropagation(); setPickerOpen((v) => !v); }}
-          className={`
-            w-7 h-7 rounded-full flex items-center justify-center
-            transition-colors duration-100
-            ${pickerOpen
-              ? "bg-white/15 text-foreground"
-              : "text-foreground-muted hover:text-foreground hover:bg-white/10"
-            }
-          `}
-          aria-label="React to message"
-          title="React"
-        >
-          <Smile size={14} />
-        </button>
-      </div>
+            <Smile size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Reply */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onReply(msg); }}
-        className="w-7 h-7 rounded-full flex items-center justify-center text-foreground-muted hover:text-foreground hover:bg-white/10 transition-colors"
-        aria-label="Reply"
-        title="Reply"
-      >
-        <Reply size={14} />
-      </button>
+      {!isDeleted && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onReply(msg); }}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-foreground-muted hover:text-foreground hover:bg-white/10 transition-colors"
+          aria-label="Reply"
+          title="Reply"
+        >
+          <Reply size={14} />
+        </button>
+      )}
 
-      {/* Copy — only shown when there's text */}
+      {/* Copy — only when there's text */}
       {canCopy && (
         <button
           onClick={(e) => { e.stopPropagation(); onCopy(msg); }}
@@ -269,6 +329,39 @@ function MessageHoverActions({
           <Copy size={14} />
         </button>
       )}
+
+      {/* Delete — only own messages */}
+      {isMe && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDeleteClick(); }}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-foreground-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          aria-label="Delete message"
+          title="Delete"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Placeholder shown for soft-deleted messages. */
+function DeletedBubble({ isMe, createdAt }: { isMe: boolean; createdAt: string }) {
+  return (
+    <div
+      className={`inline-flex items-center gap-1.5 rounded-2xl px-3 py-2 select-none
+        ${isMe
+          ? "rounded-tr-sm bg-accent/50 border border-white/10"
+          : "rounded-tl-sm bg-surface-raised/60 border border-white/5"
+        }`}
+    >
+      <Ban size={13} className={isMe ? "text-accent-foreground/40 shrink-0" : "text-foreground-muted/50 shrink-0"} />
+      <span className={`font-body text-xs italic ${isMe ? "text-accent-foreground/50" : "text-foreground-muted/60"}`}>
+        {isMe ? "You deleted this message" : "This message was deleted"}
+      </span>
+      <span className={`font-mono text-[10px] ml-1 shrink-0 ${isMe ? "text-accent-foreground/40" : "text-foreground-muted/50"}`}>
+        {fmtTime(createdAt)}
+      </span>
     </div>
   );
 }
@@ -287,20 +380,36 @@ export function MessageBubble({
   onReaction,
   onReply,
   onCopy,
+  onDelete,
 }: MessageBubbleProps) {
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
   const sender    = msg.users;
   const reactions = msg.reactions ?? [];
   const replyTo   = msg.reply_to ?? null;
   const imageUrl  = msg.image_url ?? null;
   const uploading = msg.status === "sending" && !!imageUrl;
   const failed    = msg.status === "failed";
+  const isDeleted = !!msg.deleted_at;
 
   const rowHighlight = highlighted ? "bg-black/60" : "";
+
+  const handleDeleteConfirm = () => {
+    setDeleteConfirmOpen(false);
+    onDelete(msg.id);
+  };
 
   if (isMe) {
     return (
       <Fragment>
         {unreadDivider}
+        {deleteConfirmOpen && (
+          <DeleteConfirmDialog
+            isMe={isMe}
+            onConfirm={handleDeleteConfirm}
+            onCancel={() => setDeleteConfirmOpen(false)}
+          />
+        )}
         <div
           data-message-id={msg.id}
           className={`flex flex-col items-end w-full px-5 transition-colors duration-300 ${rowHighlight} ${
@@ -312,60 +421,69 @@ export function MessageBubble({
               <RetryIndicator onRetry={() => onRetrySend(msg.id)} />
             )}
             <div className="max-w-[65%]">
-              {/* group scoped here — hover only triggers on [actions + bubble], not the full row */}
-              <div className="group flex items-center gap-1 justify-end">
-                {/* Actions sit to the LEFT of sent bubbles */}
-                <MessageHoverActions
-                  msg={msg}
-                  isMe
-                  currentUserId={currentUserId}
-                  onReaction={onReaction}
-                  onReply={onReply}
-                  onCopy={onCopy}
-                />
-                <div className="relative min-w-0">
-                  <div
-                    className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 select-none ${
-                      msg.status === "sending"
-                        ? "bg-accent opacity-70"
-                        : msg.status === "failed"
-                        ? "bg-red-500/80"
-                        : "bg-accent"
-                    }`}
-                  >
-                    {replyTo && <ReplyBubble reply={replyTo} isMe onReplyClick={onReplyClick} />}
-                    {imageUrl && (
-                      <BubbleImage
-                        url={imageUrl}
-                        isMe
-                        uploading={uploading}
-                        onCancel={() => onCancelSend(msg.id)}
-                      />
-                    )}
-                    {msg.content && (
-                      <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
-                        {msg.content}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-end gap-1 mt-1">
-                      <span className="font-mono text-[10px] text-accent-foreground/60">
-                        {fmtTime(msg.created_at)}
-                      </span>
-                      {msg.status === "sending" && (
-                        <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
-                      )}
-                      {(msg.status === "sent" || !msg.status) && (
-                        <CheckCheck size={11} className="text-accent-foreground/70" />
-                      )}
-                      {msg.status === "failed" && (
-                        <span className="text-[10px] text-red-200">!</span>
-                      )}
-                    </div>
-                  </div>
-                  <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe msgId={msg.id} onReaction={onReaction} />
+              {isDeleted ? (
+                /* Deleted placeholder — no hover actions */
+                <div className="flex justify-end">
+                  <DeletedBubble isMe createdAt={msg.created_at} />
                 </div>
-              </div>
-              {reactions.length > 0 && <div className="h-5" />}
+              ) : (
+                /* group scoped here — hover only triggers on [actions + bubble], not the full row */
+                <div className="group flex items-center gap-1 justify-end">
+                  {/* Actions sit to the LEFT of sent bubbles */}
+                  <MessageHoverActions
+                    msg={msg}
+                    isMe
+                    isDeleted={isDeleted}
+                    currentUserId={currentUserId}
+                    onReaction={onReaction}
+                    onReply={onReply}
+                    onCopy={onCopy}
+                    onDeleteClick={() => setDeleteConfirmOpen(true)}
+                  />
+                  <div className="relative min-w-0">
+                    <div
+                      className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 select-none ${
+                        msg.status === "sending"
+                          ? "bg-accent opacity-70"
+                          : msg.status === "failed"
+                          ? "bg-red-500/80"
+                          : "bg-accent"
+                      }`}
+                    >
+                      {replyTo && <ReplyBubble reply={replyTo} isMe onReplyClick={onReplyClick} />}
+                      {imageUrl && (
+                        <BubbleImage
+                          url={imageUrl}
+                          isMe
+                          uploading={uploading}
+                          onCancel={() => onCancelSend(msg.id)}
+                        />
+                      )}
+                      {msg.content && (
+                        <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
+                          {msg.content}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-end gap-1 mt-1">
+                        <span className="font-mono text-[10px] text-accent-foreground/60">
+                          {fmtTime(msg.created_at)}
+                        </span>
+                        {msg.status === "sending" && (
+                          <Clock size={10} className="text-accent-foreground/60 animate-pulse" />
+                        )}
+                        {(msg.status === "sent" || !msg.status) && (
+                          <CheckCheck size={11} className="text-accent-foreground/70" />
+                        )}
+                        {msg.status === "failed" && (
+                          <span className="text-[10px] text-red-200">!</span>
+                        )}
+                      </div>
+                    </div>
+                    <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe msgId={msg.id} onReaction={onReaction} />
+                  </div>
+                </div>
+              )}
+              {reactions.length > 0 && !isDeleted && <div className="h-5" />}
             </div>
           </div>
         </div>
@@ -376,6 +494,13 @@ export function MessageBubble({
   return (
     <Fragment>
       {unreadDivider}
+      {deleteConfirmOpen && (
+        <DeleteConfirmDialog
+          isMe={isMe}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteConfirmOpen(false)}
+        />
+      )}
       <div
         data-message-id={msg.id}
         className={`flex items-start gap-2 w-full px-5 transition-colors duration-300 ${rowHighlight} ${
@@ -383,51 +508,58 @@ export function MessageBubble({
         }`}
       >
         <div className="w-7 shrink-0">
-          {!isSameAuthor && sender && (
+          {!isSameAuthor && sender && !isDeleted && (
             <ChatAvatar name={sender.name} url={sender.avatar_url} size={7} />
           )}
         </div>
         <div className="max-w-[65%]">
-          {!isSameAuthor && sender && (
+          {!isSameAuthor && sender && !isDeleted && (
             <p className="font-body text-[11px] font-medium text-foreground-muted mb-0.5 ml-0.5">
               {sender.name}
             </p>
           )}
-          {/* group scoped here — hover only triggers on [bubble + actions], not the full row */}
-          <div className="group flex items-center gap-1">
-            <div className="relative min-w-0">
-              <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 select-none">
-                {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
-                {imageUrl && (
-                  <BubbleImage
-                    url={imageUrl}
-                    isMe={false}
-                    uploading={uploading}
-                    onCancel={() => onCancelSend(msg.id)}
-                  />
-                )}
-                {msg.content && (
-                  <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
-                    {msg.content}
+
+          {isDeleted ? (
+            <DeletedBubble isMe={false} createdAt={msg.created_at} />
+          ) : (
+            /* group scoped here — hover only triggers on [bubble + actions], not the full row */
+            <div className="group flex items-center gap-1">
+              <div className="relative min-w-0">
+                <div className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 select-none">
+                  {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
+                  {imageUrl && (
+                    <BubbleImage
+                      url={imageUrl}
+                      isMe={false}
+                      uploading={uploading}
+                      onCancel={() => onCancelSend(msg.id)}
+                    />
+                  )}
+                  {msg.content && (
+                    <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
+                      {msg.content}
+                    </p>
+                  )}
+                  <p className="font-mono text-[10px] text-foreground-muted text-right mt-1">
+                    {fmtTime(msg.created_at)}
                   </p>
-                )}
-                <p className="font-mono text-[10px] text-foreground-muted text-right mt-1">
-                  {fmtTime(msg.created_at)}
-                </p>
+                </div>
+                <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} msgId={msg.id} onReaction={onReaction} />
               </div>
-              <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} msgId={msg.id} onReaction={onReaction} />
+              {/* Actions sit to the RIGHT of received bubbles */}
+              <MessageHoverActions
+                msg={msg}
+                isMe={false}
+                isDeleted={isDeleted}
+                currentUserId={currentUserId}
+                onReaction={onReaction}
+                onReply={onReply}
+                onCopy={onCopy}
+                onDeleteClick={() => setDeleteConfirmOpen(true)}
+              />
             </div>
-            {/* Actions sit to the RIGHT of received bubbles */}
-            <MessageHoverActions
-              msg={msg}
-              isMe={false}
-              currentUserId={currentUserId}
-              onReaction={onReaction}
-              onReply={onReply}
-              onCopy={onCopy}
-            />
-          </div>
-          {reactions.length > 0 && <div className="h-5" />}
+          )}
+          {reactions.length > 0 && !isDeleted && <div className="h-5" />}
         </div>
       </div>
     </Fragment>
