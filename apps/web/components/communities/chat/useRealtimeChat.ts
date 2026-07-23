@@ -60,6 +60,7 @@ export function useRealtimeChat({
             user_id: string;
             content: string;
             created_at: string;
+            reply_to_id?: string | null;
           };
 
           // Capture scroll position before state update
@@ -87,6 +88,22 @@ export function useRealtimeChat({
               (m) => m.user_id === newRow.user_id
             );
             const users = senderMember?.users ?? null;
+
+            // Resolve reply preview from already-loaded messages.
+            // The parent message is always visible before you can reply to it,
+            // so it will almost always be in `prev` already.
+            let reply_to: Message["reply_to"] = null;
+            if (newRow.reply_to_id) {
+              const parent = prev.find((m) => m.id === newRow.reply_to_id);
+              if (parent) {
+                reply_to = {
+                  id: parent.id,
+                  content: parent.content,
+                  user_name: parent.users?.name ?? "Unknown",
+                };
+              }
+            }
+
             const incoming: Message = {
               id: newRow.id,
               content: newRow.content,
@@ -95,6 +112,7 @@ export function useRealtimeChat({
               users,
               status: "sent",
               reactions: [],
+              reply_to: reply_to ?? undefined,
             };
             const next = [...withoutTemp, incoming].sort(
               (a, b) =>
@@ -145,6 +163,29 @@ export function useRealtimeChat({
                   pendingProfileFetchRef.current.delete(targetUserId);
                 });
               pendingProfileFetchRef.current.set(targetUserId, p);
+            }
+
+            // Lazy-load reply preview if parent wasn't found in current state
+            // (e.g. first load, parent is in a previous page not yet fetched).
+            if (newRow.reply_to_id && !reply_to) {
+              const targetCommunityId = communityId;
+              const targetMsgId       = newRow.id;
+              const parentId          = newRow.reply_to_id;
+              fetch(`/api/communities/${targetCommunityId}/messages/${parentId}/preview`)
+                .then((r) => (r.ok ? r.json() : null))
+                .then((preview: { id: string; content: string; user_name: string } | null) => {
+                  if (!preview) return;
+                  setMessages((prev) => {
+                    const next = prev.map((m) =>
+                      m.id === targetMsgId && !m.reply_to
+                        ? { ...m, reply_to: preview }
+                        : m
+                    );
+                    msgCache.set(targetCommunityId, next);
+                    return next;
+                  });
+                })
+                .catch(() => {});
             }
 
             return next;
