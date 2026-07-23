@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useRef } from "react";
-import { X, CornerUpLeft, ImageIcon, ChevronDown } from "lucide-react";
+import { X, CornerUpLeft, ImageIcon } from "lucide-react";
 import type { ReplyPreview } from "@/lib/communities/cache";
 
 interface ChatInputProps {
@@ -11,12 +11,10 @@ interface ChatInputProps {
   placeholder: string;
   replyTo: ReplyPreview | null;
   pendingImagePreview: string | null;
-  showScrollToBottom?: boolean;
   onChange: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onSend: () => void;
   onCancelReply: () => void;
-  onScrollToBottom?: () => void;
   onImageSelect: (file: File) => void;
   onImageRemove: () => void;
 }
@@ -25,8 +23,8 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
   function ChatInput(
     {
       input, sending, error, placeholder, replyTo,
-      pendingImagePreview, showScrollToBottom,
-      onChange, onKeyDown, onSend, onCancelReply, onScrollToBottom,
+      pendingImagePreview,
+      onChange, onKeyDown, onSend, onCancelReply,
       onImageSelect, onImageRemove,
     },
     ref
@@ -42,8 +40,8 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
 
         {/* Reply preview bar */}
         {replyTo && (
-          <div className="flex items-center gap-2 mb-1 px-1 py-2 rounded-xl bg-surface-raised border-l-2 border-accent">
-            <CornerUpLeft size={14} className="text-accent shrink-0" />
+          <div className="flex items-start gap-2 mb-1 px-1 py-2 rounded-xl bg-surface-raised border-l-2 border-accent">
+            <CornerUpLeft size={14} className="text-accent mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-body text-[11px] font-semibold text-accent truncate">
                 {replyTo.user_name}
@@ -52,16 +50,6 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
                 {replyTo.content}
               </p>
             </div>
-            {/* Scroll-to-bottom button — shown here (WhatsApp-style) when user is scrolled up */}
-            {showScrollToBottom && onScrollToBottom && (
-              <button
-                onClick={onScrollToBottom}
-                className="shrink-0 h-7 w-7 flex items-center justify-center rounded-full bg-surface text-foreground-muted hover:text-foreground border border-border transition-colors"
-                aria-label="Scroll to bottom"
-              >
-                <ChevronDown size={14} />
-              </button>
-            )}
             <button
               onClick={onCancelReply}
               className="shrink-0 text-foreground-muted hover:text-foreground transition-colors p-0.5"
