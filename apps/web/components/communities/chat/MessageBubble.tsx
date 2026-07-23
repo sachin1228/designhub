@@ -106,9 +106,7 @@ export function MessageBubble({
   const replyTo   = msg.reply_to ?? null;
   const imageUrl  = msg.image_url ?? null;
 
-  const highlightClass = highlighted
-    ? "ring-2 ring-accent/60 ring-offset-1 ring-offset-transparent"
-    : "";
+  const rowHighlight = highlighted ? "bg-black/30" : "";
 
   if (isMe) {
     return (
@@ -116,7 +114,7 @@ export function MessageBubble({
         {unreadDivider}
         <div
           data-message-id={msg.id}
-          className={`flex flex-col items-end ${
+          className={`flex flex-col items-end w-full px-3 transition-colors duration-300 ${rowHighlight} ${
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
         >
@@ -125,7 +123,7 @@ export function MessageBubble({
               <div
                 onClick={() => onPress(msg)}
                 className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 cursor-pointer select-none
-                  active:scale-[0.97] transition-all ${highlightClass} ${
+                  active:scale-[0.97] transition-all ${
                   msg.status === "sending"
                     ? "bg-accent opacity-70"
                     : msg.status === "failed"
@@ -169,7 +167,7 @@ export function MessageBubble({
       {unreadDivider}
       <div
         data-message-id={msg.id}
-        className={`flex items-start gap-2 ${
+        className={`flex items-start gap-2 w-full px-3 transition-colors duration-300 ${rowHighlight} ${
           isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
         }`}
       >
@@ -187,7 +185,7 @@ export function MessageBubble({
           <div className="relative">
             <div
               onClick={() => onPress(msg)}
-              className={`rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 cursor-pointer select-none active:scale-[0.97] transition-all ${highlightClass}`}
+              className={`rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 cursor-pointer select-none active:scale-[0.97] transition-all`}
             >
               {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
               {imageUrl && <BubbleImage url={imageUrl} isMe={false} />}
