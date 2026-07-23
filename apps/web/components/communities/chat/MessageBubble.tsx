@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
-import { Clock, CheckCheck } from "lucide-react";
+import { Clock, CheckCheck, X } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
 import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
@@ -16,6 +16,7 @@ interface MessageBubbleProps {
   highlighted: boolean;
   onPress: (msg: CachedMessage) => void;
   onReplyClick: (replyId: string) => void;
+  onCancelSend: (msgId: string) => void;
 }
 
 function ReplyBubble({
@@ -77,16 +78,38 @@ function ReactionPills({
 }
 
 /** Image rendered inside a message bubble. */
-function BubbleImage({ url, isMe }: { url: string; isMe: boolean }) {
+function BubbleImage({
+  url, isMe, uploading, onCancel,
+}: {
+  url: string; isMe: boolean; uploading?: boolean; onCancel?: () => void;
+}) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={url}
-      alt="Image"
-      className={`block max-w-full rounded-xl object-cover mb-1 ${isMe ? "opacity-95" : ""}`}
-      style={{ maxHeight: 300, width: "auto" }}
-      loading="lazy"
-    />
+    <div className="relative mb-1">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt="Image"
+        className={`block max-w-full rounded-xl object-cover ${isMe ? "opacity-95" : ""} ${uploading ? "opacity-50" : ""}`}
+        style={{ maxHeight: 300, width: "auto" }}
+        loading="lazy"
+      />
+      {uploading && (
+        <div className="absolute inset-0 flex items-center justify-center rounded-xl">
+          <div className="relative w-12 h-12">
+            {/* Spinner ring */}
+            <div className="absolute inset-0 rounded-full border-[3px] border-white/20 border-t-white animate-spin" />
+            {/* Cancel button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); onCancel?.(); }}
+              className="absolute inset-0 flex items-center justify-center text-white"
+              aria-label="Cancel upload"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -100,11 +123,13 @@ export function MessageBubble({
   highlighted,
   onPress,
   onReplyClick,
+  onCancelSend,
 }: MessageBubbleProps) {
   const sender    = msg.users;
   const reactions = msg.reactions ?? [];
   const replyTo   = msg.reply_to ?? null;
   const imageUrl  = msg.image_url ?? null;
+  const uploading = msg.status === "sending" && !!imageUrl;
 
   const rowHighlight = highlighted ? "bg-black/60" : "";
 
@@ -132,7 +157,7 @@ export function MessageBubble({
                 }`}
               >
                 {replyTo && <ReplyBubble reply={replyTo} isMe onReplyClick={onReplyClick} />}
-                {imageUrl && <BubbleImage url={imageUrl} isMe />}
+                {imageUrl && <BubbleImage url={imageUrl} isMe uploading={uploading} onCancel={() => onCancelSend(msg.id)} />}
                 {msg.content && (
                   <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
                     {msg.content}
@@ -188,7 +213,7 @@ export function MessageBubble({
               className={`rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 cursor-pointer select-none active:scale-[0.97] transition-all`}
             >
               {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
-              {imageUrl && <BubbleImage url={imageUrl} isMe={false} />}
+              {imageUrl && <BubbleImage url={imageUrl} isMe={false} uploading={uploading} onCancel={() => onCancelSend(msg.id)} />}
               {msg.content && (
                 <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
                   {msg.content}

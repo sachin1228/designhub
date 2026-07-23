@@ -35,6 +35,7 @@ interface MessageListProps {
   highlightedMsgId: string | null;
   onMessagePress: (msg: CachedMessage) => void;
   onReplyClick: (replyId: string) => void;
+  onCancelSend: (msgId: string) => void;
 }
 
 export function MessageList({
@@ -51,6 +52,7 @@ export function MessageList({
   highlightedMsgId,
   onMessagePress,
   onReplyClick,
+  onCancelSend,
 }: MessageListProps) {
   if (loading) {
     return (
@@ -128,6 +130,7 @@ export function MessageList({
                 highlighted={highlightedMsgId === msg.id}
                 onPress={onMessagePress}
                 onReplyClick={onReplyClick}
+                onCancelSend={onCancelSend}
               />
             );
           })}

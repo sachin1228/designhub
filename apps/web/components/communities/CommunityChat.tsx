@@ -154,6 +154,7 @@ export function CommunityChat({
     error,
     handleSend,
     handleKeyDown,
+    handleCancelSend,
     inputRef,
     pendingImagePreview,
     handleImageSelect,
@@ -224,6 +225,7 @@ export function CommunityChat({
               highlightedMsgId={highlightedMsgId}
               onMessagePress={handleMessagePress}
               onReplyClick={handleReplyClick}
+              onCancelSend={handleCancelSend}
             />
           </div>
 
