@@ -106,7 +106,7 @@ export function MessageBubble({
   const replyTo   = msg.reply_to ?? null;
   const imageUrl  = msg.image_url ?? null;
 
-  const rowHighlight = highlighted ? "bg-black/30" : "";
+  const rowHighlight = highlighted ? "bg-black/60" : "";
 
   if (isMe) {
     return (
