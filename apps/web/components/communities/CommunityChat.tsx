@@ -216,6 +216,28 @@ export function CommunityChat({
     onClearReply: handleClearReply,
   });
 
+  // ── Re-anchor to bottom when reply/image bar appears or disappears ───────
+  // When the input area grows (reply preview, image preview), the scroll
+  // container shrinks. The browser keeps scrollTop unchanged, which pulls
+  // the last messages out of view and creates a black gap. Detect this with
+  // a ResizeObserver and snap back to bottom whenever the user was already there.
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => {
+      const dist =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      // If the user was effectively at the bottom (≤ 120 px) before the resize,
+      // snap them back. 120 px gives headroom for the reply bar (~56 px) + image
+      // bar (~70 px) that may appear simultaneously.
+      if (dist <= 120) {
+        container.scrollTop = container.scrollHeight - container.clientHeight;
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [scrollContainerRef]);
+
   // ── Group messages by date ────────────────────────────────────────────────
   const grouped = useMemo<DateGroup[]>(() =>
     messages.reduce<DateGroup[]>((acc, msg) => {
