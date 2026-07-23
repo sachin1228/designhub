@@ -364,25 +364,25 @@ function MessageHoverActions({
         {menuOpen && (
           <div
             className={`
-              absolute top-full mt-2 z-40 min-w-32
+              absolute bottom-full mb-2 z-40 min-w-32
               ${isMe ? "right-0" : "left-0"}
             `}
           >
-            {/* Dropdown dot and stem connect back to the chevron. */}
+            {/* Dropdown dot and stem connect back down to the chevron. */}
             <span
               aria-hidden="true"
               className={`
-                pointer-events-none absolute top-[-8px] h-2 w-px bg-white/20
+                pointer-events-none absolute bottom-[-8px] h-2 w-px bg-white/20
                 ${isMe ? "right-3.5" : "left-3.5"}
               `}
             >
               <span
-                className="absolute top-[-3px] left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/40"
+                className="absolute bottom-[-3px] left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/40"
               />
             </span>
 
             <div
-              className="overflow-hidden bg-[#1c1c1e] border border-white/[0.08] rounded-xl shadow-2xl"
+              className="overflow-hidden rounded-xl border border-white/[0.1] bg-[#1c1c1e]/85 backdrop-blur-md shadow-2xl"
               role="menu"
             >
               <button
