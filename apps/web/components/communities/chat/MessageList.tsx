@@ -32,7 +32,9 @@ interface MessageListProps {
   loading: boolean;
   displayCommunity: Community | null;
   communityId: string;
+  highlightedMsgId: string | null;
   onMessagePress: (msg: CachedMessage) => void;
+  onReplyClick: (replyId: string) => void;
 }
 
 export function MessageList({
@@ -46,7 +48,9 @@ export function MessageList({
   loading,
   displayCommunity,
   communityId,
+  highlightedMsgId,
   onMessagePress,
+  onReplyClick,
 }: MessageListProps) {
   if (loading) {
     return (
@@ -121,7 +125,9 @@ export function MessageList({
                 isFirstUnread={isFirstUnread}
                 unreadDivider={dividerNode}
                 currentUserId={currentUserId}
+                highlighted={highlightedMsgId === msg.id}
                 onPress={onMessagePress}
+                onReplyClick={onReplyClick}
               />
             );
           })}

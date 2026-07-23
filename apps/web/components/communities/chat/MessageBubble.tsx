@@ -13,17 +13,28 @@ interface MessageBubbleProps {
   isFirstUnread: boolean;
   unreadDivider: React.ReactNode;
   currentUserId: string;
+  highlighted: boolean;
   onPress: (msg: CachedMessage) => void;
+  onReplyClick: (replyId: string) => void;
 }
 
-function ReplyBubble({ reply, isMe }: { reply: ReplyPreview; isMe: boolean }) {
+function ReplyBubble({
+  reply,
+  isMe,
+  onReplyClick,
+}: {
+  reply: ReplyPreview;
+  isMe: boolean;
+  onReplyClick: (replyId: string) => void;
+}) {
   return (
     <div
-      className={`mb-1 px-2.5 py-1.5 rounded-xl border-l-2 text-left max-w-full
+      onClick={(e) => { e.stopPropagation(); onReplyClick(reply.id); }}
+      className={`mb-1 px-2.5 py-1.5 rounded-xl border-l-2 text-left max-w-full cursor-pointer
         ${isMe
-          ? "bg-black/20 border-white/40"
-          : "bg-black/10 border-foreground-muted/40"
-        }`}
+          ? "bg-black/20 border-white/20 hover:bg-black/30"
+          : "bg-black/10 border-white/15 hover:bg-black/20"
+        } transition-colors`}
     >
       <p className={`font-body text-[10px] font-semibold truncate ${isMe ? "text-accent-foreground/80" : "text-foreground-muted"}`}>
         {reply.user_name}
@@ -86,18 +97,25 @@ export function MessageBubble({
   isFirstUnread,
   unreadDivider,
   currentUserId,
+  highlighted,
   onPress,
+  onReplyClick,
 }: MessageBubbleProps) {
   const sender    = msg.users;
   const reactions = msg.reactions ?? [];
   const replyTo   = msg.reply_to ?? null;
   const imageUrl  = msg.image_url ?? null;
 
+  const highlightClass = highlighted
+    ? "ring-2 ring-accent/60 ring-offset-1 ring-offset-transparent"
+    : "";
+
   if (isMe) {
     return (
       <Fragment>
         {unreadDivider}
         <div
+          data-message-id={msg.id}
           className={`flex flex-col items-end ${
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
@@ -107,7 +125,7 @@ export function MessageBubble({
               <div
                 onClick={() => onPress(msg)}
                 className={`rounded-2xl rounded-tr-sm px-3 pt-2 pb-1.5 cursor-pointer select-none
-                  active:scale-[0.97] transition-transform ${
+                  active:scale-[0.97] transition-all ${highlightClass} ${
                   msg.status === "sending"
                     ? "bg-accent opacity-70"
                     : msg.status === "failed"
@@ -115,7 +133,7 @@ export function MessageBubble({
                     : "bg-accent"
                 }`}
               >
-                {replyTo && <ReplyBubble reply={replyTo} isMe />}
+                {replyTo && <ReplyBubble reply={replyTo} isMe onReplyClick={onReplyClick} />}
                 {imageUrl && <BubbleImage url={imageUrl} isMe />}
                 {msg.content && (
                   <p className="font-body text-sm text-accent-foreground whitespace-pre-wrap break-words">
@@ -150,6 +168,7 @@ export function MessageBubble({
     <Fragment>
       {unreadDivider}
       <div
+        data-message-id={msg.id}
         className={`flex items-start gap-2 ${
           isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
         }`}
@@ -168,9 +187,9 @@ export function MessageBubble({
           <div className="relative">
             <div
               onClick={() => onPress(msg)}
-              className="rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 cursor-pointer select-none active:scale-[0.97] transition-transform"
+              className={`rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 cursor-pointer select-none active:scale-[0.97] transition-all ${highlightClass}`}
             >
-              {replyTo && <ReplyBubble reply={replyTo} isMe={false} />}
+              {replyTo && <ReplyBubble reply={replyTo} isMe={false} onReplyClick={onReplyClick} />}
               {imageUrl && <BubbleImage url={imageUrl} isMe={false} />}
               {msg.content && (
                 <p className="font-body text-sm text-foreground whitespace-pre-wrap break-words">
