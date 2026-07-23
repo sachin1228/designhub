@@ -163,9 +163,10 @@ export function MessageBubble({
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
         >
-          {/* Wrap bubble + retry indicator in a flex row */}
-          <div className="flex items-center gap-2">
-            {/* Retry indicator sits to the LEFT of the bubble (visually on the right of the screen) */}
+          {/* Wrap bubble + retry indicator in a full-width row so max-w-[65%]
+              stays relative to the full container width. justify-end keeps the
+              bubble right-aligned; retry indicator sits to its left. */}
+          <div className="flex items-center justify-end gap-2 w-full">
             {failed && (
               <RetryIndicator onRetry={() => onRetrySend(msg.id)} />
             )}
