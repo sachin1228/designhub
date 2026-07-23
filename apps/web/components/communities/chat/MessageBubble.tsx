@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState, useRef, useEffect } from "react";
-import { Clock, CheckCheck, X, RefreshCw, Reply, Copy, Smile, Trash2, Ban } from "lucide-react";
+import { Clock, CheckCheck, X, RefreshCw, Reply, Copy, Smile, Trash2, Ban, ChevronDown } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
 import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
@@ -206,7 +206,8 @@ function DeleteConfirmDialog({
 
 /**
  * Side action buttons that appear beside the message bubble on hover.
- * Shows: Emoji reaction (opens picker above bubble) + Reply + Copy + Delete (own messages).
+ * Shows: Emoji reaction (opens picker above bubble) + a menu for Reply, Copy,
+ * and Delete (own messages).
  */
 function MessageHoverActions({
   msg,
@@ -228,7 +229,9 @@ function MessageHoverActions({
   onDeleteClick: () => void;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const myEmoji = msg.reactions?.find((r) => r.user_ids.includes(currentUserId))?.emoji;
   const canCopy = !!msg.content && !isDeleted;
 
@@ -243,6 +246,25 @@ function MessageHoverActions({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [pickerOpen]);
+
+  // Close the action menu when clicking outside or pressing Escape.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
 
   // No actions on deleted or still-sending messages
   if (isDeleted || msg.status === "sending") return null;
@@ -306,41 +328,79 @@ function MessageHoverActions({
         </div>
       )}
 
-      {/* Reply */}
-      {!isDeleted && (
+      {/* Reply, copy, and delete menu */}
+      <div className="relative" ref={menuRef}>
         <button
-          onClick={(e) => { e.stopPropagation(); onReply(msg); }}
-          className="w-7 h-7 rounded-full flex items-center justify-center text-foreground-muted hover:text-foreground hover:bg-white/10 transition-colors"
-          aria-label="Reply"
-          title="Reply"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+          className={`
+            w-7 h-7 rounded-full flex items-center justify-center
+            transition-colors duration-100
+            ${menuOpen
+              ? "bg-white/15 text-foreground"
+              : "text-foreground-muted hover:text-foreground hover:bg-white/10"
+            }
+          `}
+          aria-label="More message actions"
+          aria-expanded={menuOpen}
+          title="More actions"
         >
-          <Reply size={14} />
+          <ChevronDown size={14} />
         </button>
-      )}
 
-      {/* Copy — only when there's text */}
-      {canCopy && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onCopy(msg); }}
-          className="w-7 h-7 rounded-full flex items-center justify-center text-foreground-muted hover:text-foreground hover:bg-white/10 transition-colors"
-          aria-label="Copy text"
-          title="Copy"
-        >
-          <Copy size={14} />
-        </button>
-      )}
+        {menuOpen && (
+          <div
+            className={`
+              absolute top-full mt-1 z-40 min-w-32 overflow-hidden
+              bg-[#1c1c1e] border border-white/[0.08] rounded-xl shadow-2xl
+              ${isMe ? "right-0" : "left-0"}
+            `}
+            role="menu"
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReply(msg);
+                setMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-white/[0.08] transition-colors"
+              role="menuitem"
+            >
+              <Reply size={14} className="text-foreground-muted shrink-0" />
+              <span>Reply</span>
+            </button>
 
-      {/* Delete — only own messages */}
-      {isMe && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onDeleteClick(); }}
-          className="w-7 h-7 rounded-full flex items-center justify-center text-foreground-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
-          aria-label="Delete message"
-          title="Delete"
-        >
-          <Trash2 size={14} />
-        </button>
-      )}
+            {isMe && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteClick();
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                role="menuitem"
+              >
+                <Trash2 size={14} className="shrink-0" />
+                <span>Delete</span>
+              </button>
+            )}
+
+            {canCopy && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCopy(msg);
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-white/[0.08] transition-colors"
+                role="menuitem"
+              >
+                <Copy size={14} className="text-foreground-muted shrink-0" />
+                <span>Copy</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
