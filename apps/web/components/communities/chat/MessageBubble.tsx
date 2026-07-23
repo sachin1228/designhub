@@ -282,7 +282,7 @@ function MessageHoverActions({
     <div
       className={
         insideBubble
-          ? "absolute top-1 right-1 z-30 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150"
+          ? "contents"
           : "flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150"
       }
     >
@@ -343,11 +343,13 @@ function MessageHoverActions({
 
       {/* Reply, copy, and delete menu */}
       {showMenu && (
-      <div className="relative" ref={menuRef}>
+      <div className={insideBubble ? "contents" : "relative"} ref={menuRef}>
         <button
           onClick={(e) => { e.stopPropagation(); onMenuOpenChange(!menuOpen); }}
           className={`
+            ${insideBubble ? "absolute top-1 right-1 z-30" : ""}
             w-7 h-7 rounded-full flex items-center justify-center
+            ${insideBubble ? "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto" : ""}
             transition-colors duration-100
             ${menuOpen
               ? "bg-white/15 text-foreground"
@@ -365,7 +367,7 @@ function MessageHoverActions({
           <div
             className={`
               absolute bottom-full mb-2 z-40 min-w-32
-              ${isMe ? "right-0" : "left-0"}
+              right-0
             `}
           >
             {/* Dropdown dot and stem connect back down to the chevron. */}
@@ -373,7 +375,7 @@ function MessageHoverActions({
               aria-hidden="true"
               className={`
                 pointer-events-none absolute bottom-[-8px] h-2 w-px bg-white/20
-                ${isMe ? "right-3.5" : "left-3.5"}
+                right-3.5
               `}
             >
               <span
