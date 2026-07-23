@@ -402,16 +402,20 @@ function MessageHoverActions({
             w-7 h-7 rounded-full flex items-center justify-center
             ${insideBubble ? "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto" : ""}
             transition-colors duration-100
-            ${menuOpen
-              ? "bg-white/15 text-foreground"
-              : "text-foreground-muted hover:text-foreground hover:bg-white/10"
+            ${isMe
+              ? menuOpen
+                ? "bg-white/20 text-white"
+                : "text-white/90 hover:text-white hover:bg-white/15"
+              : menuOpen
+                ? "bg-black/10 text-foreground dark:bg-white/15"
+                : "text-foreground/80 hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
             }
           `}
           aria-label="More message actions"
           aria-expanded={menuOpen}
           title="More actions"
         >
-          <ChevronDown size={14} />
+          <ChevronDown size={14} strokeWidth={2.5} />
         </button>
 
         {menuOpen && (
