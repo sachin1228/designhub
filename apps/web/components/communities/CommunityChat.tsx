@@ -127,7 +127,7 @@ export function CommunityChat({
       `[data-message-id="${replyId}"]`
     );
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.scrollIntoView({ behavior: "instant", block: "center" });
     if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
     setHighlightedMsgId(replyId);
     highlightTimerRef.current = setTimeout(() => setHighlightedMsgId(null), 1500);
