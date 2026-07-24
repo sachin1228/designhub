@@ -686,7 +686,7 @@ export function MessageBubble({
                         <MessageContent
                           content={msg.content}
                           isMe={true}
-                          showPreview={msg.status === "sent" || !msg.status}
+                          showPreview={msg.status !== "failed"}
                         />
                       )}
                       <div className="flex items-center justify-end gap-1 mt-1">
