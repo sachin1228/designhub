@@ -348,11 +348,10 @@ function MessageHoverActions({
 
       {/* Reply, copy, and delete menu */}
       {showMenu && (
-      <div className={insideBubble ? "contents" : "relative"} ref={menuRef}>
+      <div className={insideBubble ? "absolute top-1 right-1 z-30" : "relative"} ref={menuRef}>
         <button
           onClick={(e) => { e.stopPropagation(); onMenuOpenChange(!menuOpen); }}
           className={`
-            ${insideBubble ? "absolute top-1 right-1 z-30" : ""}
             w-7 h-7 rounded-full flex items-center justify-center
             ${insideBubble ? "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto" : ""}
             transition-colors duration-100
