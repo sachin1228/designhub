@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Home, MessagesSquare, UserCircle } from "lucide-react";
+import { MessagesSquare, UserCircle } from "lucide-react";
 
 const NAV = [
-  { href: "/dashboard",             label: "Home",        icon: Home           },
-  { href: "/dashboard/communities", label: "Communities", icon: MessagesSquare  },
+  { href: "/dashboard/communities", label: "Communities", icon: MessagesSquare },
   { href: "/dashboard/profile",     label: "Profile",     icon: UserCircle     },
 ];
 
@@ -27,8 +26,29 @@ export function DashboardTopNav() {
     }
   }, [pathname, pendingHref]);
 
+  const homeActive = pendingHref ? pendingHref === "/dashboard" : isMatch("/dashboard", pathname);
+
   return (
     <nav className="flex items-center gap-1">
+      {/* Home — branded unique button */}
+      <Link
+        href="/dashboard"
+        prefetch={true}
+        onClick={() => setPendingHref("/dashboard")}
+        className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border text-[12px] font-medium transition-all ${
+          homeActive
+            ? "bg-accent/10 border-accent/40 text-accent"
+            : "border-border text-foreground-muted hover:text-foreground hover:bg-surface-raised hover:border-border"
+        }`}
+      >
+        {/* d/ logo mark */}
+        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-surface-raised text-[11px] font-semibold font-display leading-none shrink-0">
+          <span className={homeActive ? "text-accent" : "text-foreground"}>d</span><span className="text-accent">/</span>
+        </span>
+        <span>Home</span>
+      </Link>
+
+      {/* Other nav items */}
       {NAV.map(({ href, label, icon: Icon }) => {
         const active = pendingHref ? pendingHref === href : isMatch(href, pathname);
         return (
