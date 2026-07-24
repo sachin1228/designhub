@@ -35,7 +35,7 @@ const REACTIONS = [
   { emoji: "🔥", label: "Fire",    bg: "bg-blue-500"   },
 ];
 
-const EMOJI_MESSAGE_SIZE = 40;
+const EMOJI_MESSAGE_SIZE = 32;
 
 function ReplyBubble({
   reply,
