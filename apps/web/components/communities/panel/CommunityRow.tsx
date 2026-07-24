@@ -121,7 +121,7 @@ export function CommunityRow({
               </p>
 
             ) : (
-              <p className="font-body text-[13px] text-foreground-muted/60 italic flex-1">
+              <p className="font-body text-[13px] text-foreground-muted flex-1">
                 No messages yet
               </p>
             )}
