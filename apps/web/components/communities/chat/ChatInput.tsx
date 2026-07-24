@@ -94,28 +94,6 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
           <p className="font-body text-xs text-red-400 mb-2 pl-1">{error}</p>
         )}
 
-        {/* Reply preview bar */}
-        {replyTo && (
-          <div className="flex items-start gap-2 mb-1 px-1 py-2 rounded-xl bg-surface-raised border-l-2 border-accent">
-            <CornerUpLeft size={14} className="text-accent mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-body text-[11px] font-semibold text-accent truncate">
-                {replyTo.user_name}
-              </p>
-              <p className="font-body text-[11px] text-foreground-muted truncate">
-                {replyTo.content}
-              </p>
-            </div>
-            <button
-              onClick={onCancelReply}
-              className="shrink-0 text-foreground-muted hover:text-foreground transition-colors p-0.5"
-              aria-label="Cancel reply"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        )}
-
         {/* Image preview bar */}
         {pendingImagePreview && (
           <div className="flex items-center gap-2 mb-1 px-2 py-2 rounded-xl bg-surface-raised">
@@ -170,7 +148,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             </div>
           )}
 
-          <div className="flex items-center gap-2 bg-surface-raised rounded-full shadow-md px-3 py-2 min-h-[52px]">
+          <div className="flex flex-col bg-surface-raised rounded-2xl shadow-md px-3 py-2 min-h-[52px]">
             {/* Hidden file input */}
             <input
               ref={fileInputRef}
@@ -184,6 +162,30 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               }}
             />
 
+            {/* Reply preview inside the box */}
+            {replyTo && (
+              <div className="flex items-start gap-2 pb-2 mb-1 border-b border-border/40">
+                <CornerUpLeft size={13} className="text-accent mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0 border-l-2 border-accent pl-2">
+                  <p className="font-body text-[11px] font-semibold text-accent truncate">
+                    {replyTo.user_name}
+                  </p>
+                  <p className="font-body text-[11px] text-foreground-muted truncate">
+                    {replyTo.content}
+                  </p>
+                </div>
+                <button
+                  onClick={onCancelReply}
+                  className="shrink-0 text-foreground-muted hover:text-foreground transition-colors p-0.5"
+                  aria-label="Cancel reply"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {/* Input row */}
+            <div className="flex items-center gap-2">
             {/* Emoji + Image picker buttons */}
             <div className="flex items-center">
               <button
@@ -245,8 +247,9 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
                 </svg>
               </button>
             )}
-          </div>
-        </div>
+            </div>{/* end input row */}
+          </div>{/* end outer box */}
+        </div>{/* end picker container */}
       </div>
     );
   }
