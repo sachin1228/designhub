@@ -34,6 +34,7 @@ const STATIC_EVENT = {
   date: "26 Jul, 2025 · 4:00 PM",
   location: "Mariplex, Pune",
   going: 32,
+  image: null,
 };
 
 const STATIC_RESOURCES = [
@@ -42,8 +43,8 @@ const STATIC_RESOURCES = [
   { name: "Figma Component Library",   meta: "Figma File · 12.4 MB" },
 ];
 
-// ─── Outer card: flush-left, rounded right, space on top & right ──────────────
-const card = "mr-3 rounded-tr-xl rounded-br-xl border border-border px-4 py-4";
+// ─── Shared card class — flush left, rounded right, gap on top & right ────────
+const card = "mr-3 rounded-tr-xl rounded-br-xl border border-border bg-surface-raised px-4 py-4";
 
 // ─── Avatar stack ─────────────────────────────────────────────────────────────
 function AvatarStack({ members, total }: { members: Member[]; total: number }) {
@@ -67,7 +68,7 @@ function AvatarStack({ members, total }: { members: Member[]; total: number }) {
       ))}
       {extra > 0 && (
         <div
-          className="h-7 w-7 shrink-0 rounded-full ring-2 ring-surface flex items-center justify-center font-body text-[10px] font-semibold text-foreground-muted"
+          className="h-7 w-7 shrink-0 rounded-full bg-surface-raised ring-2 ring-surface flex items-center justify-center font-body text-[10px] font-semibold text-foreground-muted"
           style={{ marginLeft: -10 }}
         >
           {extra >= 1000 ? `+${Math.round(extra / 1000)}K` : `+${extra}`}
@@ -113,7 +114,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
   const memberCount = community?.member_count ?? members.length;
 
   return (
-    <div className="w-72 shrink-0 border-l border-border flex flex-col gap-3 overflow-y-auto pt-3 pb-3">
+    <div className="w-72 shrink-0 border-l border-border bg-surface flex flex-col gap-3 overflow-y-auto pt-3 pb-3">
 
       {/* Members */}
       <Section
@@ -153,7 +154,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
       {/* Upcoming Events */}
       <Section title="Upcoming Events" action={<SeeAll />}>
         <div className="flex gap-3">
-          <div className="w-16 h-16 rounded-lg shrink-0 flex items-center justify-center overflow-hidden border border-border">
+          <div className="w-16 h-16 rounded-lg bg-surface shrink-0 flex items-center justify-center overflow-hidden border border-border">
             <Calendar size={20} className="text-foreground-subtle" />
           </div>
           <div className="flex-1 min-w-0">
@@ -186,7 +187,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
         <div className="space-y-3">
           {STATIC_RESOURCES.map((r) => (
             <div key={r.name} className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-border">
+              <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center shrink-0 border border-border">
                 <FileText size={14} className="text-accent" />
               </div>
               <div className="flex-1 min-w-0">
@@ -205,20 +206,20 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
         </div>
       </Section>
 
-      {/* Community Stats — separate card */}
+      {/* Community Stats — separate card below */}
       <div className={card}>
         <span className="font-body text-sm font-semibold text-foreground block mb-3">
           Community Stats
         </span>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "Members",     value: memberCount.toLocaleString() },
-            { label: "Online",      value: "156" },
+            { label: "Members",    value: memberCount.toLocaleString() },
+            { label: "Online",     value: "156" },
             { label: "Posts today", value: "32" },
           ].map(({ label, value }) => (
             <div
               key={label}
-              className="rounded-xl px-3 py-3 flex flex-col gap-0.5 border border-border"
+              className="bg-surface rounded-xl px-3 py-3 flex flex-col gap-0.5 border border-border"
             >
               <span className="font-body text-base font-bold text-foreground">
                 {value}
