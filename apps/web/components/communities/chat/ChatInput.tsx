@@ -89,7 +89,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     };
 
     return (
-      <div className="px-4 pb-4 pt-2 shrink-0">
+      <div className="px-4 pb-4 shrink-0">
         {error && (
           <p className="font-body text-xs text-red-400 mb-2 pl-1">{error}</p>
         )}
@@ -170,7 +170,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             </div>
           )}
 
-          <div className="flex items-center gap-2 bg-surface-raised rounded-[26px] shadow-md px-3 py-3 min-h-[52px]">
+          <div className="flex items-center gap-2 bg-surface-raised rounded-full shadow-md px-3 py-3 min-h-[52px]">
             {/* Hidden file input */}
             <input
               ref={fileInputRef}
