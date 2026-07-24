@@ -28,17 +28,6 @@ export function DashboardTopNav() {
 
   return (
     <nav className="flex h-full items-center gap-1">
-      {/* Standalone brand mark */}
-      <Link
-        href="/dashboard"
-        prefetch={true}
-        onClick={() => setPendingHref("/dashboard")}
-        aria-label="drafthub home"
-        className="mr-3 flex h-7 w-7 items-center justify-center rounded-md text-[13px] font-semibold leading-none transition-colors hover:bg-surface-raised"
-      >
-        <span className="text-foreground">d</span><span className="text-accent">/</span>
-      </Link>
-
       {/* Home */}
       <Link
         href="/dashboard"
