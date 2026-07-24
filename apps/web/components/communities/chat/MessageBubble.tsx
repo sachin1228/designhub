@@ -432,23 +432,6 @@ function MessageHoverActions({
               right-0
             `}
           >
-            {/* Connector flips with the menu so it always points at the chevron. */}
-            <span
-              aria-hidden="true"
-              className={`
-                pointer-events-none absolute h-2 w-px bg-white/20
-                ${menuPlacement === "above" ? "bottom-[-8px]" : "top-[-8px]"}
-                right-3.5
-              `}
-            >
-              <span
-                className={`
-                  absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/40
-                  ${menuPlacement === "above" ? "bottom-[-3px]" : "top-[-3px]"}
-                `}
-              />
-            </span>
-
             <div
               className="overflow-hidden rounded-xl border border-white/[0.1] bg-surface-raised shadow-2xl"
               role="menu"
