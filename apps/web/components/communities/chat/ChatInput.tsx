@@ -148,7 +148,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             </div>
           )}
 
-          <div className="flex flex-col bg-surface-raised justify-center rounded-2xl shadow-md px-[5px] pl-[5px] pr-[8px] min-h-[52px]">
+          <div className="flex flex-col bg-surface-raised rounded-2xl shadow-md px-[5px] pl-[5px] pr-[8px]">
             {/* Hidden file input */}
             <input
               ref={fileInputRef}
@@ -164,8 +164,8 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
 
             {/* Reply preview inside the box */}
             {replyTo && (
-              <div className="flex items-center gap-2 pb-2 my-2 mx-2 border-l-2 rounded-md border-accent bg-black/30">
-                <div className="flex-1 min-w-0  py-2  pl-2 rounded-sm">
+              <div className="flex items-center gap-2 mt-2 mb-1 mx-2 border-l-2 rounded-md border-accent bg-black/30">
+                <div className="flex-1 min-w-0 py-2 pl-2 rounded-sm">
                   <p className="font-body text-[11px] font-semibold text-accent truncate">
                     {replyTo.user_name}
                   </p>
@@ -184,7 +184,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             )}
 
             {/* Input row */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-h-[52px]">
             {/* Emoji + Image picker buttons */}
             <div className="flex items-center">
               <button
