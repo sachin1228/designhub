@@ -13,7 +13,6 @@ import { useChatData } from "./chat/useChatData";
 import { useScrollAndUnread } from "./chat/useScrollAndUnread";
 import { useRealtimeChat } from "./chat/useRealtimeChat";
 import { useSendMessage } from "./chat/useSendMessage";
-import { TypingIndicator } from "./chat/TypingIndicator";
 import { useTypingPresence } from "./chat/useTypingPresence";
 import { extractFirstUrl } from "@/lib/communities/linkPreview";
 
@@ -401,6 +400,7 @@ export function CommunityChat({
               displayCommunity={displayCommunity}
               communityId={communityId}
               highlightedMsgId={highlightedMsgId}
+              typingUsers={typingUsers}
               onReplyClick={handleReplyClick}
               onCancelSend={handleCancelSend}
               onRetrySend={handleRetrySend}
@@ -428,7 +428,6 @@ export function CommunityChat({
             )}
 
             <div className="bg-black/40 backdrop-blur-sm">
-              <TypingIndicator users={typingUsers} />
               <ChatInput
                 ref={inputRef}
                 input={input}
