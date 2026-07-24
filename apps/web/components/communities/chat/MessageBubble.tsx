@@ -506,7 +506,41 @@ function MessageHoverActions({
 }
 
 /**
- * Renders message text with URLs converted to clickable anchors.
+ * Splits a plain text chunk into alternating text/emoji nodes so emoji
+ * glyphs can be rendered at a larger size than the surrounding text,
+ * matching WhatsApp's mixed-content style.
+ */
+function renderTextWithEmoji(text: string, key: string | number): React.ReactNode {
+  const EMOJI_CLUSTER =
+    /(?:\p{Emoji_Presentation}|\p{Emoji}\uFE0F)(?:[\u{1F3FB}-\u{1F3FF}])?(?:\u20E3)?(?:\uFE0F)?(?:\u200D(?:\p{Emoji_Presentation}|\p{Emoji}\uFE0F)(?:[\u{1F3FB}-\u{1F3FF}])?(?:\uFE0F)?)*[\uFE0F\uFE0E]?/gu;
+
+  const segments: React.ReactNode[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  EMOJI_CLUSTER.lastIndex = 0;
+
+  while ((m = EMOJI_CLUSTER.exec(text)) !== null) {
+    if (m.index > last) segments.push(text.slice(last, m.index));
+    segments.push(
+      <span
+        key={`e-${m.index}`}
+        style={{ fontSize: "1.35em", lineHeight: 1, verticalAlign: "-0.15em", display: "inline-block" }}
+      >
+        {m[0]}
+      </span>,
+    );
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) segments.push(text.slice(last));
+
+  // If no emoji was found just return the string (avoids wrapping in a Fragment).
+  if (segments.length === 1 && typeof segments[0] === "string") return segments[0];
+  return <Fragment key={key}>{segments}</Fragment>;
+}
+
+/**
+ * Renders message text with URLs converted to clickable anchors and emoji
+ * glyphs enlarged to WhatsApp-style proportions.
  * Shows a WhatsApp-style link-preview card for the first URL found.
  * Only rendered for non-deleted, non-pending messages.
  */
@@ -529,7 +563,8 @@ function MessageContent({
   URL_RE.lastIndex = 0;
   while ((m = URL_RE.exec(content)) !== null) {
     const url = m[0].replace(/[.,;:!?)]+$/, "");
-    if (m.index > last) parts.push(content.slice(last, m.index));
+    // Enlarge emoji in the plain-text segment before this URL.
+    if (m.index > last) parts.push(renderTextWithEmoji(content.slice(last, m.index), last));
     parts.push(
       <a
         key={m.index}
@@ -546,7 +581,8 @@ function MessageContent({
     );
     last = m.index + m[0].length;
   }
-  if (last < content.length) parts.push(content.slice(last));
+  // Enlarge emoji in the trailing plain-text segment.
+  if (last < content.length) parts.push(renderTextWithEmoji(content.slice(last), last));
 
   return (
     <>

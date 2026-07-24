@@ -223,7 +223,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               onBlur={onBlur}
               placeholder={placeholder}
               rows={1}
-              className="flex-1 resize-none bg-transparent font-body text-sm text-foreground placeholder:text-foreground-muted outline-none overflow-y-auto"
+              className="flex-1 resize-none bg-transparent font-body text-[15px] text-foreground placeholder:text-foreground-muted outline-none overflow-y-auto"
               style={{ lineHeight: "1.5", height: "24px", maxHeight: "120px" }}
             />
 
