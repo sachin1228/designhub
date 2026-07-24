@@ -8,7 +8,6 @@ import {
   FileText,
 } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
-import type { CachedMeta } from "@/lib/communities/cache";
 
 interface Member {
   user_id: string;
@@ -17,7 +16,7 @@ interface Member {
 
 interface CommunityInfoPanelProps {
   members: Member[];
-  community: CachedMeta | null;
+  community: { member_count: number } | null;
 }
 
 // ─── Static data (replace with real API later) ────────────────────────────────
