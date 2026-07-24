@@ -28,22 +28,29 @@ export function DashboardTopNav() {
   const homeActive = pendingHref ? pendingHref === "/dashboard" : isMatch("/dashboard", pathname);
 
   return (
-    <nav className="flex items-center gap-1">
-      {/* Home — branded unique button */}
+    <nav className="flex h-full items-center gap-1">
+      {/* Standalone brand mark */}
       <Link
         href="/dashboard"
         prefetch={true}
         onClick={() => setPendingHref("/dashboard")}
-        className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+        aria-label="drafthub home"
+        className="mr-1 flex h-7 w-7 items-center justify-center rounded-md text-[13px] font-semibold leading-none transition-colors hover:bg-surface-raised"
+      >
+        <span className="text-foreground">d</span><span className="text-accent">/</span>
+      </Link>
+
+      {/* Home */}
+      <Link
+        href="/dashboard"
+        prefetch={true}
+        onClick={() => setPendingHref("/dashboard")}
+        className={`flex h-7 items-center rounded-md px-3 text-[12px] font-medium transition-all ${
           homeActive
             ? "bg-surface-raised text-accent"
             : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
         }`}
       >
-        {/* d/ logo mark */}
-        <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-semibold font-display leading-none shrink-0 ${homeActive ? "bg-background" : "bg-surface-raised"}`}>
-          <span className="text-foreground">d</span><span className="text-accent">/</span>
-        </span>
         <span>Home</span>
       </Link>
 
@@ -56,7 +63,7 @@ export function DashboardTopNav() {
             href={href}
             prefetch={true}
             onClick={() => setPendingHref(href)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-colors ${
+            className={`flex h-7 items-center gap-2 rounded-md px-3 text-[12px] transition-colors ${
               active
                 ? "bg-surface-raised text-accent"
                 : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
