@@ -37,19 +37,18 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Full-width topbar */}
-      <header className="sticky top-0 z-20 flex h-[52px] items-center gap-4 border-b border-border bg-surface px-5 shrink-0">
-        {/* Logo */}
+      <header className="sticky top-0 z-20 flex h-[52px] items-center border-b border-border bg-surface px-5 shrink-0">
+        {/* Logo — left */}
         <span className="font-display text-lg font-semibold text-foreground shrink-0">
           drafthub<span className="text-accent mx-0.5">/</span>
         </span>
 
-        {/* Divider */}
-        <div className="h-5 w-px bg-border shrink-0" />
+        {/* Nav items — absolute center */}
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <DashboardTopNav />
+        </div>
 
-        {/* Nav items */}
-        <DashboardTopNav />
-
-        {/* Push profile to the right */}
+        {/* Profile — right */}
         <div className="ml-auto flex items-center gap-3">
           <ProfileDropdown
             name={name}
