@@ -3,7 +3,6 @@
 import {
   MapPin,
   Calendar,
-  UserPlus,
   Download,
   Users,
   FileText,
@@ -126,10 +125,6 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
         action={<SeeAll />}
       >
         <AvatarStack members={members} total={memberCount} />
-        <button className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-surface-raised border border-border font-body text-sm text-foreground hover:bg-surface-raised/80 transition-colors">
-          <UserPlus size={14} />
-          Invite Members
-        </button>
       </Section>
 
       {/* About */}
