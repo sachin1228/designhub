@@ -92,7 +92,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="px-4 py-4 border-b border-border">
+    <div className="mx-3 rounded-xl border border-border bg-surface-raised px-4 py-4">
       <div className="flex items-center justify-between mb-3">
         <span className="font-body text-sm font-semibold text-foreground">
           {title}
@@ -117,7 +117,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
   const memberCount = community?.member_count ?? members.length;
 
   return (
-    <div className="w-72 shrink-0 border-l border-border bg-surface flex flex-col overflow-y-auto">
+    <div className="w-72 shrink-0 border-l border-border bg-surface flex flex-col gap-3 overflow-y-auto py-3">
 
       {/* Members */}
       <Section
@@ -211,7 +211,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
       </Section>
 
       {/* Community Stats */}
-      <div className="px-4 py-4">
+      <div className="mx-3 rounded-xl border border-border bg-surface-raised px-4 py-4">
         <span className="font-body text-sm font-semibold text-foreground block mb-3">
           Community Stats
         </span>
@@ -223,7 +223,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
           ].map(({ label, value }) => (
             <div
               key={label}
-              className="bg-surface-raised rounded-xl px-3 py-3 flex flex-col gap-0.5 border border-border"
+              className="bg-surface rounded-xl px-3 py-3 flex flex-col gap-0.5 border border-border"
             >
               <span className="font-body text-base font-bold text-foreground">
                 {value}
