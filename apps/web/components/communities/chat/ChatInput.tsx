@@ -148,7 +148,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             </div>
           )}
 
-          <div className="flex flex-col bg-surface-raised rounded-2xl shadow-md px-3 py-2 min-h-[52px]">
+          <div className="flex flex-col bg-surface-raised justify-center rounded-full shadow-md px-[5px] pl-[5px] pr-[8px] min-h-[52px]">
             {/* Hidden file input */}
             <input
               ref={fileInputRef}
@@ -199,7 +199,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
                 aria-label="Open emoji & GIF picker"
                 aria-expanded={pickerOpen}
               >
-                <Smile size={17} />
+                <Smile size={19} />
               </button>
 
               <button
@@ -209,7 +209,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
                 className="shrink-0 h-9 w-9 flex items-center justify-center rounded-full text-foreground-muted hover:text-foreground hover:bg-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 aria-label="Attach image"
               >
-                <ImageIcon size={17} />
+                <ImageIcon size={19} />
               </button>
             </div>
 
