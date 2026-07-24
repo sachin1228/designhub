@@ -162,7 +162,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
         {/* Picker popup — full width, anchored above the input row */}
         <div className="relative" ref={pickerContainerRef}>
           {pickerOpen && (
-            <div className="absolute bottom-full left-0 mb-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
               <EmojiGifPicker
                 onEmojiSelect={handleEmojiSelect}
                 onGifSelect={handleGifSelect}
