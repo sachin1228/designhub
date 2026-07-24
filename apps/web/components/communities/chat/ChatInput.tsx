@@ -170,7 +170,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             </div>
           )}
 
-          <div className="flex items-center gap-2 bg-surface-raised rounded-2xl shadow-md px-3 py-3 min-h-[56px]">
+          <div className="flex items-center gap-2 bg-surface-raised rounded-[26px] shadow-md px-3 py-3 min-h-[52px]">
             {/* Hidden file input */}
             <input
               ref={fileInputRef}
