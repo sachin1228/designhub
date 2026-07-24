@@ -38,7 +38,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Full-width topbar */}
-      <header className="sticky top-0 z-20 flex h-10 items-center border-b border-border px-4 shrink-0">
+      <header className="sticky top-0 z-20 flex h-12 items-center border-b border-border px-4 shrink-0">
         {/* Nav items — left */}
         <DashboardTopNav />
 
