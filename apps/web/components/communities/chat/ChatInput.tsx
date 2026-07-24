@@ -185,7 +185,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             />
 
             {/* Emoji + Image picker buttons */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center">
               <button
                 type="button"
                 onClick={() => setPickerOpen((v) => !v)}
