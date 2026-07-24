@@ -37,7 +37,7 @@ export function DashboardTopNav() {
             href={href}
             prefetch={true}
             onClick={() => setPendingHref(href)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-colors ${
               active
                 ? "bg-surface-raised text-accent"
                 : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
