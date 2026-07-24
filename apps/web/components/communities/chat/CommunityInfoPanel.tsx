@@ -43,14 +43,11 @@ const STATIC_RESOURCES = [
   { name: "Figma Component Library",   meta: "Figma File · 12.4 MB" },
 ];
 
+// ─── Shared card class — flush left, rounded right, gap on top & right ────────
+const card = "mr-3 rounded-tr-xl rounded-br-xl border border-border bg-surface-raised px-4 py-4";
+
 // ─── Avatar stack ─────────────────────────────────────────────────────────────
-function AvatarStack({
-  members,
-  total,
-}: {
-  members: Member[];
-  total: number;
-}) {
+function AvatarStack({ members, total }: { members: Member[]; total: number }) {
   const shown = members.slice(0, 7);
   const extra = total > shown.length ? total - shown.length : 0;
 
@@ -92,7 +89,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="px-4 py-4 border-b border-border">
+    <div className={card}>
       <div className="flex items-center justify-between mb-3">
         <span className="font-body text-sm font-semibold text-foreground">
           {title}
@@ -117,7 +114,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
   const memberCount = community?.member_count ?? members.length;
 
   return (
-    <div className="w-72 shrink-0 border-l border-border bg-surface flex flex-col overflow-y-auto">
+    <div className="w-72 shrink-0 border-l border-border bg-surface flex flex-col gap-3 overflow-y-auto pt-3 pb-3">
 
       {/* Members */}
       <Section
@@ -157,8 +154,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
       {/* Upcoming Events */}
       <Section title="Upcoming Events" action={<SeeAll />}>
         <div className="flex gap-3">
-          {/* Event image placeholder */}
-          <div className="w-16 h-16 rounded-lg bg-surface-raised shrink-0 flex items-center justify-center overflow-hidden border border-border">
+          <div className="w-16 h-16 rounded-lg bg-surface shrink-0 flex items-center justify-center overflow-hidden border border-border">
             <Calendar size={20} className="text-foreground-subtle" />
           </div>
           <div className="flex-1 min-w-0">
@@ -191,7 +187,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
         <div className="space-y-3">
           {STATIC_RESOURCES.map((r) => (
             <div key={r.name} className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0 border border-border">
+              <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center shrink-0 border border-border">
                 <FileText size={14} className="text-accent" />
               </div>
               <div className="flex-1 min-w-0">
@@ -210,20 +206,20 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
         </div>
       </Section>
 
-      {/* Community Stats */}
-      <div className="px-4 py-4">
+      {/* Community Stats — separate card below */}
+      <div className={card}>
         <span className="font-body text-sm font-semibold text-foreground block mb-3">
           Community Stats
         </span>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "Members", value: memberCount.toLocaleString() },
-            { label: "Online",  value: "156" },
+            { label: "Members",    value: memberCount.toLocaleString() },
+            { label: "Online",     value: "156" },
             { label: "Posts today", value: "32" },
           ].map(({ label, value }) => (
             <div
               key={label}
-              className="bg-surface-raised rounded-xl px-3 py-3 flex flex-col gap-0.5 border border-border"
+              className="bg-surface rounded-xl px-3 py-3 flex flex-col gap-0.5 border border-border"
             >
               <span className="font-body text-base font-bold text-foreground">
                 {value}
