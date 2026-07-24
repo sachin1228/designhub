@@ -60,8 +60,12 @@ function AvatarStack({
       {shown.map((m, i) => (
         <div
           key={m.user_id}
-          className="ring-2 ring-surface rounded-full shrink-0"
-          style={{ marginLeft: i === 0 ? 0 : -10, zIndex: shown.length - i }}
+          className="rounded-full shrink-0 relative"
+          style={{
+            marginLeft: i === 0 ? 0 : -8,
+            zIndex: shown.length - i,
+            boxShadow: "0 0 0 2px var(--color-surface)",
+          }}
         >
           <ChatAvatar
             name={m.users?.name ?? "?"}
@@ -72,8 +76,12 @@ function AvatarStack({
       ))}
       {extra > 0 && (
         <div
-          className="h-7 w-7 shrink-0 rounded-full bg-surface-raised ring-2 ring-surface flex items-center justify-center font-body text-[10px] font-semibold text-foreground-muted"
-          style={{ marginLeft: -10 }}
+          className="h-7 w-7 shrink-0 rounded-full bg-surface-raised flex items-center justify-center font-body text-[10px] font-semibold text-foreground-muted relative"
+          style={{
+            marginLeft: -8,
+            zIndex: 0,
+            boxShadow: "0 0 0 2px var(--color-surface)",
+          }}
         >
           {extra >= 1000 ? `+${Math.round(extra / 1000)}K` : `+${extra}`}
         </div>
