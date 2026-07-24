@@ -42,7 +42,7 @@ export function DashboardTopNav() {
         }`}
       >
         {/* d/ logo mark */}
-        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-surface-raised text-[11px] font-semibold font-display leading-none shrink-0">
+        <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-semibold font-display leading-none shrink-0 ${homeActive ? "bg-background" : "bg-surface-raised"}`}>
           <span className={homeActive ? "text-accent" : "text-foreground"}>d</span><span className="text-accent">/</span>
         </span>
         <span>Home</span>
