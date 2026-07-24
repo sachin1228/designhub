@@ -21,10 +21,17 @@ function formatPreview(msg: NonNullable<Community["last_message"]>): {
   text: string;
   italic?: boolean;
 } {
-  if (msg.is_deleted)        return { prefix: msg.user?.name.split(" ")[0], text: "Message deleted", italic: true };
-  if (msg.has_image && !msg.content) return { prefix: msg.user?.name.split(" ")[0], text: "📷 Photo" };
-  const replyPrefix = msg.is_reply ? "↩ " : "";
-  return { prefix: msg.user?.name.split(" ")[0], text: replyPrefix + (msg.content ?? "") };
+  const sender = msg.user?.name.split(" ")[0];
+  if (msg.is_deleted) return { prefix: sender, text: "Message deleted", italic: true };
+  if (msg.has_image && !msg.content) return { prefix: sender, text: "📷 Photo" };
+  if (msg.is_reply) {
+    const to = msg.reply_to_user ?? null;
+    return {
+      prefix: sender,
+      text: to ? `replied to ${to}: ${msg.content}` : `↩ ${msg.content}`,
+    };
+  }
+  return { prefix: sender, text: msg.content ?? "" };
 }
 
 interface CommunityRowProps {

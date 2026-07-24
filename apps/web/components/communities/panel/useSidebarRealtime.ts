@@ -145,6 +145,29 @@ export function useSidebarRealtime({
                 );
               });
             }
+
+            // Async: resolve the replied-to user's name for reply messages.
+            if (row.reply_to_id) {
+              const commId  = row.community_id;
+              const msgAt   = row.created_at;
+              const replyId = row.reply_to_id;
+              fetch(`/api/communities/${commId}/messages/${replyId}`)
+                .then((r) => (r.ok ? r.json() : null))
+                .then((parent: { user_name?: string } | null) => {
+                  if (!parent?.user_name) return;
+                  const firstName = parent.user_name.split(" ")[0];
+                  setCommunities((prev) =>
+                    applyUpdate(prev, commId, (c) => {
+                      if (c.last_message?.created_at !== msgAt) return c;
+                      return {
+                        ...c,
+                        last_message: { ...c.last_message!, reply_to_user: firstName },
+                      };
+                    }),
+                  );
+                })
+                .catch(() => {});
+            }
           },
         )
 

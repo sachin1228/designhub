@@ -76,6 +76,8 @@ export interface CachedSidebarCommunity {
     has_image?: boolean;
     /** True when the message is a reply to another message. */
     is_reply?: boolean;
+    /** First name of the user whose message was replied to. */
+    reply_to_user?: string | null;
     /** Unique emoji strings that have been reacted to this message. */
     reactions?: string[];
   } | null;
