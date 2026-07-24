@@ -562,6 +562,26 @@ function MessageContent({
   );
 }
 
+/**
+ * Returns true when the entire message text is 1–3 emoji with no other content.
+ * Handles ZWJ sequences, skin-tone modifiers, variation selectors, and keycap combiners.
+ */
+function isEmojiOnly(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+
+  // Each "cluster" is one rendered emoji glyph, including ZWJ chains like 👨‍👩‍👧.
+  const EMOJI_CLUSTER =
+    /(?:\p{Emoji_Presentation}|\p{Emoji}\uFE0F)(?:[\u{1F3FB}-\u{1F3FF}])?(?:\u20E3)?(?:\uFE0F)?(?:\u200D(?:\p{Emoji_Presentation}|\p{Emoji}\uFE0F)(?:[\u{1F3FB}-\u{1F3FF}])?(?:\uFE0F)?)*[\uFE0F\uFE0E]?/gu;
+
+  const clusters = [...trimmed.matchAll(EMOJI_CLUSTER)];
+  if (clusters.length === 0 || clusters.length > 3) return false;
+
+  // After stripping matched clusters and whitespace, nothing should be left.
+  const remainder = trimmed.replace(EMOJI_CLUSTER, "").replace(/\s/g, "");
+  return remainder.length === 0;
+}
+
 /** Placeholder shown for soft-deleted messages. */
 function DeletedBubble({ isMe, createdAt }: { isMe: boolean; createdAt: string }) {
   return (
@@ -610,6 +630,14 @@ export function MessageBubble({
   const failed    = msg.status === "failed";
   const isDeleted = !!msg.deleted_at;
 
+  // Show as a large bubble-free emoji when the entire message is 1–3 emoji glyphs.
+  const isEmojiMsg =
+    !isDeleted &&
+    !imageUrl &&
+    !replyTo &&
+    !!msg.content &&
+    isEmojiOnly(msg.content);
+
   const rowHighlight = highlighted ? "bg-black/60" : "";
 
   const handleDeleteConfirm = () => {
@@ -643,6 +671,42 @@ export function MessageBubble({
                 /* Deleted placeholder — no hover actions */
                 <div className="flex justify-end">
                   <DeletedBubble isMe createdAt={msg.created_at} />
+                </div>
+              ) : isEmojiMsg ? (
+                /* ── Big emoji (WhatsApp-style) — no bubble background ── */
+                <div className="group flex items-center gap-1 justify-end">
+                  <MessageHoverActions
+                    msg={msg}
+                    isMe
+                    isDeleted={isDeleted}
+                    currentUserId={currentUserId}
+                    onReaction={onReaction}
+                    onReply={onReply}
+                    onCopy={onCopy}
+                    onDeleteClick={() => setDeleteConfirmOpen(true)}
+                    menuOpen={menuOpen}
+                    onMenuOpenChange={setMenuOpen}
+                  />
+                  <div className="relative">
+                    <div className="flex flex-col items-end select-none">
+                      <span style={{ fontSize: 52, lineHeight: 1.1 }}>{msg.content}</span>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="font-mono text-[10px] text-foreground-muted/70">
+                          {fmtTime(msg.created_at)}
+                        </span>
+                        {msg.status === "sending" && (
+                          <Clock size={10} className="text-foreground-muted/60 animate-pulse" />
+                        )}
+                        {(msg.status === "sent" || !msg.status) && (
+                          <CheckCheck size={11} className="text-foreground-muted/70" />
+                        )}
+                        {msg.status === "failed" && (
+                          <span className="text-[10px] text-red-400">!</span>
+                        )}
+                      </div>
+                    </div>
+                    <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe msgId={msg.id} onReaction={onReaction} />
+                  </div>
                 </div>
               ) : (
                 /* group scoped here — hover only triggers on [actions + bubble], not the full row */
@@ -760,6 +824,31 @@ export function MessageBubble({
 
           {isDeleted ? (
             <DeletedBubble isMe={false} createdAt={msg.created_at} />
+          ) : isEmojiMsg ? (
+            /* ── Big emoji (WhatsApp-style) — no bubble background ── */
+            <div className="group flex items-center gap-1">
+              <div className="relative">
+                <div className="flex flex-col items-start select-none">
+                  <span style={{ fontSize: 52, lineHeight: 1.1 }}>{msg.content}</span>
+                  <span className="font-mono text-[10px] text-foreground-muted/70 mt-0.5">
+                    {fmtTime(msg.created_at)}
+                  </span>
+                </div>
+                <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={false} msgId={msg.id} onReaction={onReaction} />
+              </div>
+              <MessageHoverActions
+                msg={msg}
+                isMe={false}
+                isDeleted={isDeleted}
+                currentUserId={currentUserId}
+                onReaction={onReaction}
+                onReply={onReply}
+                onCopy={onCopy}
+                onDeleteClick={() => setDeleteConfirmOpen(true)}
+                menuOpen={menuOpen}
+                onMenuOpenChange={setMenuOpen}
+              />
+            </div>
           ) : (
             /* group scoped here — hover only triggers on [bubble + actions], not the full row */
             <div className="group flex items-center gap-1">
