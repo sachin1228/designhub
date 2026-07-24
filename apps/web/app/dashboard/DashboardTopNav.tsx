@@ -28,7 +28,7 @@ export function DashboardTopNav() {
 
   return (
     <nav className="flex h-full items-center gap-1">
-      <span className="mr-8 shrink-0 text-2xl font-semibold leading-none tracking-tight text-foreground">
+      <span className="mr-8 shrink-0 text-lg font-medium leading-none tracking-tight text-foreground">
         drafthub <span className="text-accent">/</span>
       </span>
 
