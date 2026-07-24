@@ -117,7 +117,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
   const memberCount = community?.member_count ?? members.length;
 
   return (
-    <div className="w-72 shrink-0 border-l border-border bg-surface flex flex-col overflow-y-auto">
+    <div className="w-72 shrink-0 border border-border mr-4 mt-4 rounded-xl flex flex-col overflow-y-auto">
 
       {/* Members */}
       <Section
