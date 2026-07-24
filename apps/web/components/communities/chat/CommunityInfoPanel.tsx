@@ -64,7 +64,7 @@ function AvatarStack({ members, total }: { members: Member[]; total: number }) {
       ))}
       {extra > 0 && (
         <div
-          className="h-7 w-7 shrink-0 rounded-full ring-2 ring-surface flex items-center justify-center font-body text-[10px] font-semibold text-foreground-muted"
+          className="h-7 w-7 shrink-0 rounded-full bg-surface-raised ring-2 ring-surface flex items-center justify-center font-body text-[10px] font-semibold text-foreground-muted"
           style={{ marginLeft: -10 }}
         >
           {extra >= 1000 ? `+${Math.round(extra / 1000)}K` : `+${extra}`}
@@ -154,7 +154,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
         {/* Upcoming Events */}
         <Section title="Upcoming Events" action={<SeeAll />}>
           <div className="flex gap-3">
-            <div className="w-16 h-16 rounded-lg shrink-0 flex items-center justify-center overflow-hidden border border-border">
+            <div className="w-16 h-16 rounded-lg bg-surface-raised shrink-0 flex items-center justify-center overflow-hidden border border-border">
               <Calendar size={20} className="text-foreground-subtle" />
             </div>
             <div className="flex-1 min-w-0">
@@ -193,7 +193,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
           <div className="space-y-3">
             {STATIC_RESOURCES.map((r) => (
               <div key={r.name} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-border">
+                <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0 border border-border">
                   <FileText size={14} className="text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -227,7 +227,7 @@ export function CommunityInfoPanel({ members, community }: CommunityInfoPanelPro
           ].map(({ label, value }) => (
             <div
               key={label}
-              className="rounded-xl px-3 py-3 flex flex-col gap-0.5 border border-border"
+              className="bg-surface-raised rounded-xl px-3 py-3 flex flex-col gap-0.5 border border-border"
             >
               <span className="font-body text-base font-bold text-foreground">
                 {value}
