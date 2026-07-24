@@ -184,32 +184,33 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               }}
             />
 
-            {/* Emoji / GIF / Sticker picker button */}
-            <button
-              type="button"
-              onClick={() => setPickerOpen((v) => !v)}
-              disabled={sending}
-              className={`shrink-0 h-9 w-9 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed
-                ${pickerOpen
-                  ? "bg-accent/20 text-accent"
-                  : "text-foreground-muted hover:text-foreground hover:bg-surface"
-                }`}
-              aria-label="Open emoji & GIF picker"
-              aria-expanded={pickerOpen}
-            >
-              <Smile size={17} />
-            </button>
+            {/* Emoji + Image picker buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPickerOpen((v) => !v)}
+                disabled={sending}
+                className={`shrink-0 h-9 w-9 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed
+                  ${pickerOpen
+                    ? "bg-accent/20 text-accent"
+                    : "text-foreground-muted hover:text-foreground hover:bg-surface"
+                  }`}
+                aria-label="Open emoji & GIF picker"
+                aria-expanded={pickerOpen}
+              >
+                <Smile size={17} />
+              </button>
 
-            {/* Image picker button */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={sending}
-              className="shrink-0 h-9 w-9 flex items-center justify-center rounded-full text-foreground-muted hover:text-foreground hover:bg-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              aria-label="Attach image"
-            >
-              <ImageIcon size={17} />
-            </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sending}
+                className="shrink-0 h-9 w-9 flex items-center justify-center rounded-full text-foreground-muted hover:text-foreground hover:bg-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Attach image"
+              >
+                <ImageIcon size={17} />
+              </button>
+            </div>
 
             <textarea
               ref={ref}
