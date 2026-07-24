@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { MessagesSquare } from "lucide-react";
 
 const NAV = [
-  { href: "/dashboard/communities", label: "Communities", icon: MessagesSquare },
+  { href: "/dashboard/communities", label: "Communities" },
 ];
 
 function isMatch(href: string, pathname: string) {
@@ -35,7 +34,7 @@ export function DashboardTopNav() {
         prefetch={true}
         onClick={() => setPendingHref("/dashboard")}
         aria-label="drafthub home"
-        className="mr-1 flex h-7 w-7 items-center justify-center rounded-md text-[13px] font-semibold leading-none transition-colors hover:bg-surface-raised"
+        className="mr-3 flex h-7 w-7 items-center justify-center rounded-md text-[13px] font-semibold leading-none transition-colors hover:bg-surface-raised"
       >
         <span className="text-foreground">d</span><span className="text-accent">/</span>
       </Link>
@@ -45,17 +44,17 @@ export function DashboardTopNav() {
         href="/dashboard"
         prefetch={true}
         onClick={() => setPendingHref("/dashboard")}
-        className={`flex h-7 items-center rounded-md px-3 text-[12px] font-medium transition-all ${
+        className={`relative flex h-full items-center px-4 text-sm font-medium transition-colors after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:transition-opacity ${
           homeActive
-            ? "bg-surface-raised text-accent"
-            : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
+            ? "text-accent after:bg-accent after:opacity-100"
+            : "text-foreground-muted after:opacity-0 hover:text-foreground"
         }`}
       >
         <span>Home</span>
       </Link>
 
       {/* Other nav items */}
-      {NAV.map(({ href, label, icon: Icon }) => {
+      {NAV.map(({ href, label }) => {
         const active = pendingHref ? pendingHref === href : isMatch(href, pathname);
         return (
           <Link
@@ -63,13 +62,12 @@ export function DashboardTopNav() {
             href={href}
             prefetch={true}
             onClick={() => setPendingHref(href)}
-            className={`flex h-7 items-center gap-2 rounded-md px-3 text-[12px] transition-colors ${
+            className={`relative flex h-full items-center px-4 text-sm font-medium transition-colors after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:transition-opacity ${
               active
-                ? "bg-surface-raised text-accent"
-                : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
+                ? "text-accent after:bg-accent after:opacity-100"
+                : "text-foreground-muted after:opacity-0 hover:text-foreground"
             }`}
           >
-            <Icon size={16} />
             <span>{label}</span>
           </Link>
         );
