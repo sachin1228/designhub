@@ -4,6 +4,7 @@ import { APP_NAME } from "@draft/shared";
 import { createServiceClient } from "@/lib/supabase/service";
 import { DashboardTopNav } from "@/app/dashboard/DashboardTopNav";
 import { ProfileDropdown } from "@/app/dashboard/ProfileDropdown";
+import { Bell, MessageCircle } from "lucide-react";
 
 export default async function DashboardLayout({
   children,
@@ -41,8 +42,15 @@ export default async function DashboardLayout({
         {/* Nav items — left */}
         <DashboardTopNav />
 
-        {/* Profile — right */}
-        <div className="ml-auto flex items-center gap-3">
+        {/* Right side */}
+        <div className="ml-auto flex items-center gap-1">
+          <button className="flex items-center justify-center w-8 h-8 rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors" aria-label="Direct messages">
+            <MessageCircle size={18} />
+          </button>
+          <button className="flex items-center justify-center w-8 h-8 rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors" aria-label="Notifications">
+            <Bell size={18} />
+          </button>
+          <div className="mx-1 h-5 w-px bg-border shrink-0" />
           <ProfileDropdown
             name={name}
             email={email}
