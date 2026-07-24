@@ -16,13 +16,15 @@ function timeAgo(iso: string): string {
 }
 
 /** Formats the last-message text shown below the community name. */
-function formatPreview(
-  msg: NonNullable<Community["last_message"]>,
-): { text: string; italic?: boolean } {
-  if (msg.is_deleted) return { text: "Message deleted", italic: true };
-  if (msg.has_image && !msg.content) return { text: "📷 Photo" };
-  const prefix = msg.is_reply ? "↩ " : "";
-  return { text: prefix + (msg.content ?? "") };
+function formatPreview(msg: NonNullable<Community["last_message"]>): {
+  prefix?: string;
+  text: string;
+  italic?: boolean;
+} {
+  if (msg.is_deleted)        return { prefix: msg.user?.name.split(" ")[0], text: "Message deleted", italic: true };
+  if (msg.has_image && !msg.content) return { prefix: msg.user?.name.split(" ")[0], text: "📷 Photo" };
+  const replyPrefix = msg.is_reply ? "↩ " : "";
+  return { prefix: msg.user?.name.split(" ")[0], text: replyPrefix + (msg.content ?? "") };
 }
 
 interface CommunityRowProps {
@@ -43,6 +45,7 @@ export function CommunityRow({
   onMouseEnter,
   onMouseLeave,
 }: CommunityRowProps) {
+  const { lastReaction } = c;
   const preview = c.last_message ? formatPreview(c.last_message) : null;
 
   return (
@@ -80,11 +83,23 @@ export function CommunityRow({
           {/* Preview line */}
           <div className="flex items-center gap-1.5">
             {typingText ? (
-              /* Typing indicator — takes priority over last-message preview */
+              /* Typing — highest priority */
               <p className="font-body text-xs text-accent truncate flex-1 italic">
                 {typingText}
               </p>
+
+            ) : lastReaction ? (
+              /* Reaction preview: "You reacted 👍 to: "message"" */
+              <p className="font-body text-xs text-foreground-muted truncate flex-1">
+                <span className="font-medium">{lastReaction.firstName}</span>
+                {lastReaction.isOwn ? " reacted " : " reacted "}
+                <span>{lastReaction.emoji}</span>
+                {" to: "}
+                <span className="italic">{lastReaction.messagePreview}</span>
+              </p>
+
             ) : preview ? (
+              /* Standard message preview */
               <p
                 className={`font-body text-xs truncate flex-1 ${
                   preview.italic
@@ -92,28 +107,17 @@ export function CommunityRow({
                     : "text-foreground-muted"
                 }`}
               >
-                {/* Sender name prefix — shown for all states including deleted */}
-                {c.last_message!.user && (
-                  <span className="font-medium">
-                    {c.last_message!.user.name.split(" ")[0]}:{" "}
-                  </span>
+                {preview.prefix && (
+                  <span className="font-medium not-italic">{preview.prefix}: </span>
                 )}
                 {preview.text}
               </p>
+
             ) : (
               <p className="font-body text-xs text-foreground-muted/60 italic flex-1">
                 No messages yet
               </p>
             )}
-
-            {/* Reaction emojis on the last message */}
-            {!typingText &&
-              c.last_message?.reactions &&
-              c.last_message.reactions.length > 0 && (
-                <span className="text-xs shrink-0 leading-none">
-                  {c.last_message.reactions.slice(0, 3).join("")}
-                </span>
-              )}
 
             {/* Unread badge */}
             {c.message_count > 0 && !active && (

@@ -46,6 +46,15 @@ export interface CachedMeta {
 
 // ─── Sidebar joined-communities cache ─────────────────────────────────────────
 
+export interface SidebarLastReaction {
+  emoji: string;
+  /** First name of the person who reacted (or "You" if isOwn). */
+  firstName: string;
+  isOwn: boolean;
+  /** Content snippet of the message that was reacted to. */
+  messagePreview: string;
+}
+
 export interface CachedSidebarCommunity {
   id: string;
   name: string;
@@ -54,6 +63,8 @@ export interface CachedSidebarCommunity {
   member_count: number;
   message_count: number;
   last_read_at?: string | null;
+  /** Most recent reaction event — shown in the preview instead of last_message when set. Cleared when a new message arrives. */
+  lastReaction?: SidebarLastReaction | null;
   last_message: {
     id: string;
     content: string;

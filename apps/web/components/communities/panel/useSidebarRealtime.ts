@@ -13,8 +13,7 @@ interface Options {
 
 /**
  * Applies a patch to one community in React state and mirrors it into
- * sidebarStore, preserving last_read_at from the store so we never
- * accidentally overwrite it with a stale value.
+ * sidebarStore, preserving last_read_at from the store.
  */
 function applyUpdate(
   prev: CachedSidebarCommunity[],
@@ -38,13 +37,14 @@ function applyUpdate(
 }
 
 /**
- * Subscribes to community_messages changes (INSERT + UPDATE) for every
- * joined community and keeps the sidebar last-message preview in sync.
+ * Subscribes to community_messages + message_reactions changes for every
+ * joined community and keeps the sidebar preview in sync.
  *
  * Handles:
- *  - New messages (text, image-only, replies)
- *  - Async sender-name resolution for unknown senders
- *  - Soft-deleted messages (deleted_at set via UPDATE)
+ *  - New messages (text, image-only, replies)  → updates last_message, clears lastReaction
+ *  - Soft-deleted messages                     → marks last_message as deleted
+ *  - Reaction INSERT                           → sets lastReaction (descriptive preview)
+ *  - Reaction DELETE                           → clears lastReaction if it matched
  */
 export function useSidebarRealtime({
   communities,
@@ -52,7 +52,6 @@ export function useSidebarRealtime({
   activeCommunityIdRef,
   setCommunities,
 }: Options) {
-  // Re-subscribe whenever the set of joined communities changes.
   const communityIds = [...communities].map((c) => c.id).sort().join(",");
 
   useEffect(() => {
@@ -65,9 +64,20 @@ export function useSidebarRealtime({
       return;
     }
 
-    // Local cache of resolved sender names so we only fetch each user once
-    // per subscription lifetime.
+    // Cache resolved sender names for the lifetime of this subscription.
     const resolvedNames = new Map<string, string>();
+
+    /** Fetch a member's profile and cache their name. */
+    async function resolveName(commId: string, uid: string): Promise<string | null> {
+      if (resolvedNames.has(uid)) return resolvedNames.get(uid)!;
+      try {
+        const res = await fetch(`/api/communities/${commId}/members/${uid}`);
+        if (!res.ok) return null;
+        const data = await res.json() as { name?: string };
+        if (data?.name) { resolvedNames.set(uid, data.name); return data.name; }
+      } catch {}
+      return null;
+    }
 
     const channels = communities.map((comm) =>
       supabase
@@ -100,54 +110,45 @@ export function useSidebarRealtime({
             setCommunities((prev) =>
               applyUpdate(prev, row.community_id, (c) => ({
                 ...c,
+                lastReaction: null, // new message clears any pending reaction preview
                 last_message: {
-                  id:          row.id,
-                  content:     row.content,
-                  created_at:  row.created_at,
-                  user:        knownName ? { name: knownName } : (isOwn ? c.last_message?.user ?? null : null),
-                  has_image:   !row.content && !!row.image_url,
-                  is_reply:    !!row.reply_to_id,
-                  is_deleted:  false,
-                  reactions:   [],
+                  id:         row.id,
+                  content:    row.content,
+                  created_at: row.created_at,
+                  user:       knownName
+                    ? { name: knownName }
+                    : isOwn
+                    ? c.last_message?.user ?? null
+                    : null,
+                  has_image:  !row.content && !!row.image_url,
+                  is_reply:   !!row.reply_to_id,
+                  is_deleted: false,
+                  reactions:  [],
                 },
                 message_count:
-                  !isOwn && !isActive
-                    ? c.message_count + 1
-                    : c.message_count,
+                  !isOwn && !isActive ? c.message_count + 1 : c.message_count,
               })),
             );
 
-            // Async: resolve sender name if we don't already know it.
+            // Async name resolution for unknown senders.
             if (!isOwn && !resolvedNames.has(row.user_id)) {
-              const commId  = row.community_id;
-              const msgAt   = row.created_at;
+              const commId   = row.community_id;
+              const msgAt    = row.created_at;
               const senderId = row.user_id;
-
-              fetch(`/api/communities/${commId}/members/${senderId}`)
-                .then((r) => (r.ok ? r.json() : null))
-                .then((profile: { name: string } | null) => {
-                  if (!profile?.name) return;
-                  resolvedNames.set(senderId, profile.name);
-                  setCommunities((prev) =>
-                    applyUpdate(prev, commId, (c) => {
-                      // Only patch if this message is still the latest preview.
-                      if (c.last_message?.created_at !== msgAt) return c;
-                      return {
-                        ...c,
-                        last_message: {
-                          ...c.last_message!,
-                          user: { name: profile.name },
-                        },
-                      };
-                    }),
-                  );
-                })
-                .catch(() => {});
+              resolveName(commId, senderId).then((name) => {
+                if (!name) return;
+                setCommunities((prev) =>
+                  applyUpdate(prev, commId, (c) => {
+                    if (c.last_message?.created_at !== msgAt) return c;
+                    return { ...c, last_message: { ...c.last_message!, user: { name } } };
+                  }),
+                );
+              });
             }
           },
         )
 
-        // ── Soft-delete (UPDATE with deleted_at) ──────────────────────────
+        // ── Soft-delete ────────────────────────────────────────────────────
         .on(
           "postgres_changes",
           {
@@ -166,7 +167,6 @@ export function useSidebarRealtime({
 
             setCommunities((prev) =>
               applyUpdate(prev, updated.community_id, (c) => {
-                // Only update the preview if this is still the last message.
                 if (c.last_message?.created_at !== updated.created_at) return c;
                 return {
                   ...c,
@@ -193,21 +193,55 @@ export function useSidebarRealtime({
             filter: `community_id=eq.${comm.id}`,
           },
           (payload) => {
-            const r = payload.new as { message_id: string; emoji: string };
+            const r = payload.new as {
+              message_id: string;
+              user_id: string;
+              emoji: string;
+            };
+
+            const isOwn = r.user_id === userId;
+
             setCommunities((prev) =>
               applyUpdate(prev, comm.id, (c) => {
                 if (!c.last_message || c.last_message.id !== r.message_id) return c;
-                const existing = c.last_message.reactions ?? [];
-                if (existing.includes(r.emoji)) return c;
+
+                const preview = c.last_message.has_image
+                  ? "📷 Photo"
+                  : c.last_message.content
+                  ? `"${c.last_message.content.slice(0, 40)}${c.last_message.content.length > 40 ? "…" : ""}"`
+                  : "a message";
+
                 return {
                   ...c,
-                  last_message: {
-                    ...c.last_message,
-                    reactions: [...existing, r.emoji],
+                  lastReaction: {
+                    emoji:          r.emoji,
+                    firstName:      isOwn ? "You" : (resolvedNames.get(r.user_id)?.split(" ")[0] ?? "Someone"),
+                    isOwn,
+                    messagePreview: preview,
                   },
                 };
               }),
             );
+
+            // Async: resolve reactor name for others so it shows correctly.
+            if (!isOwn && !resolvedNames.has(r.user_id)) {
+              const msgId  = r.message_id;
+              const rEmoji = r.emoji;
+              const uid    = r.user_id;
+              resolveName(comm.id, uid).then((name) => {
+                if (!name) return;
+                setCommunities((prev) =>
+                  applyUpdate(prev, comm.id, (c) => {
+                    if (!c.lastReaction || c.lastReaction.emoji !== rEmoji) return c;
+                    if (!c.last_message || c.last_message.id !== msgId) return c;
+                    return {
+                      ...c,
+                      lastReaction: { ...c.lastReaction, firstName: name.split(" ")[0] },
+                    };
+                  }),
+                );
+              });
+            }
           },
         )
 
@@ -221,15 +255,19 @@ export function useSidebarRealtime({
             filter: `community_id=eq.${comm.id}`,
           },
           (payload) => {
-            const r = payload.old as { message_id?: string; emoji?: string };
-            if (!r.message_id || !r.emoji) return;
+            const r = payload.old as { message_id?: string; user_id?: string; emoji?: string };
+            if (!r.message_id || !r.user_id || !r.emoji) return;
+
             setCommunities((prev) =>
               applyUpdate(prev, comm.id, (c) => {
-                if (!c.last_message || c.last_message.id !== r.message_id) return c;
-                const next = (c.last_message.reactions ?? []).filter(
-                  (e) => e !== r.emoji,
-                );
-                return { ...c, last_message: { ...c.last_message, reactions: next } };
+                // Clear lastReaction only if it matches the removed reaction.
+                if (
+                  c.lastReaction?.emoji === r.emoji &&
+                  c.last_message?.id === r.message_id
+                ) {
+                  return { ...c, lastReaction: null };
+                }
+                return c;
               }),
             );
           },
