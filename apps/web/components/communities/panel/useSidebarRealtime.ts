@@ -101,12 +101,14 @@ export function useSidebarRealtime({
               applyUpdate(prev, row.community_id, (c) => ({
                 ...c,
                 last_message: {
+                  id:          row.id,
                   content:     row.content,
                   created_at:  row.created_at,
                   user:        knownName ? { name: knownName } : (isOwn ? c.last_message?.user ?? null : null),
                   has_image:   !row.content && !!row.image_url,
                   is_reply:    !!row.reply_to_id,
                   is_deleted:  false,
+                  reactions:   [],
                 },
                 message_count:
                   !isOwn && !isActive
@@ -176,6 +178,58 @@ export function useSidebarRealtime({
                     is_reply:   false,
                   },
                 };
+              }),
+            );
+          },
+        )
+
+        // ── Reaction added ────────────────────────────────────────────────
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "message_reactions",
+            filter: `community_id=eq.${comm.id}`,
+          },
+          (payload) => {
+            const r = payload.new as { message_id: string; emoji: string };
+            setCommunities((prev) =>
+              applyUpdate(prev, comm.id, (c) => {
+                if (!c.last_message || c.last_message.id !== r.message_id) return c;
+                const existing = c.last_message.reactions ?? [];
+                if (existing.includes(r.emoji)) return c;
+                return {
+                  ...c,
+                  last_message: {
+                    ...c.last_message,
+                    reactions: [...existing, r.emoji],
+                  },
+                };
+              }),
+            );
+          },
+        )
+
+        // ── Reaction removed ──────────────────────────────────────────────
+        .on(
+          "postgres_changes",
+          {
+            event: "DELETE",
+            schema: "public",
+            table: "message_reactions",
+            filter: `community_id=eq.${comm.id}`,
+          },
+          (payload) => {
+            const r = payload.old as { message_id?: string; emoji?: string };
+            if (!r.message_id || !r.emoji) return;
+            setCommunities((prev) =>
+              applyUpdate(prev, comm.id, (c) => {
+                if (!c.last_message || c.last_message.id !== r.message_id) return c;
+                const next = (c.last_message.reactions ?? []).filter(
+                  (e) => e !== r.emoji,
+                );
+                return { ...c, last_message: { ...c.last_message, reactions: next } };
               }),
             );
           },

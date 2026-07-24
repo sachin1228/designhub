@@ -118,6 +118,7 @@ export async function GET() {
         last_read_at: lastReadMap[c.id] ?? null,
         last_message: lastMsg
           ? {
+              id: lastMsg.id,
               content: lastMsg.content,
               created_at: lastMsg.created_at,
               user: { name: senderMap[lastMsg.user_id] ?? "Unknown" },

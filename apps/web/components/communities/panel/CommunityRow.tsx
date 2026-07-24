@@ -92,8 +92,8 @@ export function CommunityRow({
                     : "text-foreground-muted"
                 }`}
               >
-                {/* Sender name prefix */}
-                {!c.last_message!.is_deleted && c.last_message!.user && (
+                {/* Sender name prefix — shown for all states including deleted */}
+                {c.last_message!.user && (
                   <span className="font-medium">
                     {c.last_message!.user.name.split(" ")[0]}:{" "}
                   </span>
@@ -105,6 +105,15 @@ export function CommunityRow({
                 No messages yet
               </p>
             )}
+
+            {/* Reaction emojis on the last message */}
+            {!typingText &&
+              c.last_message?.reactions &&
+              c.last_message.reactions.length > 0 && (
+                <span className="text-xs shrink-0 leading-none">
+                  {c.last_message.reactions.slice(0, 3).join("")}
+                </span>
+              )}
 
             {/* Unread badge */}
             {c.message_count > 0 && !active && (

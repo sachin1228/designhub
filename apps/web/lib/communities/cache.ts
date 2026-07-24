@@ -55,6 +55,7 @@ export interface CachedSidebarCommunity {
   message_count: number;
   last_read_at?: string | null;
   last_message: {
+    id: string;
     content: string;
     created_at: string;
     user: { name: string } | null;
@@ -64,6 +65,8 @@ export interface CachedSidebarCommunity {
     has_image?: boolean;
     /** True when the message is a reply to another message. */
     is_reply?: boolean;
+    /** Unique emoji strings that have been reacted to this message. */
+    reactions?: string[];
   } | null;
 }
 
