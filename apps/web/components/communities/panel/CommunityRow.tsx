@@ -15,9 +15,21 @@ function timeAgo(iso: string): string {
   return `${Math.floor(h / 24)}d`;
 }
 
+/** Formats the last-message text shown below the community name. */
+function formatPreview(
+  msg: NonNullable<Community["last_message"]>,
+): { text: string; italic?: boolean } {
+  if (msg.is_deleted) return { text: "Message deleted", italic: true };
+  if (msg.has_image && !msg.content) return { text: "📷 Photo" };
+  const prefix = msg.is_reply ? "↩ " : "";
+  return { text: prefix + (msg.content ?? "") };
+}
+
 interface CommunityRowProps {
   c: Community;
   active: boolean;
+  /** If set, shown instead of the last-message preview. */
+  typingText?: string;
   onClick: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
@@ -26,10 +38,13 @@ interface CommunityRowProps {
 export function CommunityRow({
   c,
   active,
+  typingText,
   onClick,
   onMouseEnter,
   onMouseLeave,
 }: CommunityRowProps) {
+  const preview = c.last_message ? formatPreview(c.last_message) : null;
+
   return (
     <li>
       <button
@@ -50,32 +65,48 @@ export function CommunityRow({
         />
 
         <div className="flex-1 min-w-0">
+          {/* Community name + timestamp */}
           <div className="flex items-center justify-between gap-1 mb-0.5">
             <span className="font-body text-[13px] font-medium truncate text-foreground">
               {c.name}
             </span>
-            {c.last_message && (
+            {c.last_message && !typingText && (
               <span className="font-mono text-xs text-foreground-muted shrink-0">
                 {timeAgo(c.last_message.created_at)}
               </span>
             )}
           </div>
 
+          {/* Preview line */}
           <div className="flex items-center gap-1.5">
-            {c.last_message ? (
-              <p className="font-body text-xs text-foreground-muted truncate flex-1">
-                {c.last_message.user && (
+            {typingText ? (
+              /* Typing indicator — takes priority over last-message preview */
+              <p className="font-body text-xs text-accent truncate flex-1 italic">
+                {typingText}
+              </p>
+            ) : preview ? (
+              <p
+                className={`font-body text-xs truncate flex-1 ${
+                  preview.italic
+                    ? "text-foreground-muted/60 italic"
+                    : "text-foreground-muted"
+                }`}
+              >
+                {/* Sender name prefix */}
+                {!c.last_message!.is_deleted && c.last_message!.user && (
                   <span className="font-medium">
-                    {c.last_message.user.name.split(" ")[0]}:
+                    {c.last_message!.user.name.split(" ")[0]}:{" "}
                   </span>
-                )}{" "}
-                {c.last_message.content}
+                )}
+                {preview.text}
               </p>
             ) : (
               <p className="font-body text-xs text-foreground-muted/60 italic flex-1">
                 No messages yet
               </p>
             )}
+
+            {/* Unread badge */}
             {c.message_count > 0 && !active && (
               <span className="flex items-center justify-center p-1 min-w-[20px] h-[16px] rounded-full bg-green-500 text-white font-mono text-[11px] leading-[10px] font-semibold shrink-0">
                 {c.message_count > 99 ? "99+" : c.message_count}

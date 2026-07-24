@@ -58,6 +58,12 @@ export interface CachedSidebarCommunity {
     content: string;
     created_at: string;
     user: { name: string } | null;
+    /** True when the message was soft-deleted after it became the last preview. */
+    is_deleted?: boolean;
+    /** True when the message is an image-only post (no text content). */
+    has_image?: boolean;
+    /** True when the message is a reply to another message. */
+    is_reply?: boolean;
   } | null;
 }
 
