@@ -39,7 +39,7 @@ export async function GET() {
     // Fetch the latest messages across all communities.
     db
       .from("community_messages")
-      .select("community_id, content, created_at, user_id")
+      .select("id, community_id, content, created_at, user_id")
       .in("community_id", ids)
       .order("created_at", { ascending: false })
       .limit(ids.length * 10),
@@ -54,7 +54,7 @@ export async function GET() {
   }
 
   // 4. Pick the latest message per community AND count unread messages in JS.
-  const lastMsgByComm: Record<string, { community_id: string; content: string; created_at: string; user_id: string }> = {};
+  const lastMsgByComm: Record<string, { id: string; community_id: string; content: string; created_at: string; user_id: string }> = {};
   const msgCountMap: Record<string, number> = {};
   for (const m of recentMessages ?? []) {
     if (!lastMsgByComm[m.community_id]) {
