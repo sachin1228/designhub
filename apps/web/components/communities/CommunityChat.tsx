@@ -372,10 +372,11 @@ export function CommunityChat({
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <ChatHeader community={displayCommunity} />
+    <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <ChatHeader community={displayCommunity} />
 
-      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {/* Scrollable message area */}
           <div
@@ -445,9 +446,10 @@ export function CommunityChat({
           </div>
 
         </div>
-
-        <CommunityInfoPanel members={members} community={displayCommunity} />
+        </div>
       </div>
+
+      <CommunityInfoPanel members={members} community={displayCommunity} />
     </div>
   );
 }
