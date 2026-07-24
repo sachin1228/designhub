@@ -164,9 +164,9 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
 
             {/* Reply preview inside the box */}
             {replyTo && (
-              <div className="flex items-start gap-2 pb-2 mb-1 border-b border-border/40">
+              <div className="flex items-start gap-2 pb-2 mb-1 border-b border-white/5">
                 <CornerUpLeft size={13} className="text-accent mt-0.5 shrink-0" />
-                <div className="flex-1 min-w-0 border-l-2 border-accent pl-2">
+                <div className="flex-1 min-w-0 border-l-2 border-accent pl-2 bg-black/30 rounded-sm">
                   <p className="font-body text-[11px] font-semibold text-accent truncate">
                     {replyTo.user_name}
                   </p>
