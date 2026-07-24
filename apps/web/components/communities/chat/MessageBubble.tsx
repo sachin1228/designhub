@@ -8,7 +8,6 @@ import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communi
 import { LinkPreview } from "./LinkPreview";
 import { extractFirstUrl } from "@/lib/communities/linkPreview";
 
-type MenuPlacement = "above" | "below";
 
 interface MessageBubbleProps {
   msg: CachedMessage;
@@ -245,7 +244,6 @@ function MessageHoverActions({
   insideBubble?: boolean;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>("above");
   const pickerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const myEmoji = msg.reactions?.find((r) => r.user_ids.includes(currentUserId))?.emoji;
@@ -262,56 +260,6 @@ function MessageHoverActions({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [pickerOpen]);
-
-  // Flip the menu to the side with enough room inside the chat viewport.
-  useEffect(() => {
-    if (!showMenu || !menuOpen) return;
-
-    const updateMenuPlacement = () => {
-      const root = menuRef.current;
-      if (!root) return;
-
-      const trigger = root.querySelector<HTMLButtonElement>(
-        '[aria-label="More message actions"]'
-      );
-      const menu = root.querySelector<HTMLElement>('[role="menu"]');
-      if (!trigger || !menu) return;
-
-      const triggerRect = trigger.getBoundingClientRect();
-      const menuRect = menu.getBoundingClientRect();
-      const scrollViewport = root.closest<HTMLElement>(
-        "[data-chat-scroll-container]"
-      );
-      const viewportRect = scrollViewport?.getBoundingClientRect() ?? {
-        top: 0,
-        bottom: window.innerHeight,
-      };
-      const gap = 8;
-      const spaceAbove = triggerRect.top - viewportRect.top;
-      const spaceBelow = viewportRect.bottom - triggerRect.bottom;
-      const fitsAbove = spaceAbove >= menuRect.height + gap;
-      const fitsBelow = spaceBelow >= menuRect.height + gap;
-
-      setMenuPlacement(() => {
-        if (fitsAbove) return "above";
-        if (fitsBelow) return "below";
-        return spaceAbove >= spaceBelow ? "above" : "below";
-      });
-    };
-
-    const frame = requestAnimationFrame(updateMenuPlacement);
-    const scrollViewport = menuRef.current?.closest<HTMLElement>(
-      "[data-chat-scroll-container]"
-    );
-    window.addEventListener("resize", updateMenuPlacement);
-    scrollViewport?.addEventListener("scroll", updateMenuPlacement, true);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("resize", updateMenuPlacement);
-      scrollViewport?.removeEventListener("scroll", updateMenuPlacement, true);
-    };
-  }, [menuOpen, showMenu]);
 
   // Close the action menu when clicking outside or pressing Escape.
   useEffect(() => {
@@ -424,66 +372,63 @@ function MessageHoverActions({
           <ChevronDown size={14} strokeWidth={2.5} />
         </button>
 
-        {menuOpen && (
-          <div
-            className={`
-              absolute z-40 min-w-32
-              ${menuPlacement === "above" ? "bottom-full mb-2" : "top-full mt-2"}
-              right-0
-            `}
-          >
-            <div
-              className="overflow-hidden rounded-xl border border-white/[0.1] bg-surface-raised shadow-2xl"
-              role="menu"
+        {/* Dropdown — always mounted, animated like profile dropdown */}
+        <div
+          className={`absolute top-full mt-1 right-0 z-40 min-w-[9rem] rounded-xl bg-surface border border-border shadow-lg overflow-hidden origin-top-right transform transition ${
+            menuOpen
+              ? "opacity-100 scale-100 ease-out duration-100 pointer-events-auto"
+              : "opacity-0 scale-95 ease-in duration-75 pointer-events-none"
+          }`}
+          role="menu"
+        >
+          <div className="py-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReply(msg);
+                onMenuOpenChange(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left font-body text-sm text-foreground-muted hover:text-foreground hover:bg-surface-raised/50 transition-colors"
+              role="menuitem"
             >
+              <Reply size={14} className="shrink-0" />
+              <span>Reply</span>
+            </button>
+
+            {canCopy && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onReply(msg);
+                  onCopy(msg);
                   onMenuOpenChange(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-white/[0.08] transition-colors"
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left font-body text-sm text-foreground-muted hover:text-foreground hover:bg-surface-raised/50 transition-colors"
                 role="menuitem"
               >
-                <Reply size={14} className="text-foreground-muted shrink-0" />
-                <span>Reply</span>
+                <Copy size={14} className="shrink-0" />
+                <span>Copy</span>
               </button>
+            )}
 
-              {canCopy && (
+            {isMe && (
+              <>
+                <div className="h-px bg-border mx-2" role="separator" />
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onCopy(msg);
+                    onDeleteClick();
                     onMenuOpenChange(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-white/[0.08] transition-colors"
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left font-body text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                   role="menuitem"
                 >
-                  <Copy size={14} className="text-foreground-muted shrink-0" />
-                  <span>Copy</span>
+                  <Trash2 size={14} className="shrink-0" />
+                  <span>Delete</span>
                 </button>
-              )}
-
-              {isMe && (
-                <>
-                  <div className="h-px bg-white/[0.08]" role="separator" />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteClick();
-                      onMenuOpenChange(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors"
-                    role="menuitem"
-                  >
-                    <Trash2 size={14} className="shrink-0" />
-                    <span>Delete</span>
-                  </button>
-                </>
-              )}
-            </div>
+              </>
+            )}
           </div>
-        )}
+        </div>
       </div>
       )}
     </div>
