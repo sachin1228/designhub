@@ -35,10 +35,10 @@ export function DashboardTopNav() {
         href="/dashboard"
         prefetch={true}
         onClick={() => setPendingHref("/dashboard")}
-        className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border text-[12px] font-medium transition-all ${
+        className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
           homeActive
-            ? "bg-accent/10 border-accent/40 text-accent"
-            : "border-border text-foreground-muted hover:text-foreground hover:bg-surface-raised hover:border-border"
+            ? "bg-surface-raised text-accent"
+            : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
         }`}
       >
         {/* d/ logo mark */}
