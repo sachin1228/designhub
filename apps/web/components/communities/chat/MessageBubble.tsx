@@ -696,7 +696,7 @@ export function MessageBubble({
         )}
         <div
           data-message-id={msg.id}
-          className={`flex flex-col items-end w-full px-5 transition-colors duration-300 ${rowHighlight} ${
+          className={`group flex flex-col items-end w-full px-5 transition-colors duration-300 ${rowHighlight} ${
             isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
           }`}
         >
@@ -712,7 +712,7 @@ export function MessageBubble({
                 </div>
               ) : isEmojiMsg ? (
                 /* ── Big emoji (WhatsApp-style) — no bubble background ── */
-                <div className="group flex items-center gap-1 justify-end">
+                <div className="flex items-center gap-1 justify-end">
                   <MessageHoverActions
                     msg={msg}
                     isMe
@@ -747,8 +747,7 @@ export function MessageBubble({
                   </div>
                 </div>
               ) : (
-                /* group scoped here — hover only triggers on [actions + bubble], not the full row */
-                <div className="group flex items-center gap-1 justify-end">
+                <div className="flex items-center gap-1 justify-end">
                   {/* Actions sit to the LEFT of sent bubbles */}
                   <MessageHoverActions
                     msg={msg}
@@ -844,7 +843,7 @@ export function MessageBubble({
       )}
       <div
         data-message-id={msg.id}
-        className={`flex items-start gap-2 w-full px-5 transition-colors duration-300 ${rowHighlight} ${
+        className={`group flex items-start gap-2 w-full px-5 transition-colors duration-300 ${rowHighlight} ${
           isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
         }`}
       >
@@ -864,7 +863,7 @@ export function MessageBubble({
             <DeletedBubble isMe={false} createdAt={msg.created_at} />
           ) : isEmojiMsg ? (
             /* ── Big emoji (WhatsApp-style) — no bubble background ── */
-            <div className="group flex items-center gap-1">
+            <div className="flex items-center gap-1">
               <div className="relative">
                 <div className="flex flex-col items-start select-none">
                   <span style={{ fontSize: EMOJI_MESSAGE_SIZE, lineHeight: 1.1 }}>{msg.content}</span>
@@ -888,8 +887,7 @@ export function MessageBubble({
               />
             </div>
           ) : (
-            /* group scoped here — hover only triggers on [bubble + actions], not the full row */
-            <div className="group flex items-center gap-1">
+            <div className="flex items-center gap-1">
               <div className="relative min-w-0">
                 <div className={`relative rounded-2xl rounded-tl-sm bg-surface-raised shadow-sm px-3 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
                   menuOpen ? "ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" : ""
