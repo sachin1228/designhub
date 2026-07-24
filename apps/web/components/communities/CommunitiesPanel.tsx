@@ -30,7 +30,7 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
     <div className="flex flex-col h-full w-80 shrink-0 border-r border-border bg-surface">
       <button
         onClick={() => router.push("/dashboard/communities")}
-        className={`flex items-center gap-2 mx-3 mt-3 mb-1 px-3 py-2.5 rounded-lg font-body text-sm font-medium transition-colors text-left ${
+        className={`flex items-center gap-2 mx-3 mt-3 mb-1 px-3 py-2 rounded-lg font-body text-xs font-medium transition-colors text-left ${
           pathname === "/dashboard/communities"
             ? "bg-accent/10 text-accent"
             : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"

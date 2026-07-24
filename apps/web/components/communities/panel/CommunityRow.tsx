@@ -77,7 +77,7 @@ export function CommunityRow({
         <div className="flex-1 min-w-0">
           {/* Community name + timestamp */}
           <div className="flex items-center justify-between gap-1 mb-0.5">
-            <span className="font-body text-[15px] font-medium truncate text-foreground">
+            <span className="font-body text-[14px] font-medium truncate text-foreground">
               {c.name}
             </span>
             {c.last_message && !typingText && (
