@@ -7,7 +7,7 @@ import type { CachedMessage, CachedMeta, MessageReaction, ReplyPreview } from "@
 import { fmtDate } from "./chat/chatUtils";
 import { ChatHeader } from "./chat/ChatHeader";
 import { ChatInput } from "./chat/ChatInput";
-import { MembersPanel } from "./chat/MembersPanel";
+import { CommunityInfoPanel } from "./chat/CommunityInfoPanel";
 import { MessageList } from "./chat/MessageList";
 import { useChatData } from "./chat/useChatData";
 import { useScrollAndUnread } from "./chat/useScrollAndUnread";
@@ -446,7 +446,7 @@ export function CommunityChat({
 
         </div>
 
-        <MembersPanel members={members} />
+        <CommunityInfoPanel members={members} community={displayCommunity} />
       </div>
     </div>
   );
