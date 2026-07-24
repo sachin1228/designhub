@@ -64,7 +64,7 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
                 All
               </span>
             </div>
-            <ul className="space-y-0.5">
+            <ul className="space-y-1">
               {sorted.map((c) => (
                 <CommunityRow
                   key={c.id}
