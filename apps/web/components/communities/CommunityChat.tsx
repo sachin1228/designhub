@@ -411,22 +411,19 @@ export function CommunityChat({
             />
           </div>
 
+          {/* Scroll-to-bottom button — positioned relative to the scroll container */}
+          {showScrollToBottom && (
+            <button
+              onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+              className="absolute bottom-20 right-4 z-20 h-8 w-8 flex items-center justify-center rounded-full bg-surface-raised shadow-lg border border-border text-foreground-muted hover:text-foreground transition-colors"
+              aria-label="Scroll to bottom"
+            >
+              <ChevronDown size={16} />
+            </button>
+          )}
+
           {/* Floating input — sits above the scroll area */}
           <div className="absolute bottom-0 left-0 right-0 z-10">
-            {/* Gradient fade so messages dissolve into the input bar */}
-            <div className="h-10 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-
-            {/* Scroll-to-bottom button */}
-            {showScrollToBottom && (
-              <button
-                onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
-                className="absolute bottom-[calc(100%-8px)] right-4 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-surface-raised shadow-lg border border-border text-foreground-muted hover:text-foreground transition-colors"
-                aria-label="Scroll to bottom"
-              >
-                <ChevronDown size={16} />
-              </button>
-            )}
-
             <div className="bg-black/40 backdrop-blur-sm">
               <ChatInput
                 ref={inputRef}
