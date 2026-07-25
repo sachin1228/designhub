@@ -1,2 +1,3 @@
 - [Profile page migration](profile-page-migration.md) — linkedin_url, portfolio_url, bio must be added to designer_profiles via migration before profile page works.
 - [Realtime sidebar previews](realtime-sidebar-previews.md) — reaction previews need message identity and event ordering to stay correct across messages.
+- [Imported dependency verification](imported-dependency-verification.md) — local package installation can rewrite manifests and generated Next files; restore unrelated changes before committing.
