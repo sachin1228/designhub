@@ -45,21 +45,21 @@ export function GlobalSidebar({ userId }: Props) {
   return (
     <aside className="h-full w-56 shrink-0 border-r border-border bg-background overflow-y-auto">
       {/* WORKSPACE nav */}
-      <div className="px-3 pt-2 pb-2 shrink-0">
-        <p className="px-2 mb-1.5 font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
+      <div className="px-4 pt-5 pb-3">
+        <p className="px-1 mb-3 font-body text-[11px] font-semibold uppercase tracking-widest text-foreground-muted">
           Workspace
         </p>
-        <ul className="space-y-0.5">
+        <ul className="space-y-1">
           <li>
             <Link
               href="/dashboard"
-              className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg font-body text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-body text-sm font-medium transition-colors ${
                 homeActive
                   ? "bg-surface-raised text-foreground"
                   : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
               }`}
             >
-              <Home size={15} className="shrink-0" />
+              <Home size={17} className="shrink-0" />
               <span className="flex-1 truncate">Home</span>
               {homeActive && (
                 <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
@@ -69,13 +69,13 @@ export function GlobalSidebar({ userId }: Props) {
           <li>
             <Link
               href="/dashboard/communities"
-              className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg font-body text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-body text-sm font-medium transition-colors ${
                 exploreActive
                   ? "bg-surface-raised text-foreground"
                   : "text-foreground-muted hover:text-foreground hover:bg-surface-raised"
               }`}
             >
-              <Users size={15} className="shrink-0" />
+              <Users size={17} className="shrink-0" />
               <span className="flex-1 truncate">Explore Communities</span>
             </Link>
           </li>
