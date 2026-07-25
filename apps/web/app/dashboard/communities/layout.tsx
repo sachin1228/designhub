@@ -1,18 +1,11 @@
-import { getSession } from "@/lib/auth/session";
-import { CommunitiesPanel } from "@/components/communities/CommunitiesPanel";
-
 export default async function CommunitiesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
-  const userId = (session as { userId?: string } | null)?.userId ?? "";
-
   return (
-    <div className="-mx-8 -my-8 flex overflow-hidden" style={{ height: "calc(100vh - 48px)" }}>
-      <CommunitiesPanel userId={userId} />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {children}
       </div>
     </div>

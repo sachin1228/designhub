@@ -62,10 +62,10 @@ export default async function DashboardLayout({
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <DashboardSidebar />
+        <DashboardSidebar userId={session.userId!} />
 
         {/* Page content */}
-        <main className="min-w-0 flex-1 px-8 py-8">
+        <main className="flex min-w-0 flex-1 flex-col px-8 py-8">
           {children}
         </main>
       </div>

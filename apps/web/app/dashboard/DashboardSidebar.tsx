@@ -3,6 +3,7 @@
 import { House, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CommunitiesPanel } from "@/components/communities/CommunitiesPanel";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Home", icon: House },
@@ -15,11 +16,11 @@ function isActive(href: string, pathname: string) {
     : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ userId }: { userId: string }) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-background px-4 py-5">
+    <aside className="flex w-72 min-h-0 shrink-0 flex-col border-r border-border bg-background px-4 py-5">
       <div className="px-3 pb-7">
         <span className="font-display text-lg font-semibold tracking-tight text-foreground">
           drafthub <span className="text-accent">/</span>
@@ -59,10 +60,8 @@ export function DashboardSidebar() {
         })}
       </nav>
 
-      <div className="mt-8 border-t border-border pt-5">
-        <p className="px-3 font-body text-xs leading-relaxed text-foreground-subtle">
-          Share work, connect with creatives, and discover new opportunities.
-        </p>
+      <div className="mt-5 flex min-h-0 flex-1 flex-col border-t border-border pt-4">
+        <CommunitiesPanel userId={userId} embedded />
       </div>
     </aside>
   );

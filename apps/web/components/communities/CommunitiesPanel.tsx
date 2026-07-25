@@ -5,7 +5,13 @@ import { Spinner } from "@/components/ui/Spinner";
 import { CommunityRow } from "./panel/CommunityRow";
 import { useSidebarCommunities } from "./panel/useSidebarCommunities";
 
-export function CommunitiesPanel({ userId }: { userId: string }) {
+export function CommunitiesPanel({
+  userId,
+  embedded = false,
+}: {
+  userId: string;
+  embedded?: boolean;
+}) {
   const {
     communities,
     loading,
@@ -27,7 +33,12 @@ export function CommunitiesPanel({ userId }: { userId: string }) {
   });
 
   return (
-    <div className="flex flex-col h-full w-72 shrink-0 border-r border-border">
+    <div
+      className={[
+        "flex min-h-0 flex-col",
+        embedded ? "h-full w-full" : "h-full w-72 shrink-0 border-r border-border",
+      ].join(" ")}
+    >
       <button
         onClick={() => router.push("/dashboard/communities")}
         className={`flex items-center gap-2 mx-3 mt-3 mb-1 px-3 py-2 rounded-lg font-body text-xs font-medium transition-colors text-left ${
