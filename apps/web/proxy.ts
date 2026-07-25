@@ -30,20 +30,10 @@ async function fetchUserStatus(
   }
 }
 
-// Origins allowed to call the API cross-origin (local dev + Replit).
-const ALLOWED_ORIGINS = [
-  "http://localhost:8081",
-  "http://localhost:3000",
-  "http://127.0.0.1:8081",
-  "http://127.0.0.1:3000",
-];
-
-function corsHeaders(origin: string | null) {
-  const allowed =
-    origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+// Uses * because the mobile app authenticates via Bearer token, not cookies.
+function corsHeaders() {
   return {
-    "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type,Authorization",
   };
@@ -54,18 +44,20 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ── CORS pre-flight ───────────────────────────────────────────────────────
+  // Respond to OPTIONS before the request reaches any route handler.
+  // next.config.js headers() adds CORS headers to all non-OPTIONS responses,
+  // so we only need to handle OPTIONS here — no duplication.
   if (pathname.startsWith("/api/") && request.method === "OPTIONS") {
     return new NextResponse(null, {
       status: 204,
-      headers: corsHeaders(request.headers.get("origin")),
+      headers: corsHeaders(),
     });
   }
 
   // ── Mobile / Bearer-token support ────────────────────────────────────────
+  // Inject the Bearer token as a session cookie so route handlers that read
+  // from cookies work without modification.
   if (pathname.startsWith("/api/")) {
-    const origin = request.headers.get("origin");
-    const cors = corsHeaders(origin);
-
     const authHeader = request.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
       const bearerToken = authHeader.slice(7);
@@ -76,15 +68,10 @@ export async function proxy(request: NextRequest) {
         "cookie",
         `${existingCookies}${cookieSep}${SESSION_COOKIE}=${bearerToken}`
       );
-      const res = NextResponse.next({ request: { headers: requestHeaders } });
-      Object.entries(cors).forEach(([k, v]) => res.headers.set(k, v));
-      return res;
+      return NextResponse.next({ request: { headers: requestHeaders } });
     }
-
-    // No Bearer token — still attach CORS headers to the response.
-    const res = NextResponse.next();
-    Object.entries(cors).forEach(([k, v]) => res.headers.set(k, v));
-    return res;
+    // No Bearer token — let next.config.js headers() handle CORS on the response.
+    return NextResponse.next();
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
