@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { sidebarStore, msgCache } from "@/lib/communities/cache";
 import type { CachedMessage, CachedMeta, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
 import { fmtDate } from "./chat/chatUtils";
-import { ChatHeader } from "./chat/ChatHeader";
+import { ChatHeader, type ChatTab } from "./chat/ChatHeader";
 import { ChatInput } from "./chat/ChatInput";
 import { CommunityInfoPanel } from "./chat/CommunityInfoPanel";
 import { MessageList } from "./chat/MessageList";
@@ -38,6 +38,7 @@ export function CommunityChat({
   initialLastReadAt?: string | null;
 }) {
   const [hasMounted, setHasMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState<ChatTab>("chat");
   useIsomorphicLayoutEffect(() => { setHasMounted(true); }, []);
 
   // ── Highlighted message state (scroll-to-reply) — handler defined after scrollContainerRef ──
@@ -373,10 +374,21 @@ export function CommunityChat({
   return (
     <div className="flex-1 flex overflow-hidden">
       <div className="flex-1 flex flex-col overflow-hidden">
-        <ChatHeader community={displayCommunity} />
+        <ChatHeader
+          community={displayCommunity}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
 
-        <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-hidden relative">
+        {activeTab === "threads" ? (
+          <div className="flex-1 overflow-y-auto p-6">
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              Threads
+            </h2>
+          </div>
+        ) : (
+          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 overflow-hidden relative">
           {/* Scrollable message area — full height, padded at bottom so messages
               don't hide behind the floating input bar.                           */}
           <div
@@ -448,6 +460,7 @@ export function CommunityChat({
 
         </div>
         </div>
+        )}
       </div>
 
       <CommunityInfoPanel members={members} community={displayCommunity} />

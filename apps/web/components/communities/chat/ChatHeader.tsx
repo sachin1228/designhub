@@ -13,47 +13,78 @@ interface Community {
 
 interface ChatHeaderProps {
   community: Community | null;
+  activeTab: ChatTab;
+  onTabChange: (tab: ChatTab) => void;
 }
 
-export function ChatHeader({ community }: ChatHeaderProps) {
+export type ChatTab = "chat" | "threads";
+
+export function ChatHeader({
+  community,
+  activeTab,
+  onTabChange,
+}: ChatHeaderProps) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
+    <div className="px-5 pt-3 border-b border-border shrink-0">
       {community ? (
         <>
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-surface-raised flex items-center justify-center text-sm shrink-0 overflow-hidden">
-              {community.image_url ? (
-                <img
-                  src={community.image_url}
-                  alt={community.name}
-                  className="h-9 w-9 rounded-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    e.currentTarget.parentElement!.textContent =
-                      TYPE_EMOJI[community.type] ?? "💬";
-                  }}
-                />
-              ) : (
-                TYPE_EMOJI[community.type] ?? "💬"
-              )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-surface-raised flex items-center justify-center text-sm shrink-0 overflow-hidden">
+                {community.image_url ? (
+                  <img
+                    src={community.image_url}
+                    alt={community.name}
+                    className="h-9 w-9 rounded-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      e.currentTarget.parentElement!.textContent =
+                        TYPE_EMOJI[community.type] ?? "💬";
+                    }}
+                  />
+                ) : (
+                  TYPE_EMOJI[community.type] ?? "💬"
+                )}
+              </div>
+              <div>
+                <h3 className="font-display text-sm font-semibold text-foreground leading-none">
+                  {community.name}
+                </h3>
+                <p className="font-body text-[11px] text-foreground-muted mt-0.5 flex items-center gap-1">
+                  <Users size={10} /> {community.member_count} member
+                  {community.member_count !== 1 ? "s" : ""}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-display text-sm font-semibold text-foreground leading-none">
-                {community.name}
-              </h3>
-              <p className="font-body text-[11px] text-foreground-muted mt-0.5 flex items-center gap-1">
-                <Users size={10} /> {community.member_count} member
+            <div className="flex items-center gap-2">
+              <Users size={14} className="text-foreground-muted" />
+              <span className="font-body text-xs text-foreground-muted">
+                {community.member_count} member
                 {community.member_count !== 1 ? "s" : ""}
-              </p>
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Users size={14} className="text-foreground-muted" />
-            <span className="font-body text-xs text-foreground-muted">
-              {community.member_count} member
-              {community.member_count !== 1 ? "s" : ""}
-            </span>
-          </div>
+          <nav className="flex items-center gap-5 mt-3" aria-label="Community views">
+            {([
+              ["chat", "Chat"],
+              ["threads", "Threads"],
+            ] as const).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                onClick={() => onTabChange(tab)}
+                className={`border-b-2 pb-2 font-body text-sm transition-colors ${
+                  activeTab === tab
+                    ? "border-accent text-foreground"
+                    : "border-transparent text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
         </>
       ) : (
         /* Skeleton header while loading */
