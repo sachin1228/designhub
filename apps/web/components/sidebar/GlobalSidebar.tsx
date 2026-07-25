@@ -43,7 +43,7 @@ export function GlobalSidebar({ userId }: Props) {
   const exploreActive = pathname === "/dashboard/communities";
 
   return (
-    <aside className="flex flex-col h-full w-56 shrink-0 border-r border-border bg-background overflow-hidden">
+    <aside className="h-full w-56 shrink-0 border-r border-border bg-background overflow-y-auto">
       {/* WORKSPACE nav */}
       <div className="px-3 pt-2 pb-2 shrink-0">
         <p className="px-2 mb-1.5 font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
@@ -86,7 +86,7 @@ export function GlobalSidebar({ userId }: Props) {
       <div className="mx-3 h-px bg-border shrink-0" />
 
       {/* ALL — community list */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div>
         {loading ? (
           <div className="flex justify-center py-12">
             <Spinner className="h-4 w-4 text-foreground-muted" />
