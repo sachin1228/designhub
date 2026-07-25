@@ -31,14 +31,44 @@ async function fetchUserStatus(
   }
 }
 
+// Origins that are allowed to call the API cross-origin (local dev only).
+const DEV_ORIGINS = [
+  "http://localhost:8081",
+  "http://localhost:3000",
+  "http://127.0.0.1:8081",
+  "http://127.0.0.1:3000",
+];
+
+function corsHeaders(origin: string | null) {
+  const allowed =
+    origin && DEV_ORIGINS.includes(origin) ? origin : DEV_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  };
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ── CORS pre-flight ───────────────────────────────────────────────────────
+  if (pathname.startsWith("/api/") && request.method === "OPTIONS") {
+    return new NextResponse(null, {
+      status: 204,
+      headers: corsHeaders(request.headers.get("origin")),
+    });
+  }
 
   // ── Mobile / Bearer-token support ────────────────────────────────────────
   // If the client sends `Authorization: Bearer <jwt>` (e.g. the React Native
   // app), inject it as the session cookie so all existing API route handlers
   // that read from cookies work without modification.
   if (pathname.startsWith("/api/")) {
+    const origin = request.headers.get("origin");
+    const cors = corsHeaders(origin);
+
     const authHeader = request.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
       const bearerToken = authHeader.slice(7);
@@ -49,8 +79,15 @@ export async function middleware(request: NextRequest) {
         "cookie",
         `${existingCookies}${cookieSep}${SESSION_COOKIE}=${bearerToken}`
       );
-      return NextResponse.next({ request: { headers: requestHeaders } });
+      const res = NextResponse.next({ request: { headers: requestHeaders } });
+      Object.entries(cors).forEach(([k, v]) => res.headers.set(k, v));
+      return res;
     }
+
+    // No Bearer token — still attach CORS headers to the response
+    const res = NextResponse.next();
+    Object.entries(cors).forEach(([k, v]) => res.headers.set(k, v));
+    return res;
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
