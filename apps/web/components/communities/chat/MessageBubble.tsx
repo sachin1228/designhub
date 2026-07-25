@@ -580,7 +580,7 @@ export function MessageBubble({
   function handleRowMouseMove(e: React.MouseEvent) {
     if (!bubbleRef.current) return;
     const r = bubbleRef.current.getBoundingClientRect();
-    const withinX = e.clientX >= r.right - 120 && e.clientX <= r.right + 120;
+    const withinX = e.clientX >= r.right - 150 && e.clientX <= r.right + 150;
     const withinY = e.clientY >= r.top - 4 && e.clientY <= r.bottom + 4;
     setNearBubble(withinX && withinY);
   }
