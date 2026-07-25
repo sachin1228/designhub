@@ -11,7 +11,9 @@ import { ProfileHero } from "./components/ProfileHero";
 import { ProfileIdentity } from "./components/ProfileIdentity";
 import { ProfileLinks } from "./components/ProfileLinks";
 import { ProfileInterests } from "./components/ProfileInterests";
+import { ProfileThreads } from "./components/ProfileThreads";
 import { AvatarPickerModal } from "./components/AvatarPickerModal";
+import type { ProfileThread } from "@/components/communities/threads/types";
 
 interface Props {
   initialName: string;
@@ -28,6 +30,7 @@ interface Props {
   initialBio: string;
   initialInterestIds: string[];
   allInterests: { id: string; name: string; image_url?: string | null }[];
+  initialThreads: ProfileThread[];
 }
 
 export function ProfileClient({
@@ -35,6 +38,7 @@ export function ProfileClient({
   city, company, sector, experienceLevel,
   initialLinkedIn, initialPortfolio, initialBio,
   initialInterestIds, allInterests,
+  initialThreads,
 }: Props) {
   const router = useRouter();
 
@@ -273,6 +277,8 @@ export function ProfileClient({
         interestIds={interestIds}
         onChange={setInterestIds}
       />
+
+      <ProfileThreads initialThreads={initialThreads} />
 
       {/* Sticky save bar */}
       {hasChanges && (

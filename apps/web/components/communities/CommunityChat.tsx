@@ -9,6 +9,7 @@ import { ChatHeader, type ChatTab } from "./chat/ChatHeader";
 import { ChatInput } from "./chat/ChatInput";
 import { CommunityInfoPanel } from "./chat/CommunityInfoPanel";
 import { MessageList } from "./chat/MessageList";
+import { ThreadsView } from "./threads/ThreadsView";
 import { useChatData } from "./chat/useChatData";
 import { useScrollAndUnread } from "./chat/useScrollAndUnread";
 import { useRealtimeChat } from "./chat/useRealtimeChat";
@@ -381,11 +382,7 @@ export function CommunityChat({
         />
 
         {activeTab === "threads" ? (
-          <div className="flex-1 overflow-y-auto p-6">
-            <h2 className="font-display text-lg font-semibold text-foreground">
-              Threads
-            </h2>
-          </div>
+          <ThreadsView communityId={communityId} />
         ) : (
           <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-hidden relative">
