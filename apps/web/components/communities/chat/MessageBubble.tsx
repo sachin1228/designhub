@@ -357,14 +357,14 @@ function MessageHoverActions({
             transition-all duration-150
             ${isMe
               ? menuOpen
-                ? "bg-black/40 text-white"
+                ? "bg-black/30 text-white"
                 : insideBubble
-                  ? "group-hover:bg-black/30 group-hover:text-white hover:bg-black/40 text-white/80"
+                  ? "bg-black/15 text-white/80 hover:bg-black/25 hover:text-white"
                   : "text-white/90 hover:text-white hover:bg-white/15"
               : menuOpen
-                ? "bg-white/20 text-foreground"
+                ? "bg-white/15 text-foreground"
                 : insideBubble
-                  ? "group-hover:bg-white/15 group-hover:text-foreground hover:bg-white/25 text-foreground/60"
+                  ? "bg-white/10 text-foreground/70 hover:bg-white/20 hover:text-foreground"
                   : "text-foreground/80 hover:text-foreground hover:bg-white/10"
             }
           `}
