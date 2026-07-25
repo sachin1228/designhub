@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
+import { optionsResponse } from "@/lib/cors";
+
+export function OPTIONS() { return optionsResponse(); }
 
 /**
  * PATCH /api/communities/[id]/read

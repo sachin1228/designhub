@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession, clearSessionCookie } from "@/lib/auth/session";
+import { optionsResponse } from "@/lib/cors";
+
+export function OPTIONS() { return optionsResponse(); }
 
 export async function POST() {
   // M-6: Only clear the cookie when a valid session actually exists.

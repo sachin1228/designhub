@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession, clearSessionCookie } from "@/lib/auth/session";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimit } from "@/lib/auth/rate-limit";
+import { optionsResponse } from "@/lib/cors";
+
+export function OPTIONS() { return optionsResponse(); }
 
 export async function GET(request: NextRequest) {
   // L-7: Rate-limit /me to prevent aggressive polling from hammering the DB

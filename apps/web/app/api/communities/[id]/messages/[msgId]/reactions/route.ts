@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
 import type { MessageReaction } from "@/lib/communities/cache";
+import { optionsResponse } from "@/lib/cors";
+
+export function OPTIONS() { return optionsResponse(); }
 
 interface Params {
   params: Promise<{ id: string; msgId: string }>;

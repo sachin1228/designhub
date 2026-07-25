@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
 import { getMasterImageMap, TABLE_LOOKUP } from "@/lib/master-data-cache";
+import { optionsResponse } from "@/lib/cors";
+
+export function OPTIONS() { return optionsResponse(); }
 
 export async function GET() {
   let session;

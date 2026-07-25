@@ -12,10 +12,16 @@ async function request<T>(
     ...(options.headers ?? {}),
   };
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  const url = `${API_BASE_URL}${path}`;
+  console.log(`[api] ${options.method ?? "GET"} ${url}`);
+
+  let res: Response;
+  try {
+    res = await fetch(url, { ...options, headers });
+  } catch (err) {
+    console.error(`[api] fetch threw — URL: ${url}`, err);
+    throw err;
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

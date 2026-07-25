@@ -4,6 +4,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { loginSchema } from "@/lib/validations";
 import { createSession, setSessionCookie } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/auth/rate-limit";
+import { optionsResponse } from "@/lib/cors";
+
+export function OPTIONS() { return optionsResponse(); }
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for") ?? "unknown";

@@ -1,8 +1,9 @@
 // Fill in your values in apps/mobile/.env or as EXPO_PUBLIC_ env vars.
 // See .env.example for the full list.
 
+// Use || not ?? so an empty string env var also falls back to the default.
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
+  process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
 export const SUPABASE_URL =
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
