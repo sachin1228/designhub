@@ -83,7 +83,7 @@ export function GlobalSidebar({ userId }: Props) {
       </div>
 
       {/* Separator */}
-      <div className="mx-3 h-px bg-border shrink-0" />
+      <div className="mx-4 my-2 h-px bg-border" />
 
       {/* ALL — community list */}
       <div>
@@ -100,13 +100,13 @@ export function GlobalSidebar({ userId }: Props) {
             <p className="font-body text-xs text-foreground-muted">No communities yet</p>
           </div>
         ) : (
-          <div className="py-0.5">
-            <div className="px-3 pt-3 pb-0.5">
-              <span className="font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
+          <div>
+            <div className="px-5 pt-3 pb-2">
+              <span className="font-body text-[11px] font-semibold uppercase tracking-widest text-foreground-muted">
                 All
               </span>
             </div>
-            <ul className="space-y-0.5">
+            <ul className="space-y-0.5 px-3">
               {sorted.map((c) => (
                 <CommunityRow
                   key={c.id}
