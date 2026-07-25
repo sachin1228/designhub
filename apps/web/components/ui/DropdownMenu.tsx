@@ -1,16 +1,19 @@
 "use client";
 
 /**
- * Portal-based dropdown menu.
+ * Portal-based dropdown menu — SSR-safe.
  *
  * Renders children into document.body via createPortal so the menu is never
- * clipped by a parent's stacking context (no more z-index battles or sibling
- * elements bleeding through). Positions itself with `position: fixed` derived
- * from the trigger element's bounding rect, so it always floats above
- * everything at z-[9999].
+ * clipped by a parent's stacking context (no z-index battles). Positions
+ * itself with `position: fixed` derived from the trigger element's bounding
+ * rect and sits at z-[9999].
+ *
+ * SSR safety: nothing is rendered until after the first client-side paint
+ * (mounted state), and the portal is fully unmounted when closed — no
+ * show/hide toggling that would cause hydration mismatches.
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface DropdownMenuProps {
@@ -36,6 +39,9 @@ export function DropdownMenu({
   className = "",
 }: DropdownMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  // Only render on the client — prevents SSR/hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   /** Reposition the menu relative to the trigger. */
   const reposition = useCallback(() => {
@@ -56,7 +62,7 @@ export function DropdownMenu({
   /* Reposition whenever the menu opens or the viewport scrolls/resizes. */
   useEffect(() => {
     if (!open) return;
-    // Wait one frame so the portal node is in the DOM before measuring.
+    // One frame so the portal node is in the DOM before measuring.
     const raf = requestAnimationFrame(reposition);
     window.addEventListener("scroll", reposition, true);
     window.addEventListener("resize", reposition);
@@ -87,22 +93,17 @@ export function DropdownMenu({
     };
   }, [open, onClose, triggerRef]);
 
-  if (typeof document === "undefined") return null;
+  // Nothing on the server or when closed — mount/unmount keeps React's
+  // server and client HTML in sync and avoids parentNode removal errors.
+  if (!mounted || !open) return null;
 
   return createPortal(
     <div
       ref={menuRef}
       role="menu"
-      style={{
-        position: "fixed",
-        zIndex: 9999,
-        // Hidden until reposition() fires so it doesn't flash at 0,0.
-        visibility: open ? "visible" : "hidden",
-        pointerEvents: open ? "auto" : "none",
-      }}
+      style={{ position: "fixed", zIndex: 9999 }}
       className={`min-w-[8rem] rounded-xl bg-surface-raised border border-white/[0.1] shadow-2xl overflow-hidden
-        transition-[opacity,transform] duration-100 origin-top-right
-        ${open ? "opacity-100 scale-100" : "opacity-0 scale-95"}
+        animate-in fade-in zoom-in-95 duration-100 origin-top-right
         ${className}`}
     >
       {children}
