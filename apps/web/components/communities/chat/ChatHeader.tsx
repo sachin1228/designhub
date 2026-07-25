@@ -1,6 +1,6 @@
 "use client";
 
-import { Users } from "lucide-react";
+import { MessageCircle, MessagesSquare, Users } from "lucide-react";
 import { TYPE_EMOJI } from "./chatUtils";
 
 interface Community {
@@ -66,9 +66,9 @@ export function ChatHeader({
           </div>
           <nav className="flex items-center gap-5 mt-3" aria-label="Community views">
             {([
-              ["chat", "Chat"],
-              ["threads", "Threads"],
-            ] as const).map(([tab, label]) => (
+              ["chat", "Chat", MessageCircle],
+              ["threads", "Threads", MessagesSquare],
+            ] as const).map(([tab, label, Icon]) => (
               <button
                 key={tab}
                 type="button"
@@ -81,7 +81,10 @@ export function ChatHeader({
                     : "border-transparent text-foreground-muted hover:text-foreground"
                 }`}
               >
-                {label}
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon size={14} aria-hidden="true" />
+                  {label}
+                </span>
               </button>
             ))}
           </nav>
