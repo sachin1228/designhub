@@ -77,6 +77,9 @@ export function GlobalSidebar({ userId }: Props) {
             >
               <Users size={17} className="shrink-0" />
               <span className="flex-1 truncate">Explore Communities</span>
+              {exploreActive && (
+                <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
+              )}
             </Link>
           </li>
         </ul>
