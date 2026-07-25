@@ -354,14 +354,18 @@ function MessageHoverActions({
           className={`
             w-7 h-7 rounded-full flex items-center justify-center
             ${insideBubble ? "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto" : ""}
-            transition-colors duration-100
+            transition-all duration-150
             ${isMe
               ? menuOpen
-                ? "bg-white/20 text-white"
-                : "text-white/90 hover:text-white hover:bg-white/15"
+                ? "bg-black/40 text-white"
+                : insideBubble
+                  ? "text-white/70 group-hover:bg-black/[0.28] group-hover:text-white/90 hover:bg-black/[0.40] hover:text-white"
+                  : "text-white/90 hover:text-white hover:bg-white/15"
               : menuOpen
-                ? "bg-black/10 text-foreground dark:bg-white/15"
-                : "text-foreground/80 hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
+                ? "bg-white/[0.18] text-foreground"
+                : insideBubble
+                  ? "text-foreground/60 group-hover:bg-white/[0.14] group-hover:text-foreground/80 hover:bg-white/[0.22] hover:text-foreground"
+                  : "text-foreground/80 hover:text-foreground hover:bg-white/10"
             }
           `}
           aria-label="More message actions"
