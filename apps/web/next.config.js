@@ -11,21 +11,6 @@ const nextConfig = {
   transpilePackages: ["@draft/shared", "@draft/design-system"],
   allowedDevOrigins: ["*.replit.dev", "*.pike.replit.dev", "*.sisko.replit.dev", "127.0.0.1"],
 
-  // Allow the Expo web app (localhost:8081) to call the API cross-origin during local dev.
-  async headers() {
-    return [
-      {
-        source: "/api/:path*",
-        headers: [
-          { key: "Access-Control-Allow-Origin", value: "http://localhost:8081" },
-          { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Methods", value: "GET,POST,PATCH,PUT,DELETE,OPTIONS" },
-          { key: "Access-Control-Allow-Headers", value: "Content-Type,Authorization" },
-        ],
-      },
-    ];
-  },
-
   images: {
     // Allow Next.js <Image> to optimise images from Supabase storage and the
     // external avatar providers (DiceBear, Robohash, etc.).
