@@ -357,14 +357,14 @@ function MessageHoverActions({
             transition-all duration-150
             ${isMe
               ? menuOpen
-                ? "bg-black/30 text-white"
+                ? "bg-black/15 text-white"
                 : insideBubble
-                  ? "bg-black/15 text-white/80 hover:bg-black/25 hover:text-white"
+                  ? "text-white/90"
                   : "text-white/90 hover:text-white hover:bg-white/15"
               : menuOpen
-                ? "bg-white/15 text-foreground"
+                ? "bg-white/10 text-foreground"
                 : insideBubble
-                  ? "bg-white/10 text-foreground/70 hover:bg-white/20 hover:text-foreground"
+                  ? "text-foreground/80"
                   : "text-foreground/80 hover:text-foreground hover:bg-white/10"
             }
           `}
@@ -737,6 +737,20 @@ export function MessageBubble({
                       <span className="text-[10px] text-red-200">!</span>
                     )}
                   </div>
+
+                  {/* WhatsApp-style corner gradient — feathered radial from inside the bubble,
+                      fading to transparent at the right edge where the chevron sits */}
+                  {!uploading && !failed && (
+                    <div
+                      className="absolute top-0 right-0 w-16 h-10 rounded-tr-2xl pointer-events-none z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                      style={{
+                        background: isMe
+                          ? "radial-gradient(42px at left center, rgba(0,0,0,0.14), rgba(0,0,0,0.08) 50%, transparent 100%)"
+                          : "radial-gradient(42px at left center, rgba(0,0,0,0.12), rgba(0,0,0,0.06) 50%, transparent 100%)",
+                      }}
+                    />
+                  )}
+
                   <MessageHoverActions
                     msg={msg}
                     isMe={isMe}
