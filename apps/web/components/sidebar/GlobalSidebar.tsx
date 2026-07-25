@@ -46,7 +46,7 @@ export function GlobalSidebar({ userId }: Props) {
     <aside className="h-full w-72 shrink-0 border-r border-border bg-background overflow-y-auto">
       {/* WORKSPACE nav */}
       <div className="px-4 pt-5 pb-3">
-        <p className="px-1 mb-3 font-body text-[11px] font-semibold uppercase tracking-widest text-foreground-muted">
+        <p className="px-1 mb-3 font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
           Workspace
         </p>
         <ul className="space-y-1">
@@ -102,8 +102,8 @@ export function GlobalSidebar({ userId }: Props) {
         ) : (
           <div>
             <div className="px-5 pt-3 pb-2">
-              <span className="font-body text-[11px] font-semibold uppercase tracking-widest text-foreground-muted">
-                All
+              <span className="font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
+                Your community
               </span>
             </div>
             <ul className="space-y-0.5 px-3">
