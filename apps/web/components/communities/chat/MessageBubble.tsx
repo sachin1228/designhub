@@ -229,6 +229,7 @@ function MessageHoverActions({
   showReaction = true,
   showMenu = true,
   insideBubble = false,
+  dotsVisible = false,
 }: {
   msg: CachedMessage;
   isMe: boolean;
@@ -243,6 +244,8 @@ function MessageHoverActions({
   showReaction?: boolean;
   showMenu?: boolean;
   insideBubble?: boolean;
+  /** Controls three-dot button visibility when insideBubble=true (proximity-based). */
+  dotsVisible?: boolean;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -336,7 +339,12 @@ function MessageHoverActions({
           onClick={(e) => { e.stopPropagation(); onMenuOpenChange(!menuOpen); }}
           className={`
             w-7 h-7 rounded-full flex items-center justify-center
-            ${insideBubble ? "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto" : ""}
+            ${insideBubble
+              ? (dotsVisible || menuOpen)
+                ? "opacity-100 pointer-events-auto"
+                : "opacity-0 pointer-events-none"
+              : ""}
+            transition-opacity duration-150
             transition-colors duration-100
             ${isMe
               ? menuOpen
@@ -565,6 +573,17 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [nearBubble, setNearBubble] = useState(false);
+  const bubbleRef = useRef<HTMLDivElement>(null);
+
+  /** Show three-dot button when mouse is within 40 px of the bubble's right edge. */
+  function handleRowMouseMove(e: React.MouseEvent) {
+    if (!bubbleRef.current) return;
+    const r = bubbleRef.current.getBoundingClientRect();
+    const withinX = e.clientX >= r.right - 40 && e.clientX <= r.right + 30;
+    const withinY = e.clientY >= r.top - 4 && e.clientY <= r.bottom + 4;
+    setNearBubble(withinX && withinY);
+  }
 
   const sender    = msg.users;
   const reactions = msg.reactions ?? [];
@@ -607,6 +626,8 @@ export function MessageBubble({
         className={`group flex items-start gap-2 w-full px-5 transition-colors duration-300 ${rowHighlight} ${
           isSameAuthor && !isFirstUnread ? "mt-0.5" : "mt-3"
         }`}
+        onMouseMove={handleRowMouseMove}
+        onMouseLeave={() => setNearBubble(false)}
       >
         {/* Avatar column — always on the left */}
         <div className="w-7 shrink-0 mt-0.5">
@@ -670,6 +691,7 @@ export function MessageBubble({
               {failed && <RetryIndicator onRetry={() => onRetrySend(msg.id)} />}
               <div className="relative min-w-0">
                 <div
+                  ref={bubbleRef}
                   className={`relative rounded-2xl px-3 pt-2 pb-1.5 select-none transition-shadow duration-150 ${
                     menuOpen ? "ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" : ""
                   } ${
@@ -727,6 +749,7 @@ export function MessageBubble({
                     onMenuOpenChange={setMenuOpen}
                     showReaction={false}
                     insideBubble
+                    dotsVisible={nearBubble}
                   />
                 </div>
                 <ReactionPills reactions={reactions} currentUserId={currentUserId} isMe={isMe} msgId={msg.id} onReaction={onReaction} />
