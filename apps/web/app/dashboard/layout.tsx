@@ -37,42 +37,42 @@ export default async function DashboardLayout({
   const userId = session.userId!;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      {/* Global sidebar */}
-      <GlobalSidebar userId={userId} />
+    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground">
+      {/* Full-width topbar */}
+      <header className="sticky top-0 z-20 flex h-12 items-center border-b border-border px-4 shrink-0">
+        <span className="text-lg font-medium leading-none tracking-tight text-foreground">
+          drafthub <span className="text-accent">/</span>
+        </span>
 
-      {/* Right pane: topbar + page content */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* Topbar — logo left, icons right */}
-        <header className="sticky top-0 z-20 flex h-12 items-center border-b border-border px-4 shrink-0">
-          <span className="text-lg font-medium leading-none tracking-tight text-foreground mr-auto">
-            drafthub <span className="text-accent">/</span>
-          </span>
-          <div className="flex items-center gap-0.5">
-            <button
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
-              aria-label="Direct messages"
-            >
-              <MessageCircle size={16} />
-            </button>
-            <button
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
-              aria-label="Notifications"
-            >
-              <Bell size={16} />
-            </button>
-            <div className="mx-1 h-4 w-px bg-border shrink-0" />
-            <ProfileDropdown
-              name={name}
-              email={email}
-              avatarUrl={avatarUrl}
-              initial={initial}
-            />
-          </div>
-        </header>
+        <div className="ml-auto flex items-center gap-0.5">
+          <button
+            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+            aria-label="Direct messages"
+          >
+            <MessageCircle size={16} />
+          </button>
+          <button
+            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+            aria-label="Notifications"
+          >
+            <Bell size={16} />
+          </button>
+          <div className="mx-1 h-4 w-px bg-border shrink-0" />
+          <ProfileDropdown
+            name={name}
+            email={email}
+            avatarUrl={avatarUrl}
+            initial={initial}
+          />
+        </div>
+      </header>
+
+      {/* Below topbar: sidebar + page content side by side */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <GlobalSidebar userId={userId} />
 
         {/* Page content — no global padding; each page owns its own spacing */}
-        <main className="flex-1 min-h-0 overflow-y-auto">
+        <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">
           {children}
         </main>
       </div>
