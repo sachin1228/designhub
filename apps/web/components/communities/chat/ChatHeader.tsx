@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BookOpen,
   CalendarDays,
   Images,
   MessageCircle,
@@ -23,13 +24,14 @@ interface ChatHeaderProps {
   onTabChange: (tab: ChatTab) => void;
 }
 
-export type ChatTab = "chat" | "threads" | "events" | "showcase";
+export type ChatTab = "chat" | "threads" | "events" | "showcase" | "resources";
 
 const TABS: Array<{ id: ChatTab; label: string; icon: typeof MessageCircle }> = [
   { id: "chat", label: "Chat", icon: MessageCircle },
   { id: "threads", label: "Threads", icon: MessagesSquare },
   { id: "events", label: "Events", icon: CalendarDays },
   { id: "showcase", label: "Showcase", icon: Images },
+  { id: "resources", label: "Resources", icon: BookOpen },
 ];
 
 export function ChatHeader({ community, activeTab, onTabChange }: ChatHeaderProps) {

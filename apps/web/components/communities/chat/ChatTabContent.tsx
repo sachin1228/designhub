@@ -2,6 +2,7 @@
 
 import {
   ArrowLeft,
+  BookOpen,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -15,7 +16,7 @@ import {
 import { useState } from "react";
 import type { ChatTab } from "./ChatHeader";
 
-type DetailKind = "thread" | "event" | "showcase";
+type DetailKind = "thread" | "event" | "showcase" | "resource";
 
 interface DemoComment {
   author: string;
@@ -353,6 +354,126 @@ const STATIC_SHOWCASES: DetailData[] = [
   },
 ];
 
+const STATIC_RESOURCES: DetailData[] = [
+  {
+    id: "design-system-guidelines",
+    kind: "resource",
+    title: "Design System Guidelines",
+    label: "PDF · 2.4 MB",
+    summary: "A practical guide to building consistent, accessible product experiences.",
+    body: [
+      "This guide brings together the foundations our community uses when creating product interfaces: clear hierarchy, purposeful spacing, accessible color, and components that can grow with the product.",
+      "Use it as a conversation starter, not a strict rulebook. The best systems leave room for context, experimentation, and the people who use the final experience.",
+    ],
+    metadata: [
+      { label: "Format", value: "PDF" },
+      { label: "Size", value: "2.4 MB" },
+      { label: "Added by", value: "DraftHub team" },
+      { label: "Downloads", value: "128 downloads" },
+    ],
+    comments: [
+      {
+        author: "Maya Joshi",
+        initials: "MJ",
+        time: "26m ago",
+        text: "The section on accessible defaults is a great checklist for design reviews.",
+      },
+      {
+        author: "Aarav Singh",
+        initials: "AS",
+        time: "18m ago",
+        text: "I’ve been sharing the spacing examples with our engineering team. Super useful.",
+      },
+      {
+        author: "Ananya Rao",
+        initials: "AR",
+        time: "7m ago",
+        text: "Would love a follow-up version with more responsive layout examples.",
+      },
+    ],
+    color: "bg-amber-500",
+    visualLabel: "FOUNDATIONS / PATTERNS / PRACTICE",
+  },
+  {
+    id: "amazon-design-principles",
+    kind: "resource",
+    title: "Amazon Design Principles",
+    label: "PDF · 1.1 MB",
+    summary: "A compact reference for making customer-focused design decisions.",
+    body: [
+      "This reference collects the principles that help teams keep customer needs visible while navigating complex product and business constraints.",
+      "Each principle includes a short prompt for critique sessions, so it can move from a document into the everyday rhythm of a design team.",
+    ],
+    metadata: [
+      { label: "Format", value: "PDF" },
+      { label: "Size", value: "1.1 MB" },
+      { label: "Added by", value: "Design operations" },
+      { label: "Downloads", value: "94 downloads" },
+    ],
+    comments: [
+      {
+        author: "Neha Kulkarni",
+        initials: "NK",
+        time: "44m ago",
+        text: "The critique prompts make this much easier to use than a principles poster.",
+      },
+      {
+        author: "Rohan Mehta",
+        initials: "RM",
+        time: "32m ago",
+        text: "I’m adding the customer-observation prompt to our next weekly review.",
+      },
+      {
+        author: "Priya Shah",
+        initials: "PS",
+        time: "15m ago",
+        text: "A version for early-stage teams would be a great companion resource.",
+      },
+    ],
+    color: "bg-sky-500",
+    visualLabel: "CUSTOMER / CLARITY / IMPACT",
+  },
+  {
+    id: "figma-component-library",
+    kind: "resource",
+    title: "Figma Component Library",
+    label: "Figma file · 12.4 MB",
+    summary: "A ready-to-use starter library for exploring product flows with the community.",
+    body: [
+      "Start a new exploration with a small set of flexible components, common patterns, and useful layout frames. The library is intentionally lightweight so teams can adapt it to their own product language.",
+      "Duplicate the file before making changes, then share your improvements back with the community so the starter set keeps getting better.",
+    ],
+    metadata: [
+      { label: "Format", value: "Figma file" },
+      { label: "Size", value: "12.4 MB" },
+      { label: "Added by", value: "Community library" },
+      { label: "Duplicates", value: "61 duplicates" },
+    ],
+    comments: [
+      {
+        author: "Sachin Patil",
+        initials: "SP",
+        time: "1h ago",
+        text: "The empty states and loading patterns are especially handy for quick prototypes.",
+      },
+      {
+        author: "Maya Joshi",
+        initials: "MJ",
+        time: "39m ago",
+        text: "Could we add a few mobile navigation patterns in the next update?",
+      },
+      {
+        author: "Aarav Singh",
+        initials: "AS",
+        time: "21m ago",
+        text: "Yes — I’ll collect a few examples from the next community critique.",
+      },
+    ],
+    color: "bg-fuchsia-500",
+    visualLabel: "DUPLICATE / EXPLORE / SHARE",
+  },
+];
+
 function TabIntro({
   eyebrow,
   title,
@@ -378,6 +499,7 @@ function TabIntro({
 function KindIcon({ kind, size = 16 }: { kind: DetailKind; size?: number }) {
   if (kind === "thread") return <MessagesSquare size={size} />;
   if (kind === "event") return <CalendarDays size={size} />;
+  if (kind === "resource") return <BookOpen size={size} />;
   return <Images size={size} />;
 }
 
@@ -536,6 +658,51 @@ function ShowcaseView({ onOpen }: { onOpen: (item: DetailData) => void }) {
   );
 }
 
+function ResourcesView({ onOpen }: { onOpen: (item: DetailData) => void }) {
+  return (
+    <div className="mx-auto w-full max-w-3xl px-6 py-8">
+      <TabIntro
+        eyebrow="Tools for better work"
+        title="Resources from the community"
+        description="Save a useful reference, borrow a starting point, and keep learning with resources shared by designers here."
+      />
+
+      <div className="space-y-3">
+        {STATIC_RESOURCES.map((resource) => (
+          <button
+            key={resource.id}
+            type="button"
+            onClick={() => onOpen(resource)}
+            className="flex w-full items-center gap-4 rounded-xl border border-border bg-surface/60 p-4 text-left transition-colors hover:border-foreground-subtle/40"
+          >
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white ${resource.color}`}>
+              <BookOpen size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-body text-sm font-semibold text-foreground">{resource.title}</h3>
+                <span className="rounded-full border border-border px-2 py-0.5 font-body text-[10px] text-foreground-muted">
+                  {resource.label}
+                </span>
+              </div>
+              <p className="mt-1.5 line-clamp-2 font-body text-xs leading-relaxed text-foreground-muted">
+                {resource.summary}
+              </p>
+              <div className="mt-3 flex items-center gap-4 font-body text-[11px] text-foreground-subtle">
+                <span>{resource.metadata[2].value}</span>
+                <span>{resource.metadata[3].value}</span>
+              </div>
+            </div>
+            <span className="shrink-0 rounded-lg border border-border px-3 py-2 font-body text-xs font-semibold text-foreground-muted">
+              View
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DetailView({ item, onBack }: { item: DetailData; onBack: () => void }) {
   const [isInterested, setIsInterested] = useState(false);
 
@@ -547,7 +714,15 @@ function DetailView({ item, onBack }: { item: DetailData; onBack: () => void }) 
         className="mb-6 flex items-center gap-2 font-body text-xs font-medium text-foreground-muted transition-colors hover:text-foreground"
       >
         <ArrowLeft size={14} />
-        Back to {item.kind === "thread" ? "threads" : item.kind === "event" ? "events" : "showcase"}
+        Back to {
+          item.kind === "thread"
+            ? "threads"
+            : item.kind === "event"
+              ? "events"
+              : item.kind === "showcase"
+                ? "showcase"
+                : "resources"
+        }
       </button>
 
       <article>
@@ -573,11 +748,11 @@ function DetailView({ item, onBack }: { item: DetailData; onBack: () => void }) 
           ))}
         </div>
 
-        {item.kind === "showcase" && (
+        {(item.kind === "showcase" || item.kind === "resource") && (
           <div className={`relative mt-6 flex h-44 items-end overflow-hidden rounded-xl p-6 ${item.color}`}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.38),transparent_42%)]" />
             <div className="relative flex items-center gap-2 text-white">
-              <Sparkles size={16} />
+              {item.kind === "resource" ? <BookOpen size={16} /> : <Sparkles size={16} />}
               <span className="font-display text-xl font-semibold">{item.visualLabel}</span>
             </div>
           </div>
@@ -681,6 +856,7 @@ export function ChatTabContent({ tab }: { tab: Exclude<ChatTab, "chat"> }) {
       {tab === "threads" && <ThreadsView onOpen={setSelectedItem} />}
       {tab === "events" && <EventsView onOpen={setSelectedItem} />}
       {tab === "showcase" && <ShowcaseView onOpen={setSelectedItem} />}
+      {tab === "resources" && <ResourcesView onOpen={setSelectedItem} />}
     </div>
   );
 }
