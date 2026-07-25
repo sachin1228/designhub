@@ -75,7 +75,7 @@ export function SignupStep1({
           <span className="font-body text-xs font-medium text-overlay-foreground">Email</span>
           <input type="email" value={state.email}
             onChange={(e) => onChange({ email: e.target.value })}
-            placeholder="you@studio.com" className={inputClass} autoComplete="username" required />
+            placeholder="you@example.com" className={inputClass} autoComplete="username" required />
           <FieldError errors={fieldErrors} field="email" />
         </label>
 

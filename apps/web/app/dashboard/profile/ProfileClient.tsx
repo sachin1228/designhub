@@ -23,8 +23,8 @@ interface Props {
   company: string | null;
   sector: string | null;
   experienceLevel: string | null;
-  initialLinkedIn: string;
-  initialPortfolio: string;
+  initialGithub: string;
+  initialWebsite: string;
   initialBio: string;
   initialInterestIds: string[];
   allInterests: { id: string; name: string; image_url?: string | null }[];
@@ -33,7 +33,7 @@ interface Props {
 export function ProfileClient({
   initialName, email, createdAt, avatarUrl: initialAvatarUrl,
   city, company, sector, experienceLevel,
-  initialLinkedIn, initialPortfolio, initialBio,
+  initialGithub, initialWebsite, initialBio,
   initialInterestIds, allInterests,
 }: Props) {
   const router = useRouter();
@@ -41,8 +41,8 @@ export function ProfileClient({
   // Form state
   const [name,        setName]        = useState(initialName);
   const [bio,         setBio]         = useState(initialBio);
-  const [linkedin,    setLinkedin]    = useState(initialLinkedIn);
-  const [portfolio,   setPortfolio]   = useState(initialPortfolio);
+  const [github,      setGithub]      = useState(initialGithub);
+  const [website,     setWebsite]     = useState(initialWebsite);
   const [interestIds, setInterestIds] = useState<string[]>(initialInterestIds);
 
   // Avatar state
@@ -90,8 +90,8 @@ export function ProfileClient({
   const hasChanges =
     name !== initialName ||
     bio !== initialBio ||
-    linkedin !== initialLinkedIn ||
-    portfolio !== initialPortfolio ||
+    github !== initialGithub ||
+    website !== initialWebsite ||
     JSON.stringify([...interestIds].sort()) !== JSON.stringify([...initialInterestIds].sort());
 
   // ── Save profile ────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ export function ProfileClient({
         fetch("/api/profile", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim(), bio, linkedin_url: linkedin, portfolio_url: portfolio }),
+          body: JSON.stringify({ name: name.trim(), bio, github_url: github, website_url: website }),
         }),
         fetch("/api/profile/interests", {
           method: "POST",
@@ -262,10 +262,10 @@ export function ProfileClient({
       />
 
       <ProfileLinks
-        linkedin={linkedin}
-        portfolio={portfolio}
-        onLinkedinChange={setLinkedin}
-        onPortfolioChange={setPortfolio}
+        github={github}
+        website={website}
+        onGithubChange={setGithub}
+        onWebsiteChange={setWebsite}
       />
 
       <ProfileInterests

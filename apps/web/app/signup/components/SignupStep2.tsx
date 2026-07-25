@@ -10,6 +10,7 @@ interface Step2State {
   city_id: string;
   sector_id: string;
   experience_level: string;
+  github_url: string;
 }
 
 interface SignupStep2Props {
@@ -77,16 +78,29 @@ export function SignupStep2({
 
         <div className="flex flex-col gap-1.5">
           <span className="font-body text-xs font-medium text-overlay-foreground">
-            Industry Sector <span className="text-red-400">*</span>
+            Development Area <span className="text-red-400">*</span>
           </span>
           <SearchableSelect
             options={sectors.map((s) => ({ value: s.id, label: s.name, imageUrl: s.image_url }))}
             value={state.sector_id}
             onChange={(v) => onChange({ sector_id: v })}
-            placeholder="Select a sector"
+            placeholder="Select a development area"
             allowOther otherLabel="Other"
           />
         </div>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="font-body text-xs font-medium text-overlay-foreground">
+            GitHub Profile <span className="text-overlay-muted">(optional)</span>
+          </span>
+          <input
+            type="url"
+            value={state.github_url}
+            onChange={(e) => onChange({ github_url: e.target.value })}
+            placeholder="https://github.com/yourusername"
+            className="rounded-md border border-overlay-elevated bg-overlay px-3.5 py-2.5 font-body text-sm text-overlay-foreground outline-none transition-colors placeholder:text-overlay-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 w-full"
+          />
+        </label>
 
         <div className="flex flex-col gap-1.5">
           <span className="font-body text-xs font-medium text-overlay-foreground">

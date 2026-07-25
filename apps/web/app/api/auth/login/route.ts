@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Your account setup is incomplete. Please finish signing up using the invitation link sent to your email.",
+          "Your account setup is incomplete. Please finish signing up from the public signup page.",
         incompleteSignup: true,
       },
       { status: 403 }

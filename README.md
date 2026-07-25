@@ -1,13 +1,13 @@
-# drafthub/ — a home for designers\
+# drafthub/ — a home for developers\
 
-A full-stack platform for UI/UX, product, and social media designers. Designers apply to join, admins review applications, approved members complete their profile and get access to a real-time community chat.
+A full-stack developer community. Anyone can sign up, complete a developer profile, and get access to real-time community chat.
 
 ## What the app does today
 
 | Area | What's built |
 |---|---|
-| **Application / onboarding** | Public apply form → admin review → approval email with invite link → multi-step sign-up (profile, avatar upload, interests) |
-| **Auth** | Custom JWT sessions via `jose` + `bcryptjs`. No Supabase Auth — sessions live in an httpOnly cookie. Includes login, logout, password-reset request/confirm. |
+| **Signup / onboarding** | Public multi-step signup for every developer (profile, GitHub, avatar upload, technical interests) |
+| **Auth** | Custom JWT sessions via `jose` + `bcryptjs`. No Supabase Auth — sessions live in an httpOnly cookie. Includes public signup, login, logout, and password reset. |
 | **Admin panel** | Review and approve/reject applications; manage users (block/unblock); CRUD for master data: cities, companies, sectors, experience levels, interests, communities, Lottie animations. |
 | **Communities / chat** | Real-time community chat (Supabase Realtime). Members are auto-joined to communities on sign-up. Admins can delete messages. |
 | **Image uploads** | Avatar and community images uploaded via signed Supabase Storage URLs, compressed server-side with `sharp`. |

@@ -10,8 +10,8 @@ The Next.js 14 (App Router) web application for the **draft/** platform.
 |---|---|---|
 | `/` | Public | Landing / home page |
 | `/login` | Public | Email + password login |
-| `/apply` | Public | Designer application form |
-| `/signup/*` | Invited users (token) | Multi-step onboarding: profile → avatar → interests |
+| `/apply` | Public | Developer community signup entry point |
+| `/signup/*` | Public (legacy invite tokens also supported) | Multi-step onboarding: developer profile → avatar → interests |
 | `/reset-password` | Public | Request / confirm password reset |
 | `/dashboard/*` | Authenticated users | Member area |
 | `/admin/*` | Admin only | Admin panel (see below) |
@@ -22,7 +22,7 @@ Protected by middleware — requires a valid session with `role: "admin"`.
 
 | Section | What it manages |
 |---|---|
-| Applications | Review pending applications, approve or reject with email notification |
+| Applications | Legacy application review for previously invited members |
 | Users | View all members, block/unblock accounts |
 | Communities | Create/edit communities, delete messages |
 | Master data | Cities, companies, sectors, experience levels, interests, tools, Lottie animations |
@@ -32,8 +32,8 @@ Protected by middleware — requires a valid session with `role: "admin"`.
 | Prefix | Purpose |
 |---|---|
 | `/api/auth/*` | login, logout, me, reset-request, reset-confirm |
-| `/api/applications` | Public apply endpoint (rate-limited: 5/hr per IP) |
-| `/api/signup/*` | Multi-step onboarding (validate token, profile, avatar, interests, complete) |
+| `/api/applications` | Legacy application endpoint |
+| `/api/signup/*` | Public multi-step onboarding (legacy invitation tokens remain supported) |
 | `/api/profile/*` | Update profile and interests (authenticated) |
 | `/api/communities/*` | List, join, send/read messages, mark read |
 | `/api/data/*` | Public reference data (cities, sectors, experience levels, interests, companies) |

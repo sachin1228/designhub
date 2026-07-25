@@ -114,7 +114,7 @@ export async function sendInvitationEmail(
               Welcome, ${name}!
             </h1>
             <p style="margin:0 0 24px;font-size:15px;color:#7B7B7B;line-height:1.6;">
-              Your application has been approved. You're invited to create your ${APP_NAME} account and join a curated community of designers — share your work, connect with other creatives, get feedback, and discover new career opportunities.
+              Your application has been approved. You're invited to create your ${APP_NAME} account and join a curated community of developers — share what you're building, connect with other engineers, and grow your career.
             </p>
             <a href="${link}"
                style="display:inline-block;padding:12px 28px;background:#0070f3;color:#fff;font-size:15px;font-weight:500;border-radius:8px;text-decoration:none;">
@@ -173,7 +173,7 @@ export async function sendWelcomeEmail(
               You're officially in, ${name}!
             </h1>
             <p style="margin:0 0 16px;font-size:15px;color:#7B7B7B;line-height:1.6;">
-              Your ${APP_NAME} account is all set up. Welcome to a curated community of designers — we're glad to have you here.
+              Your ${APP_NAME} account is all set up. Welcome to a community of developers — we're glad to have you here.
             </p>
             <p style="margin:0 0 24px;font-size:15px;color:#7B7B7B;line-height:1.6;">
               Head over to your dashboard to complete your profile, share your work, connect with fellow creatives, and discover new career opportunities.
@@ -231,10 +231,10 @@ export async function sendRejectionEmail(
               Hi ${name},
             </h1>
             <p style="margin:0 0 16px;font-size:15px;color:#7B7B7B;line-height:1.6;">
-              Thank you for applying to ${APP_NAME}. After reviewing your portfolio, we weren't able to approve your application at this time.
+               Thank you for applying to ${APP_NAME}. After reviewing your application, we weren't able to approve it at this time.
             </p>
             <p style="margin:0 0 24px;font-size:15px;color:#7B7B7B;line-height:1.6;">
-              We know this is disappointing, but we genuinely encourage you to keep building. ${APP_NAME} is a curated community for designers who share their work, connect with creatives, and grow their careers — and the bar keeps rising. Take some time to strengthen your case studies and portfolio; we'd love to see you reapply when you're ready.
+               We know this is disappointing, but we genuinely encourage you to keep building. ${APP_NAME} is a community for developers who share what they build, connect with engineers, and grow their careers.
             </p>
             <a href="${applyLink}"
                style="display:inline-block;padding:12px 28px;background:#262220;border:1px solid #3a3633;color:#F5F2F0;font-size:15px;font-weight:500;border-radius:8px;text-decoration:none;">

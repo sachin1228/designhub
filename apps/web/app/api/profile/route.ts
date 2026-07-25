@@ -27,7 +27,7 @@ export async function GET() {
     db
       .from("designer_profiles")
       .select(
-        "avatar_url, avatar_source, experience_level, linkedin_url, portfolio_url, bio, cities(id, name), companies(id, name), design_sectors(id, name)"
+        "avatar_url, avatar_source, experience_level, github_url, website_url, bio, cities(id, name), companies(id, name), design_sectors(id, name)"
       )
       .eq("user_id", userId)
       .maybeSingle(),
@@ -54,8 +54,8 @@ export async function PATCH(request: NextRequest) {
   let body: {
     name?: string;
     bio?: string;
-    linkedin_url?: string;
-    portfolio_url?: string;
+     github_url?: string;
+     website_url?: string;
   };
   try {
     body = await request.json();
@@ -104,8 +104,8 @@ export async function PATCH(request: NextRequest) {
     }
     profilePatch.bio = bio || null;
   }
-  if (typeof body.linkedin_url === "string") profilePatch.linkedin_url = body.linkedin_url.trim() || null;
-  if (typeof body.portfolio_url === "string") profilePatch.portfolio_url = body.portfolio_url.trim() || null;
+  if (typeof body.github_url === "string") profilePatch.github_url = body.github_url.trim() || null;
+  if (typeof body.website_url === "string") profilePatch.website_url = body.website_url.trim() || null;
 
   if (Object.keys(profilePatch).length > 0) {
     const { error } = await db.from("designer_profiles").update(profilePatch).eq("user_id", userId);

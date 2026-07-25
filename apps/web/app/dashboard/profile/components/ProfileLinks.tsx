@@ -1,6 +1,6 @@
 "use client";
 
-import { Linkedin, Globe } from "lucide-react";
+import { Github, Globe } from "lucide-react";
 
 function SectionLabel({ num, label }: { num: string; label: string }) {
   return (
@@ -16,43 +16,43 @@ const fieldCls =
   "bg-transparent border-b border-border focus:border-accent outline-none text-foreground font-body text-sm transition-colors w-full pb-0.5 placeholder:text-foreground-subtle";
 
 interface ProfileLinksProps {
-  linkedin: string;
-  portfolio: string;
-  onLinkedinChange: (v: string) => void;
-  onPortfolioChange: (v: string) => void;
+  github: string;
+  website: string;
+  onGithubChange: (v: string) => void;
+  onWebsiteChange: (v: string) => void;
 }
 
 export function ProfileLinks({
-  linkedin,
-  portfolio,
-  onLinkedinChange,
-  onPortfolioChange,
+  github,
+  website,
+  onGithubChange,
+  onWebsiteChange,
 }: ProfileLinksProps) {
   return (
     <div className="rounded-2xl border border-border bg-surface p-6 mb-5">
-      <SectionLabel num="02" label="Links" />
+      <SectionLabel num="02" label="Developer Links" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="flex flex-col gap-1.5">
           <label className="font-body text-[11px] font-medium text-foreground-muted uppercase tracking-wider flex items-center gap-1.5">
-            <Linkedin size={11} /> LinkedIn
+            <Github size={11} /> GitHub
           </label>
           <input
             type="url"
-            value={linkedin}
-            onChange={(e) => onLinkedinChange(e.target.value)}
-            placeholder="https://linkedin.com/in/yourname"
+            value={github}
+            onChange={(e) => onGithubChange(e.target.value)}
+            placeholder="https://github.com/yourname"
             className={fieldCls}
           />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="font-body text-[11px] font-medium text-foreground-muted uppercase tracking-wider flex items-center gap-1.5">
-            <Globe size={11} /> Portfolio
+            <Globe size={11} /> Personal Website
           </label>
           <input
             type="url"
-            value={portfolio}
-            onChange={(e) => onPortfolioChange(e.target.value)}
-            placeholder="https://yourportfolio.com"
+            value={website}
+            onChange={(e) => onWebsiteChange(e.target.value)}
+            placeholder="https://yourwebsite.com"
             className={fieldCls}
           />
         </div>

@@ -48,7 +48,7 @@ export function ProfileInterests({
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-6 mb-8">
-      <SectionLabel num="03" label="Design Interests" />
+       <SectionLabel num="03" label="Development Interests" />
 
       {/* Selected chips */}
       <div className="flex flex-wrap gap-2 mb-4 min-h-[32px]">

@@ -30,7 +30,7 @@ async function getResumeStep(
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token");
   if (!token) {
-    return NextResponse.json({ valid: false, error: "Token is required" }, { status: 400 });
+    return NextResponse.json({ valid: true, direct: true });
   }
 
   const db = createServiceClient();

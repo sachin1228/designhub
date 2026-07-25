@@ -7,17 +7,17 @@ import { masterDataSchema } from "@/lib/validations";
 const DEFAULT_LEVELS = [
   { slug: "student",        name: "Students" },
   { slug: "fresher",        name: "Freshers" },
-  { slug: "junior",         name: "Junior Designers" },
-  { slug: "mid_level",      name: "Mid-Level Designers" },
-  { slug: "senior",         name: "Senior Designers" },
-  { slug: "lead",           name: "Lead Designers" },
-  { slug: "principal",      name: "Principal Designers" },
-  { slug: "staff",          name: "Staff Designers" },
-  { slug: "design_manager", name: "Design Managers" },
-  { slug: "head_of_design", name: "Heads of Design" },
-  { slug: "director",       name: "Design Directors" },
-  { slug: "vp",             name: "VP of Design" },
-  { slug: "consultant",     name: "Design Consultants" },
+  { slug: "junior",         name: "Junior Developers" },
+  { slug: "mid_level",      name: "Mid-Level Developers" },
+  { slug: "senior",         name: "Senior Developers" },
+  { slug: "lead",           name: "Lead Developers" },
+  { slug: "principal",      name: "Principal Developers" },
+  { slug: "staff",          name: "Staff Developers" },
+  { slug: "design_manager", name: "Engineering Managers" },
+  { slug: "head_of_design", name: "Heads of Engineering" },
+  { slug: "director",       name: "Engineering Directors" },
+  { slug: "vp",             name: "VP of Engineering" },
+  { slug: "consultant",     name: "Developer Consultants" },
   { slug: "freelancer",     name: "Freelancers" },
 ];
 
@@ -57,7 +57,7 @@ export async function GET(_request: NextRequest) {
   });
 }
 
-/** Converts a display name to a URL-safe slug, e.g. "Freelance Designers" → "freelance_designers" */
+/** Converts a display name to a URL-safe slug. */
 function toSlug(name: string): string {
   return name
     .toLowerCase()

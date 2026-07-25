@@ -5,7 +5,7 @@ export const metadata = { title: "Interests — Admin" };
 export default function InterestsPage() {
   return (
     <MasterDataPage
-      title="Design Interests"
+      title="Development Interests"
       entity="Interest"
       apiBase="/api/admin/interests"
       basePath="/admin/interests"

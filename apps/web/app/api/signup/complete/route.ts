@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // L-2: token is now part of the schema — use the validated value, not a raw cast
   const { name, email, password, token } = parsed.data;
 
   const db = createServiceClient();
@@ -49,34 +48,39 @@ export async function POST(request: NextRequest) {
   });
   if (!nameDecision.allowed) return moderationFailureResponse(nameDecision);
 
-  // Validate invitation token (must exist and not be expired)
-  const { data: invitation } = await db
-    .from("invitations")
-    .select("id, expires_at, used_at, application_id")
-    .eq("token", token)
-    .maybeSingle();
+  let invitation: { id: string; expires_at: string; used_at: string | null; application_id: string } | null = null;
+  if (token) {
+    const { data } = await db
+      .from("invitations")
+      .select("id, expires_at, used_at, application_id")
+      .eq("token", token)
+      .maybeSingle();
+    invitation = data;
 
-  if (!invitation) {
-    return NextResponse.json(
-      { error: "Invalid or expired invitation token." },
-      { status: 400 }
-    );
-  }
+    if (!invitation) {
+      return NextResponse.json(
+        { error: "Invalid or expired invitation token." },
+        { status: 400 }
+      );
+    }
 
-  if (new Date(invitation.expires_at) < new Date()) {
-    return NextResponse.json(
-      { error: "This invitation link has expired. Please contact us." },
-      { status: 400 }
-    );
+    if (new Date(invitation.expires_at) < new Date()) {
+      return NextResponse.json(
+        { error: "This invitation link has expired. Please contact us." },
+        { status: 400 }
+      );
+    }
   }
 
   // Always check by application_id first — this is the single-account-per-invite
   // guard and also handles resuming an incomplete signup (regardless of used_at).
-  const { data: existingUser } = await db
-    .from("users")
-    .select("id, name, email, password_hash")
-    .eq("application_id", invitation.application_id)
-    .maybeSingle();
+  const { data: existingUser } = invitation
+    ? await db
+        .from("users")
+        .select("id, name, email, password_hash")
+        .eq("application_id", invitation.application_id)
+        .maybeSingle()
+    : { data: null };
 
   if (existingUser) {
     // A user already exists for this application — the invite was started before.
@@ -129,7 +133,7 @@ export async function POST(request: NextRequest) {
   }
 
   // If used_at is set and no user exists, the link was genuinely fully used.
-  if (invitation.used_at) {
+  if (invitation?.used_at) {
     return NextResponse.json(
       { error: "This invitation link has already been used." },
       { status: 400 }
@@ -152,12 +156,12 @@ export async function POST(request: NextRequest) {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // Create the user — DO NOT mark used_at yet.
-  // used_at is set only after all 3 steps complete (avatar route).
+  // Create the user — direct signups have no application_id.
+  // Legacy invitation signups remain linked to their application.
   const { data: user, error: userError } = await db
     .from("users")
     .insert({
-      application_id: invitation.application_id,
+      ...(invitation ? { application_id: invitation.application_id } : {}),
       name,
       email: email.toLowerCase(),
       password_hash: passwordHash,
@@ -167,8 +171,15 @@ export async function POST(request: NextRequest) {
 
   if (userError) {
     // Unique-violation on application_id (code 23505) means a concurrent
-    // request just created the user. Fetch that row and resume the session.
+    // legacy invitation request just created the user. Fetch that row and
+    // resume the session.
     if ((userError as { code?: string }).code === "23505") {
+      if (!invitation) {
+        return NextResponse.json(
+          { error: "An account with this email already exists." },
+          { status: 409 }
+        );
+      }
       const { data: raceUser } = await db
         .from("users")
         .select("id, name, email, password_hash")

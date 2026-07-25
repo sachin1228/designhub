@@ -2,6 +2,8 @@
 alter table designer_profiles
   add column if not exists linkedin_url  text,
   add column if not exists portfolio_url text,
+  add column if not exists github_url    text,
+  add column if not exists website_url   text,
   add column if not exists bio           text;
 
 -- Back-fill linkedin/portfolio from the linked application (best-effort)

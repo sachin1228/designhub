@@ -90,16 +90,16 @@ export function UserInfoCard({ user, application, interests }: Props) {
         }
       />
       <InfoRow
-        label="LinkedIn"
+        label="GitHub"
         value={
-          application?.linkedin_url ? (
+          profile?.github_url ? (
             <a
-              href={application.linkedin_url}
+              href={profile.github_url}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-accent hover:underline"
             >
-              {application.linkedin_url}
+              {profile.github_url}
               <ExternalLink size={11} className="shrink-0" />
             </a>
           ) : (
@@ -108,16 +108,16 @@ export function UserInfoCard({ user, application, interests }: Props) {
         }
       />
       <InfoRow
-        label="Portfolio"
+        label="Personal website"
         value={
-          application?.portfolio_url ? (
+          profile?.website_url ? (
             <a
-              href={application.portfolio_url}
+              href={profile.website_url}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-accent hover:underline"
             >
-              {application.portfolio_url}
+              {profile.website_url}
               <ExternalLink size={11} className="shrink-0" />
             </a>
           ) : (

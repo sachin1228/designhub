@@ -4,6 +4,8 @@ export interface UserProfile {
   experience_level: string;
   avatar_url?: string | null;
   avatar_source?: string | null;
+  github_url?: string | null;
+  website_url?: string | null;
   companies: { name: string } | null;
   cities: { name: string } | null;
   design_sectors: { name: string } | null;
@@ -25,8 +27,8 @@ export interface AdminUser {
 }
 
 export interface UserApplication {
-  linkedin_url: string | null;
-  portfolio_url: string | null;
+  linkedin_url?: string | null;
+  portfolio_url?: string | null;
 }
 
 // Legacy label map for users who signed up before the experience_level column

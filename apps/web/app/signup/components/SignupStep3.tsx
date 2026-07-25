@@ -25,7 +25,7 @@ export function SignupStep3({
   return (
     <div className="rounded-xl border border-overlay-elevated bg-overlay-raised p-8 shadow-xl">
       <h2 className="font-display text-2xl font-semibold text-overlay-foreground mb-1">
-        What are your design interests?
+        What are your development interests?
       </h2>
       <p className="font-body text-sm text-overlay-muted mb-1">Step 3 of 4</p>
       <p className="font-body text-xs text-overlay-muted mb-7">

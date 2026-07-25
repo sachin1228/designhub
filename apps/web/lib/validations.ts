@@ -24,8 +24,8 @@ export const signupStep1Schema = z
       .min(8, "Password must be at least 8 characters")
       .regex(/[0-9]/, "Must contain at least one number"),
     confirm_password: z.string(),
-    // L-2: token validated here so the route uses parsed.data.token, not a raw cast
-    token: z.string().min(1, "Invitation token is required"),
+    // Optional for the public signup flow; legacy invitation links still work.
+    token: z.string().optional(),
   })
   .refine((d) => d.password === d.confirm_password, {
     message: "Passwords do not match",
@@ -35,10 +35,11 @@ export const signupStep1Schema = z
 export const signupStep2Schema = z.object({
   company_id: z.string().uuid("Please select a company"),
   city_id: z.string().uuid("Please select a city"),
-  sector_id: z.string().uuid("Please select a design sector"),
+  sector_id: z.string().uuid("Please select a development area"),
   // No longer validated against a hardcoded enum — the experience_levels table
   // (managed via the admin panel) is the source of truth. Any non-empty slug is valid.
   experience_level: z.string().min(1, "Please select an experience level"),
+  github_url: z.union([z.string().url("Please enter a valid GitHub URL").refine((v) => v.includes("github.com"), "Must be a GitHub URL"), z.literal("")]).optional(),
 });
 
 export const masterDataSchema = z.object({
