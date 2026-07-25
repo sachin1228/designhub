@@ -383,7 +383,7 @@ export function CommunityChat({
 
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-hidden relative">
-            {activeTab !== "chat" && <ChatTabContent tab={activeTab} />}
+            {activeTab !== "chat" && <ChatTabContent key={activeTab} tab={activeTab} />}
             {activeTab === "chat" && (
               <>
                 {/* Scrollable message area — full height, padded at bottom so messages

@@ -1,6 +1,12 @@
 "use client";
 
-import { CalendarDays, MessageCircle, MessagesSquare, Users } from "lucide-react";
+import {
+  CalendarDays,
+  Images,
+  MessageCircle,
+  MessagesSquare,
+  Users,
+} from "lucide-react";
 import { TYPE_EMOJI } from "./chatUtils";
 
 interface Community {
@@ -17,12 +23,13 @@ interface ChatHeaderProps {
   onTabChange: (tab: ChatTab) => void;
 }
 
-export type ChatTab = "chat" | "threads" | "events";
+export type ChatTab = "chat" | "threads" | "events" | "showcase";
 
 const TABS: Array<{ id: ChatTab; label: string; icon: typeof MessageCircle }> = [
   { id: "chat", label: "Chat", icon: MessageCircle },
   { id: "threads", label: "Threads", icon: MessagesSquare },
   { id: "events", label: "Events", icon: CalendarDays },
+  { id: "showcase", label: "Showcase", icon: Images },
 ];
 
 export function ChatHeader({ community, activeTab, onTabChange }: ChatHeaderProps) {
@@ -76,7 +83,7 @@ export function ChatHeader({ community, activeTab, onTabChange }: ChatHeaderProp
         <nav
           aria-label="Community views"
           role="tablist"
-          className="flex items-center gap-1 px-5"
+          className="flex items-center gap-1 overflow-x-auto px-5"
         >
           {TABS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
