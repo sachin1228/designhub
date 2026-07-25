@@ -43,8 +43,11 @@ export default async function DashboardLayout({
 
       {/* Right pane: topbar + page content */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* Topbar — icons only, no nav links */}
-        <header className="sticky top-0 z-20 flex h-12 items-center justify-end border-b border-border px-4 shrink-0">
+        {/* Topbar — logo left, icons right */}
+        <header className="sticky top-0 z-20 flex h-12 items-center border-b border-border px-4 shrink-0">
+          <span className="text-lg font-medium leading-none tracking-tight text-foreground mr-auto">
+            drafthub <span className="text-accent">/</span>
+          </span>
           <div className="flex items-center gap-0.5">
             <button
               className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"

@@ -44,13 +44,6 @@ export function GlobalSidebar({ userId }: Props) {
 
   return (
     <aside className="flex flex-col h-full w-56 shrink-0 border-r border-border bg-background overflow-hidden">
-      {/* Logo — same height as topbar */}
-      <div className="flex items-center h-12 px-4 shrink-0">
-        <span className="text-lg font-medium leading-none tracking-tight text-foreground">
-          drafthub <span className="text-accent">/</span>
-        </span>
-      </div>
-
       {/* WORKSPACE nav */}
       <div className="px-3 pt-2 pb-2 shrink-0">
         <p className="px-2 mb-1.5 font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
