@@ -33,6 +33,26 @@ async function fetchUserStatus(
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ── Mobile / Bearer-token support ────────────────────────────────────────
+  // If the client sends `Authorization: Bearer <jwt>` (e.g. the React Native
+  // app), inject it as the session cookie so all existing API route handlers
+  // that read from cookies work without modification.
+  if (pathname.startsWith("/api/")) {
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const bearerToken = authHeader.slice(7);
+      const requestHeaders = new Headers(request.headers);
+      const existingCookies = request.headers.get("cookie") ?? "";
+      const cookieSep = existingCookies ? "; " : "";
+      requestHeaders.set(
+        "cookie",
+        `${existingCookies}${cookieSep}${SESSION_COOKIE}=${bearerToken}`
+      );
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    }
+  }
+
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySession(token) : null;
 
@@ -83,5 +103,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/admin/:path*", "/dashboard/:path*"],
+  matcher: ["/", "/login", "/admin/:path*", "/dashboard/:path*", "/api/:path*"],
 };

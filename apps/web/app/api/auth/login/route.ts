@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     password === adminPassword
   ) {
     const token = await createSession({ email: adminEmail, role: "admin" });
-    const response = NextResponse.json({ success: true, redirect: "/admin" });
+    const response = NextResponse.json({ success: true, redirect: "/admin", token });
     setSessionCookie(response, token);
     return response;
   }
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     role: "user",
   });
 
-  const response = NextResponse.json({ success: true, name: user.name });
+  const response = NextResponse.json({ success: true, name: user.name, token });
   setSessionCookie(response, token);
   return response;
 }
