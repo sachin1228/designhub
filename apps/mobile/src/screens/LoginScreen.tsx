@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation";
@@ -22,10 +21,12 @@ export default function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
+    setError(null);
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Missing fields", "Please enter your email and password.");
+      setError("Please enter your email and password.");
       return;
     }
     setLoading(true);
@@ -34,7 +35,7 @@ export default function LoginScreen({ navigation }: Props) {
       await saveToken(token);
       navigation.reset({ index: 0, routes: [{ name: "App" }] });
     } catch (err: any) {
-      Alert.alert("Login failed", err.message ?? "Something went wrong.");
+      setError(err.message ?? "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -86,6 +87,10 @@ export default function LoginScreen({ navigation }: Props) {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {error && (
+            <Text style={styles.errorText}>{error}</Text>
+          )}
 
           <TouchableOpacity
             style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
@@ -177,5 +182,11 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  errorText: {
+    color: "#f87171",
+    fontSize: 14,
+    marginTop: 12,
+    textAlign: "center",
   },
 });

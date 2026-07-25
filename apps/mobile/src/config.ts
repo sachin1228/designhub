@@ -2,7 +2,7 @@
 // See .env.example for the full list.
 
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://your-app.replit.dev";
+  process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 
 export const SUPABASE_URL =
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
