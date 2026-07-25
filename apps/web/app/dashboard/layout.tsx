@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { APP_NAME } from "@draft/shared";
 import { createServiceClient } from "@/lib/supabase/service";
-import { DashboardTopNav } from "@/app/dashboard/DashboardTopNav";
+import { DashboardSidebar } from "@/app/dashboard/DashboardSidebar";
 import { ProfileDropdown } from "@/app/dashboard/ProfileDropdown";
 import { Bell, MessageCircle } from "lucide-react";
 
@@ -39,8 +39,9 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Full-width topbar */}
       <header className="sticky top-0 z-20 flex h-12 items-center border-b border-border px-4 shrink-0">
-        {/* Nav items — left */}
-        <DashboardTopNav />
+        <span className="font-body text-xs text-foreground-subtle">
+          Design community workspace
+        </span>
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-0.5">
@@ -60,10 +61,14 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      {/* Page content */}
-      <main className="flex-1 px-8 py-8">
-        {children}
-      </main>
+      <div className="flex min-h-0 flex-1">
+        <DashboardSidebar />
+
+        {/* Page content */}
+        <main className="min-w-0 flex-1 px-8 py-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
