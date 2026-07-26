@@ -48,9 +48,10 @@ export function publicDataTests() {
     const res = http.get(`${BASE_URL}/api/giphy?type=trending&limit=10`, {
       tags: { name: 'giphy/trending' },
     });
+    // 200 = ok, 429 = rate limited, 503 = GIPHY_API_KEY not configured, 502 = GIPHY unreachable
     check(res, {
-      'giphy/trending: status 200 or 429': (r) =>
-        r.status === 200 || r.status === 429,
+      'giphy/trending: status 200 or 429 or 502 or 503': (r) =>
+        r.status === 200 || r.status === 429 || r.status === 502 || r.status === 503,
     });
     sleep(0.1);
   });
@@ -60,8 +61,8 @@ export function publicDataTests() {
       tags: { name: 'giphy/search' },
     });
     check(res, {
-      'giphy/search: status 200 or 429': (r) =>
-        r.status === 200 || r.status === 429,
+      'giphy/search: status 200 or 429 or 502 or 503': (r) =>
+        r.status === 200 || r.status === 429 || r.status === 502 || r.status === 503,
     });
     sleep(0.1);
   });

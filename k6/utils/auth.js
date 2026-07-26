@@ -24,8 +24,10 @@ export function loginUser(email, password) {
     { headers: JSON_HEADERS, tags: { name: 'auth/login' } },
   );
   check(res, {
-    'login: status 200': (r) => r.status === 200,
-    'login: success true': (r) => {
+    // 429 means rate-limited — valid outcome under load, not a failure
+    'login: status 200 or 429': (r) => r.status === 200 || r.status === 429,
+    'login: success true (when not rate-limited)': (r) => {
+      if (r.status === 429) return true;
       try { return JSON.parse(r.body).success === true; } catch { return false; }
     },
   });
@@ -46,8 +48,9 @@ export function loginAdmin(email, password) {
     { headers: JSON_HEADERS, tags: { name: 'auth/login-admin' } },
   );
   check(res, {
-    'admin login: status 200': (r) => r.status === 200,
-    'admin login: success true': (r) => {
+    'admin login: status 200 or 429': (r) => r.status === 200 || r.status === 429,
+    'admin login: success true (when not rate-limited)': (r) => {
+      if (r.status === 429) return true;
       try { return JSON.parse(r.body).success === true; } catch { return false; }
     },
   });

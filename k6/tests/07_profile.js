@@ -22,7 +22,22 @@ export function profileTests() {
     const res = http.get(`${BASE_URL}/api/profile`, {
       tags: { name: 'profile/get' },
     });
-    check(res, objectResponse('profile/get', ['id', 'name']));
+    // Response shape: { user: { name, email, ... }, profile: { avatar_url, ... }, ... }
+    check(res, {
+      'profile/get: status 200': (r) => r.status === 200,
+      'profile/get: has user object': (r) => {
+        try {
+          const b = JSON.parse(r.body);
+          return b.user !== null && typeof b.user === 'object';
+        } catch { return false; }
+      },
+      'profile/get: has profile object': (r) => {
+        try {
+          const b = JSON.parse(r.body);
+          return b.profile !== null && typeof b.profile === 'object';
+        } catch { return false; }
+      },
+    });
     sleep(0.1);
   });
 

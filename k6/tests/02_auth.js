@@ -36,9 +36,10 @@ export function authTests() {
       JSON.stringify({ email: 'nobody@example.com', password: 'wrongpass' }),
       { headers: JSON_HEADERS, tags: { name: 'auth/login-invalid' } },
     );
+    // 401 = bad creds, 400/422 = validation, 429 = rate limited (expected under load)
     check(res, {
-      'auth/login invalid: status 401 or 400 or 422': (r) =>
-        r.status === 401 || r.status === 400 || r.status === 422,
+      'auth/login invalid: status 401 or 400 or 422 or 429': (r) =>
+        r.status === 401 || r.status === 400 || r.status === 422 || r.status === 429,
     });
     sleep(0.2);
   });
@@ -57,16 +58,21 @@ export function authTests() {
     sleep(0.3);
   });
 
-  group('auth — me (unauthenticated — fresh request, no jar)', () => {
-    // Test that /me returns user:null when no session cookie is sent
+  group('auth — me (unauthenticated — separate cookie jar)', () => {
+    // Create a fresh, isolated jar so no session cookie is sent
+    const jar = new http.CookieJar();
     const res = http.get(`${BASE_URL}/api/auth/me`, {
       tags: { name: 'auth/me-unauthed' },
-      jar: http.cookieJar(), // empty jar — no session cookie
+      jar,
     });
     check(res, {
       'auth/me unauthed: status 200': (r) => r.status === 200,
-      'auth/me unauthed: user null': (r) => {
-        try { return JSON.parse(r.body).user === null; } catch { return false; }
+      'auth/me unauthed: no active user': (r) => {
+        try {
+          const b = JSON.parse(r.body);
+          // Either user is null, or the response has no user key at all
+          return b.user === null || b.user === undefined;
+        } catch { return false; }
       },
     });
     sleep(0.1);

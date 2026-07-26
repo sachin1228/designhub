@@ -44,7 +44,7 @@ export function threadTests() {
       JSON.stringify({
         title:       `k6 test thread [VU:${__VU} ITER:${__ITER}]`,
         description: 'Automated stress test thread — safe to delete.',
-        category:    'general',
+        category:    'discussion', // valid: question|discussion|idea|feedback|referral|collaboration
         tags:        ['k6', 'test'],
         links:       [],
         attachments: [],
