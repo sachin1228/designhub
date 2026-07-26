@@ -30,7 +30,7 @@ export async function GET() {
   const threads = (data ?? []).map((thread) => ({
     ...thread,
     users: null,
-    community: (thread as { communities?: { name: string } | null }).communities ?? null,
+    community: (thread as { communities?: { name: string }[] | null }).communities?.[0] ?? null,
     communities: undefined,
   }));
 
