@@ -23,6 +23,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
+import { SignJWT } from 'jose';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -33,25 +34,38 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SUPABASE_URL    = process.env.SUPABASE_URL;
 const SERVICE_KEY     = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const COMMUNITY_ID    = process.env.TEST_COMMUNITY_ID;
+const SESSION_SECRET  = process.env.SESSION_SECRET;
 const USER_COUNT      = parseInt(process.env.K6_USER_COUNT    || '200', 10);
 const PASSWORD        = process.env.K6_USER_PASSWORD          || 'K6testPass123!';
 const PREFIX          = process.env.K6_USER_PREFIX            || 'k6user';
 
-if (!SUPABASE_URL || !SERVICE_KEY || !COMMUNITY_ID) {
+if (!SUPABASE_URL || !SERVICE_KEY || !COMMUNITY_ID || !SESSION_SECRET) {
   console.error(`
 ERROR: Missing required environment variables.
 
-  SUPABASE_URL               — ${SUPABASE_URL ? '✓' : '✗ MISSING'}
-  SUPABASE_SERVICE_ROLE_KEY  — ${SERVICE_KEY  ? '✓' : '✗ MISSING'}
-  TEST_COMMUNITY_ID          — ${COMMUNITY_ID  ? '✓' : '✗ MISSING'}
+  SUPABASE_URL               — ${SUPABASE_URL    ? '✓' : '✗ MISSING'}
+  SUPABASE_SERVICE_ROLE_KEY  — ${SERVICE_KEY     ? '✓' : '✗ MISSING'}
+  TEST_COMMUNITY_ID          — ${COMMUNITY_ID    ? '✓' : '✗ MISSING'}
+  SESSION_SECRET             — ${SESSION_SECRET  ? '✓' : '✗ MISSING'}
 
 Usage:
   SUPABASE_URL=https://xxx.supabase.co \\
   SUPABASE_SERVICE_ROLE_KEY=eyJ... \\
   TEST_COMMUNITY_ID=<uuid> \\
+  SESSION_SECRET=your-secret \\
   node k6/scripts/seed-users.js
 `);
   process.exit(1);
+}
+
+/** Generate a 7-day JWT session token — identical to what the app creates on login. */
+async function createSessionToken(userId, email) {
+  const secret = new TextEncoder().encode(SESSION_SECRET);
+  return new SignJWT({ userId, email, role: 'user' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(secret);
 }
 
 const db = createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -222,12 +236,30 @@ async function main() {
   }
   console.log(`\n   ✓ Community memberships done.\n`);
 
-  // ── Write credentials file ───────────────────────────────────────────────
-  const output = allUsers.map(u => ({
-    email:    u.email,
-    password: PASSWORD,
-    name:     u.name,
-  }));
+  // ── Generate session tokens for every user ───────────────────────────────
+  console.log('   Generating session tokens...\n');
+  const emailToId = {};
+  // Fetch IDs for all seeded users
+  for (let b = 0; b < allUsers.length; b += BATCH_SIZE) {
+    const batch = allUsers.slice(b, b + BATCH_SIZE).map(u => u.email);
+    const { data } = await db.from('users').select('id, email').in('email', batch);
+    for (const u of data || []) emailToId[u.email] = u.id;
+  }
+
+  const output = [];
+  for (const u of allUsers) {
+    const userId = emailToId[u.email];
+    if (!userId) continue;
+    const sessionToken = await createSessionToken(userId, u.email);
+    output.push({
+      email:        u.email,
+      password:     PASSWORD,
+      name:         u.name,
+      userId,
+      sessionToken, // pre-signed JWT — k6 sets this as draft_session cookie
+    });
+  }
+  console.log(`   ✓ ${output.length} session tokens generated.\n`);
 
   fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2));
