@@ -1,0 +1,148 @@
+sachin@sachins-MacBook-Air-2 drafthub % git pull origin feat/k6-stress-tests
+
+k6 run k6/scenarios/smoke.js \
+  -e BASE_URL=https://drafthub-web.vercel.app \
+  -e ADMIN_EMAIL=admin@drafthub.com \
+  -e ADMIN_PASSWORD=sachingalaxy1228@ \
+  -e TEST_USER_EMAIL=patilsachin1228@gmail.com \
+  -e TEST_USER_PASSWORD=sachin1228 \
+  -e TEST_COMMUNITY_ID=2d98706f-367c-441b-9d5d-ace92fa8a859
+From https://github.com/sachin1228/drafthub
+ * branch            feat/k6-stress-tests -> FETCH_HEAD
+Already up to date.
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: k6/scenarios/smoke.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1 iterations shared among 1 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate>0.95' rate=98.63%
+
+    http_req_duration
+    ✓ 'p(95)<2000' p(95)=1.61s
+
+      {percentile:99}
+      ✓ 'p(99)<5000' p(99)=0s
+
+    http_req_failed
+    ✗ 'rate<0.05' rate=11.47%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 73     1.144153/s
+    checks_succeeded...: 98.63% 72 out of 73
+    checks_failed......: 1.36%  1 out of 73
+
+    ✓ data/cities: status 200
+    ✓ data/cities: body has cities array
+    ✓ data/companies: status 200
+    ✓ data/companies: body has companies array
+    ✓ data/sectors: status 200
+    ✓ data/sectors: body has sectors array
+    ✓ data/interests: status 200
+    ✓ data/interests: body has interests array
+    ✓ data/experience-levels: status 200
+    ✓ data/experience-levels: body has experience_levels array
+    ✓ giphy/trending: status 200 or 429 or 502 or 503
+    ✓ giphy/search: status 200 or 429 or 502 or 503
+    ✓ applications/submit: accepted or rate-limited
+    ✓ applications/submit invalid: status 400 or 422
+    ✓ admin/guard: 401 or 403
+    ✓ login: status 200 or 429
+    ✓ login: success true (when not rate-limited)
+    ✓ auth/me authed: status 200
+    ✓ auth/me authed: user present
+    ✓ auth/login invalid: status 401 or 400 or 422 or 429
+    ✓ auth/reset-request: status 200 or 429
+    ✓ auth/me unauthed: status 200
+    ✓ auth/me unauthed: no active user
+    ✓ communities/list: status 200
+    ✓ communities/list: has communities array
+    ✓ communities/all: status 200
+    ✓ communities/single: status 200 or 404
+    ✓ communities/stats: status 200 or 404
+    ✓ communities/messages-get: status 200 or 404
+    ✓ communities/messages-post: status 200 or 201 or 404
+    ✓ communities/reactions-post: status 2xx
+    ✓ communities/messages-delete: status 200 or 204
+    ✓ communities/read-patch: status 200 or 404
+    ✓ threads/list: status 200 or 404
+    ✓ threads/create: status 2xx or 404
+    ✓ threads/get: status 200 or 404
+    ✓ threads/vote: status 2xx or 404
+    ✓ threads/comments-list: status 200 or 404
+    ✓ threads/comments-post: status 2xx or 404
+    ✓ threads/comments-delete: status 200 or 204 or 404
+    ✗ threads/patch: status 2xx or 403 or 404
+      ↳  0% — ✓ 0 / ✗ 1
+    ✓ threads/delete: status 200 or 204 or 403 or 404
+    ✓ events/list: status 200 or 404
+    ✓ events/create: status 2xx or 404
+    ✓ events/get: status 200 or 404
+    ✓ events/rsvp: status 2xx or 404
+    ✓ events/rsvp-list: status 200 or 404
+    ✓ events/comments-get: status 200 or 404
+    ✓ events/comments-post: status 2xx or 404
+    ✓ events/delete: status 200 or 204 or 403 or 404
+    ✓ profile/get: status 200
+    ✓ profile/get: has user object
+    ✓ profile/get: has profile object
+    ✓ profile/patch: status 200
+    ✓ profile/interests: status 2xx
+    ✓ profile/threads: status 200
+    ✓ lottie-settings/get: status 200
+    ✓ link-preview/get: status 200 or 4xx
+    ✓ logout: status 200
+    ✓ admin login: status 200 or 429
+    ✓ admin login: success true (when not rate-limited)
+    ✓ admin/applications: status 200 or 401
+    ✓ admin/users: status 200 or 401
+    ✓ admin/communities: status 200 or 401
+    ✓ admin/cities: status 200 or 401
+    ✓ admin/sectors: status 200 or 401
+    ✓ admin/companies: status 200 or 401
+    ✓ admin/interests: status 200 or 401
+    ✓ admin/moderation: status 200 or 401
+    ✓ admin/tags: status 200 or 401
+    ✓ admin/cities-post: status 2xx or 401
+    ✓ admin/interests-post: status 2xx or 401
+
+    HTTP
+    http_req_duration..............: avg=912.51ms min=58.92ms med=957.64ms max=2.35s p(90)=1.48s p(95)=1.61s
+      { expected_response:true }...: avg=962ms    min=58.92ms med=969.48ms max=2.35s p(90)=1.51s p(95)=1.71s
+      { percentile:99 }............: avg=0s       min=0s      med=0s       max=0s    p(90)=0s    p(95)=0s   
+    http_req_failed................: 11.47% 7 out of 61
+    http_reqs......................: 61     0.956073/s
+
+    EXECUTION
+    iteration_duration.............: avg=1m3s     min=1m3s    med=1m3s     max=1m3s  p(90)=1m3s  p(95)=1m3s 
+    iterations.....................: 1      0.015673/s
+    vus............................: 1      min=1       max=1
+    vus_max........................: 1      min=1       max=1
+
+    NETWORK
+    data_received..................: 325 kB 5.1 kB/s
+    data_sent......................: 9.3 kB 146 B/s
+
+
+
+
+running (01m03.8s), 0/1 VUs, 1 complete and 0 interrupted iterations
+default ✓ [======================================] 1 VUs  01m03.8s/10m0s  1/1 shared iters
+ERRO[0064] thresholds on metrics 'http_req_failed' have been crossed 
+sachin@sachins-MacBook-Air-2 drafthub % 
