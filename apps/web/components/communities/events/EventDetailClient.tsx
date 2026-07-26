@@ -4,13 +4,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, Calendar, CornerDownRight, ExternalLink, Image as ImageIcon,
+  ArrowLeft, Calendar, CornerDownRight, ExternalLink,
   Loader2, MapPin, MessageSquare, MoreHorizontal, Pencil,
-  Smile, Trash2, Users, Video, X,
+  Send, Trash2, Users, Video,
 } from "lucide-react";
 import type { CommunityEvent, EventComment, EventRsvp } from "./types";
 import { EditEventModal } from "./EditEventModal";
-import { EmojiGifPicker } from "@/components/communities/chat/EmojiGifPicker";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -346,27 +345,11 @@ export function EventDetailClient({
   const [commentsLoading, setCommentsLoading] = useState(true);
 
   // Main composer state
-  const [expanded, setExpanded] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
-  const [emojiOpen, setEmojiOpen] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const emojiPickerRef = useRef<HTMLDivElement>(null);
-
-  // Close emoji picker on outside click
-  useEffect(() => {
-    if (!emojiOpen) return;
-    function outside(e: MouseEvent) {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) setEmojiOpen(false);
-    }
-    document.addEventListener("mousedown", outside);
-    return () => document.removeEventListener("mousedown", outside);
-  }, [emojiOpen]);
 
   const isOwner = event.user_id === currentUserId;
   const past = isPast(event.end_date ?? event.event_date);
@@ -383,10 +366,10 @@ export function EventDetailClient({
 
   // Auto-grow textarea
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = `${ta.scrollHeight}px`;
   }, [commentText]);
 
   // ── Event actions ──
@@ -427,72 +410,23 @@ export function EventDetailClient({
 
   // ── Composer ──
 
-  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    setExpanded(true);
-    e.target.value = "";
-  }
-
-  function clearImage() {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImageFile(null);
-    setImagePreview(null);
-  }
-
-  function handleEmojiInsert(emoji: string) {
-    const ta = textareaRef.current;
-    if (!ta) { setCommentText((p) => p + emoji); return; }
-    const start = ta.selectionStart ?? commentText.length;
-    const end = ta.selectionEnd ?? commentText.length;
-    const next = commentText.slice(0, start) + emoji + commentText.slice(end);
-    setCommentText(next);
-    setEmojiOpen(false);
-    setTimeout(() => { ta.focus(); const pos = start + emoji.length; ta.setSelectionRange(pos, pos); }, 0);
-  }
-
-  function handleComposerClick() {
-    setExpanded(true);
-    setTimeout(() => textareaRef.current?.focus(), 0);
-  }
-
   async function handlePostComment(e?: React.FormEvent) {
     e?.preventDefault();
     const text = commentText.trim();
-    if ((!text && !imageFile) || posting) return;
+    if (!text || posting) return;
     setPosting(true);
     setCommentError(null);
     try {
-      let uploadedImageUrl: string | null = null;
-      if (imageFile) {
-        const form = new FormData();
-        form.append("file", imageFile);
-        const uploadRes = await fetch(`/api/communities/${communityId}/events/upload`, { method: "POST", body: form });
-        if (!uploadRes.ok) { const d = await uploadRes.json(); setCommentError(d.error ?? "Image upload failed."); return; }
-        const { url } = await uploadRes.json();
-        uploadedImageUrl = url;
-      }
       const res = await fetch(`/api/communities/${communityId}/events/${event.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: text, image_url: uploadedImageUrl }),
+        body: JSON.stringify({ body: text }),
       });
       const data = await res.json();
       if (!res.ok) { setCommentError(data.error ?? "Failed to post."); return; }
       setComments((prev) => [...prev, data.comment]);
       setCommentText("");
-      clearImage();
-      setExpanded(false);
     } finally { setPosting(false); }
-  }
-
-  function handleCancel() {
-    setCommentText("");
-    clearImage();
-    setExpanded(false);
-    setCommentError(null);
   }
 
   // ── Comment actions passed to CommentNode ──
@@ -518,7 +452,7 @@ export function EventDetailClient({
     "from-emerald-400/80 to-teal-500/80",
   ];
   const gradientIndex = event.id.charCodeAt(0) % gradients.length;
-  const canPost = (commentText.trim().length > 0 || imageFile !== null) && !posting;
+  const canPost = commentText.trim().length > 0 && !posting;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -673,105 +607,43 @@ export function EventDetailClient({
           {activeTab === "discussion" && (
             <div className="mt-5 space-y-5">
               {/* Composer */}
-              <div className="rounded-xl border border-border bg-surface overflow-hidden">
-                {!expanded ? (
-                  <button type="button" onClick={handleComposerClick}
-                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
-                    <Avatar name={currentUserName || "M"} avatarUrl={currentUserAvatar} size="md" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-medium text-foreground">Start a discussion</p>
-                      <p className="font-body text-xs text-foreground-subtle">Ask a question or share something about this event…</p>
-                    </div>
-                    <span className="shrink-0 rounded-lg bg-accent px-3.5 py-1.5 font-body text-xs font-semibold text-accent-foreground">
-                      Add comment
-                    </span>
+              <form onSubmit={handlePostComment} className="space-y-2">
+                <div className="rounded-xl border border-border bg-surface overflow-hidden">
+                  <textarea
+                    ref={textareaRef}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void handlePostComment();
+                    }}
+                    placeholder="Write a comment… (⌘↵ to post)"
+                    rows={3}
+                    maxLength={2000}
+                    className="w-full resize-none bg-transparent px-4 py-3.5 font-body text-sm text-foreground placeholder:text-foreground-subtle focus:outline-none"
+                  />
+                </div>
+                {commentError && <p className="font-body text-xs text-red-400">{commentError}</p>}
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={!canPost}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-1.5 font-body text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {posting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                    {posting ? "Posting…" : "Post"}
                   </button>
-                ) : (
-                  <form onSubmit={handlePostComment} className="p-4 space-y-3">
-                    <div className="flex gap-3">
-                      <Avatar name={currentUserName || "M"} avatarUrl={currentUserAvatar} size="md" />
-                      <div className="flex-1 min-w-0">
-                        <textarea
-                          ref={textareaRef}
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void handlePostComment();
-                            if (e.key === "Escape") handleCancel();
-                          }}
-                          placeholder="Ask a question or share something about this event…"
-                          rows={3}
-                          maxLength={2000}
-                          autoFocus
-                          className="w-full resize-none bg-transparent font-body text-sm text-foreground placeholder:text-foreground-subtle focus:outline-none"
-                        />
-                        {imagePreview && (
-                          <div className="relative mt-2 inline-block">
-                            <img src={imagePreview} alt="Upload preview" className="max-h-48 rounded-lg border border-border object-cover" />
-                            <button type="button" onClick={clearImage}
-                              className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-surface border border-border text-foreground-muted hover:text-foreground">
-                              <X size={10} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                </div>
+              </form>
 
-                    {commentError && <p className="pl-11 font-body text-xs text-red-400">{commentError}</p>}
-
-                    <div className="flex items-center justify-between pl-11">
-                      <div className="flex items-center gap-1">
-                        <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif"
-                          className="hidden" onChange={handleImageSelect} />
-
-                        {/* Emoji */}
-                        <div ref={emojiPickerRef} className="relative">
-                          <button type="button" onClick={() => setEmojiOpen((p) => !p)} title="Add emoji"
-                            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-surface-raised ${
-                              emojiOpen ? "text-accent" : "text-foreground-subtle hover:text-foreground"
-                            }`}>
-                            <Smile size={16} />
-                          </button>
-                          {emojiOpen && (
-                            <div className="absolute bottom-full left-0 mb-2 z-50">
-                              <EmojiGifPicker onEmojiSelect={handleEmojiInsert} onGifSelect={() => setEmojiOpen(false)} />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* GIF — coming soon */}
-                        <div className="relative group/gif">
-                          <button type="button" disabled
-                            className="flex h-8 items-center justify-center rounded-lg px-2 font-body text-[11px] font-black tracking-wide text-foreground-subtle opacity-40 cursor-not-allowed">
-                            GIF
-                          </button>
-                          <div className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-surface px-2.5 py-1 font-body text-[11px] text-foreground-muted shadow-md opacity-0 transition-opacity group-hover/gif:opacity-100">
-                            Coming soon
-                          </div>
-                        </div>
-
-                        {/* Image */}
-                        <button type="button" onClick={() => imageInputRef.current?.click()} title="Add image"
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground-subtle transition-colors hover:bg-surface-raised hover:text-foreground">
-                          <ImageIcon size={16} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button type="button" onClick={handleCancel}
-                          className="rounded-lg px-3.5 py-1.5 font-body text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-raised hover:text-foreground">
-                          Cancel
-                        </button>
-                        <button type="submit" disabled={!canPost}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-1.5 font-body text-xs font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">
-                          {posting ? <Loader2 size={12} className="animate-spin" /> : null}
-                          {posting ? "Posting…" : "Post"}
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                )}
-              </div>
+              {/* Comments heading */}
+              {!commentsLoading && (
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="font-display text-sm font-semibold text-foreground">
+                    {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+              )}
 
               {/* Comments list */}
               {commentsLoading ? (
