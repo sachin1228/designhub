@@ -33,6 +33,7 @@ export interface CommunityThread {
   updated_at: string;
   vote_count: number;
   user_voted: boolean;
+  comment_count: number;
   users: {
     name: string;
     avatar_url: string | null;
@@ -41,4 +42,16 @@ export interface CommunityThread {
 
 export interface ProfileThread extends CommunityThread {
   community: { name: string } | null;
+}
+
+export interface ThreadComment {
+  id: string;
+  thread_id: string;
+  user_id: string;
+  parent_id: string | null;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  users: { name: string; avatar_url: string | null } | null;
+  replies: ThreadComment[];
 }

@@ -69,6 +69,7 @@ export default async function ProfilePage() {
         community: (thread as { communities?: { name: string } | null }).communities ?? null,
         vote_count: 0,
         user_voted: false,
+        comment_count: 0,
       })) as ProfileThread[]}
       currentUserId={userId}
     />

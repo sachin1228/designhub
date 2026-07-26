@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { ChevronUp, MessageSquare, MoreHorizontal, Pencil } from "lucide-react";
 import type { ProfileThread } from "./types";
 import { THREAD_CATEGORIES } from "./types";
@@ -62,6 +63,8 @@ export function ProfileThreadCard({ thread, onUpdated, onVoteChanged }: ProfileT
     }
   }
 
+  const threadHref = `/dashboard/communities/${thread.community_id}/threads/${thread.id}`;
+
   return (
     <>
       <article className="group rounded-xl border border-border bg-surface-raised">
@@ -86,8 +89,8 @@ export function ProfileThreadCard({ thread, onUpdated, onVoteChanged }: ProfileT
             </span>
           </div>
 
-          {/* Main content */}
-          <div className="min-w-0 flex-1 py-3 pr-3">
+          {/* Main content — clickable */}
+          <Link href={threadHref} className="min-w-0 flex-1 py-3 pr-3 block">
             {/* Top row: category + community + menu */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -103,10 +106,14 @@ export function ProfileThreadCard({ thread, onUpdated, onVoteChanged }: ProfileT
                   </span>
                 )}
               </div>
-              <div className="relative shrink-0" ref={menuRef}>
+              <div
+                className="relative shrink-0"
+                ref={menuRef}
+                onClick={(e) => e.preventDefault()}
+              >
                 <button
                   type="button"
-                  onClick={() => setMenuOpen((prev) => !prev)}
+                  onClick={(e) => { e.preventDefault(); setMenuOpen((prev) => !prev); }}
                   aria-label="Thread options"
                   className="flex h-6 w-6 items-center justify-center rounded-md text-foreground-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface hover:text-foreground focus:opacity-100"
                 >
@@ -116,7 +123,7 @@ export function ProfileThreadCard({ thread, onUpdated, onVoteChanged }: ProfileT
                   <div className="absolute right-0 top-7 z-20 min-w-[120px] rounded-lg border border-border bg-surface py-1 shadow-lg">
                     <button
                       type="button"
-                      onClick={() => { setMenuOpen(false); setShowEditModal(true); }}
+                      onClick={(e) => { e.preventDefault(); setMenuOpen(false); setShowEditModal(true); }}
                       className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-foreground-muted hover:bg-surface-raised hover:text-foreground"
                     >
                       <Pencil size={11} />
@@ -153,17 +160,13 @@ export function ProfileThreadCard({ thread, onUpdated, onVoteChanged }: ProfileT
               <span className="font-body text-[11px] text-foreground-subtle">
                 {formatRelativeDate(thread.updated_at || thread.created_at)}
               </span>
-              {thread.allow_replies && (
-                <>
-                  <span className="font-body text-[11px] text-foreground-subtle">·</span>
-                  <span className="inline-flex items-center gap-1 font-body text-[11px] text-foreground-subtle">
-                    <MessageSquare size={10} />
-                    Replies open
-                  </span>
-                </>
-              )}
+              <span className="font-body text-[11px] text-foreground-subtle">·</span>
+              <span className="inline-flex items-center gap-1 font-body text-[11px] text-foreground-subtle">
+                <MessageSquare size={10} />
+                {thread.comment_count} {thread.comment_count === 1 ? "comment" : "comments"}
+              </span>
             </div>
-          </div>
+          </Link>
         </div>
       </article>
 

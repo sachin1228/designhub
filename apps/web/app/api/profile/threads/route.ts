@@ -34,21 +34,21 @@ export async function GET() {
     communities: undefined,
   }));
 
-  if (!threads.length) {
-    return NextResponse.json({ threads: [] });
-  }
+  if (!threads.length) return NextResponse.json({ threads: [] });
 
-  // Fetch vote counts and user's votes
   const threadIds = threads.map((t) => t.id);
-  const [{ data: allVotes }, { data: myVotes }] = await Promise.all([
+  const [{ data: allVotes }, { data: myVotes }, { data: allComments }] = await Promise.all([
     db.from("thread_votes").select("thread_id").in("thread_id", threadIds),
     db.from("thread_votes").select("thread_id").in("thread_id", threadIds).eq("user_id", userId),
+    db.from("thread_comments").select("thread_id").in("thread_id", threadIds),
   ]);
 
   const voteCountMap: Record<string, number> = {};
-  for (const vote of allVotes ?? []) {
-    voteCountMap[vote.thread_id] = (voteCountMap[vote.thread_id] ?? 0) + 1;
-  }
+  for (const v of allVotes ?? []) voteCountMap[v.thread_id] = (voteCountMap[v.thread_id] ?? 0) + 1;
+
+  const commentCountMap: Record<string, number> = {};
+  for (const c of allComments ?? []) commentCountMap[c.thread_id] = (commentCountMap[c.thread_id] ?? 0) + 1;
+
   const myVoteSet = new Set((myVotes ?? []).map((v) => v.thread_id));
 
   return NextResponse.json({
@@ -56,6 +56,7 @@ export async function GET() {
       ...thread,
       vote_count: voteCountMap[thread.id] ?? 0,
       user_voted: myVoteSet.has(thread.id),
+      comment_count: commentCountMap[thread.id] ?? 0,
     })),
   });
 }

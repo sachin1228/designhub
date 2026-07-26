@@ -107,23 +107,28 @@ async function withAuthorAndVotes(
     { data: profiles },
     { data: allVotes },
     { data: myVotes },
+    { data: allComments },
   ] = await Promise.all([
     userIds.length ? db.from("users").select("id, name").in("id", userIds) : { data: [] },
     userIds.length ? db.from("designer_profiles").select("user_id, avatar_url").in("user_id", userIds) : { data: [] },
     db.from("thread_votes").select("thread_id").in("thread_id", threadIds),
     db.from("thread_votes").select("thread_id").in("thread_id", threadIds).eq("user_id", currentUserId),
+    db.from("thread_comments").select("thread_id").in("thread_id", threadIds),
   ]);
 
   const userMap = Object.fromEntries((users ?? []).map((u) => [u.id, u.name]));
   const avatarMap = Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p.avatar_url]));
 
-  // Count votes per thread
   const voteCountMap: Record<string, number> = {};
   for (const vote of allVotes ?? []) {
     voteCountMap[vote.thread_id] = (voteCountMap[vote.thread_id] ?? 0) + 1;
   }
 
-  // My votes set
+  const commentCountMap: Record<string, number> = {};
+  for (const c of allComments ?? []) {
+    commentCountMap[c.thread_id] = (commentCountMap[c.thread_id] ?? 0) + 1;
+  }
+
   const myVoteSet = new Set((myVotes ?? []).map((v) => v.thread_id));
 
   return rows.map((row) => ({
@@ -133,6 +138,7 @@ async function withAuthorAndVotes(
       : null,
     vote_count: voteCountMap[row.id as string] ?? 0,
     user_voted: myVoteSet.has(row.id as string),
+    comment_count: commentCountMap[row.id as string] ?? 0,
   }));
 }
 
