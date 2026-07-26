@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { uploadToR2 } from "@/lib/r2";
 import { compressChatImage } from "@/lib/image-utils";
 
-const MAX_BYTES = 20 * 1024 * 1024; // 20 MB raw limit (images shrink after compression)
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB limit
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
@@ -54,7 +54,7 @@ export async function POST(
     return NextResponse.json({ error: "This file type is not supported." }, { status: 422 });
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Files must be 20 MB or smaller." }, { status: 422 });
+    return NextResponse.json({ error: "Files must be 10 MB or smaller." }, { status: 422 });
   }
 
   const slug = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
