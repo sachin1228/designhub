@@ -16,7 +16,7 @@ export async function GET(
 
   const { data, error } = await db
     .from("event_comments")
-    .select("id, event_id, user_id, body, image_url, created_at, updated_at")
+    .select("id, event_id, user_id, parent_id, body, image_url, created_at, updated_at")
     .eq("event_id", eventId)
     .order("created_at", { ascending: true });
 
@@ -68,6 +68,7 @@ export async function POST(
 
   const text = typeof body.body === "string" ? body.body.trim() : "";
   const imageUrl = typeof body.image_url === "string" && body.image_url.trim() ? body.image_url.trim() : null;
+  const parentId = typeof body.parent_id === "string" && body.parent_id.trim() ? body.parent_id.trim() : null;
 
   if (!text && !imageUrl) {
     return NextResponse.json({ error: "Comment must have text or an image." }, { status: 422 });
@@ -76,10 +77,21 @@ export async function POST(
     return NextResponse.json({ error: "Comment must be 1–2000 characters." }, { status: 422 });
   }
 
+  // Validate parent belongs to same event
+  if (parentId) {
+    const { data: parent } = await db
+      .from("event_comments")
+      .select("id")
+      .eq("id", parentId)
+      .eq("event_id", eventId)
+      .maybeSingle();
+    if (!parent) return NextResponse.json({ error: "Parent comment not found." }, { status: 404 });
+  }
+
   const { data: comment, error } = await db
     .from("event_comments")
-    .insert({ event_id: eventId, user_id: userId, body: text, image_url: imageUrl })
-    .select("id, event_id, user_id, body, image_url, created_at, updated_at")
+    .insert({ event_id: eventId, user_id: userId, parent_id: parentId, body: text, image_url: imageUrl })
+    .select("id, event_id, user_id, parent_id, body, image_url, created_at, updated_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

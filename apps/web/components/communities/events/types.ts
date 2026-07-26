@@ -30,9 +30,11 @@ export interface EventComment {
   id: string;
   event_id: string;
   user_id: string;
+  parent_id: string | null;
   body: string;
   image_url: string | null;
   created_at: string;
   updated_at: string;
   users: { name: string; avatar_url: string | null } | null;
+  replies?: EventComment[];
 }
