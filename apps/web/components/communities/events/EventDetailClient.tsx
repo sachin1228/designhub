@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Calendar, ExternalLink, Loader2,
-  MapPin, MoreHorizontal, Pencil, Trash2, Video,
+  MapPin, MessageSquare, MoreHorizontal, Pencil, Send, Trash2, Users, Video,
 } from "lucide-react";
-import type { CommunityEvent, EventRsvp } from "./types";
+import type { CommunityEvent, EventComment, EventRsvp } from "./types";
 import { EditEventModal } from "./EditEventModal";
 
 function fmtEventDateTime(iso: string) {
@@ -18,6 +18,15 @@ function fmtEventDateTime(iso: string) {
 }
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
+}
+function fmtRelative(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 function isPast(iso: string) { return new Date(iso) < new Date(); }
 
@@ -36,6 +45,7 @@ function Avatar({ name, avatarUrl, size = "md" }: { name: string; avatarUrl: str
 function AvatarStack({ rsvps, count }: { rsvps: EventRsvp[]; count: number }) {
   const visible = rsvps.slice(0, 5);
   const extra = count - visible.length;
+  if (count === 0) return <span className="font-body text-sm text-foreground-subtle">0 going</span>;
   return (
     <div className="flex items-center gap-2.5">
       <div className="flex items-center">
@@ -52,7 +62,7 @@ function AvatarStack({ rsvps, count }: { rsvps: EventRsvp[]; count: number }) {
         ))}
       </div>
       <span className="font-body text-sm text-foreground-muted">
-        {extra > 0 ? `+${extra} going` : count > 0 ? `${count} going` : "0 going"}
+        {extra > 0 ? `+${extra} going` : `${count} going`}
       </span>
     </div>
   );
@@ -76,10 +86,34 @@ export function EventDetailClient({ event: initialEvent, initialRsvps, currentUs
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shared, setShared] = useState(false);
+  const [activeTab, setActiveTab] = useState<"discussion" | "attendees">("discussion");
+
+  // Comments state
+  const [comments, setComments] = useState<EventComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentText, setCommentText] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const isOwner = event.user_id === currentUserId;
   const past = isPast(event.end_date ?? event.event_date);
   const full = event.max_attendees !== null && event.rsvp_count >= event.max_attendees && !event.user_rsvped;
+
+  const fetchComments = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/communities/${communityId}/events/${event.id}/comments`);
+      if (res.ok) {
+        const d = await res.json();
+        setComments(d.comments ?? []);
+      }
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, [communityId, event.id]);
+
+  useEffect(() => { void fetchComments(); }, [fetchComments]);
 
   async function handleJoin() {
     if (rsvpPending || past) return;
@@ -119,7 +153,40 @@ export function EventDetailClient({ event: initialEvent, initialRsvps, currentUs
     }
   }
 
-  // Gradient placeholder colours — same set as EventCard
+  async function handlePostComment(e: React.FormEvent) {
+    e.preventDefault();
+    const text = commentText.trim();
+    if (!text || posting) return;
+    setPosting(true);
+    setCommentError(null);
+    try {
+      const res = await fetch(`/api/communities/${communityId}/events/${event.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: text }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setCommentError(data.error ?? "Failed to post comment."); return; }
+      setComments((prev) => [...prev, data.comment]);
+      setCommentText("");
+      textareaRef.current?.focus();
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    if (!confirm("Delete this comment?")) return;
+    setDeletingCommentId(commentId);
+    try {
+      const res = await fetch(`/api/communities/${communityId}/events/${event.id}/comments/${commentId}`, { method: "DELETE" });
+      if (res.ok) setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } finally {
+      setDeletingCommentId(null);
+    }
+  }
+
+  // Gradient placeholder
   const gradients = [
     "from-violet-500/80 to-pink-500/80",
     "from-blue-500/80 to-cyan-400/80",
@@ -139,17 +206,13 @@ export function EventDetailClient({ event: initialEvent, initialRsvps, currentUs
           <ArrowLeft size={13} /> Back to {communityName}
         </Link>
 
-        {/* Main card — horizontal layout matching EventCard */}
+        {/* Main card — horizontal layout */}
         <div className="rounded-xl border border-border bg-surface overflow-hidden">
           <div className="flex min-h-[200px]">
             {/* Cover image / gradient — left panel */}
             <div className="relative w-56 shrink-0 overflow-hidden">
               {event.cover_image_url ? (
-                <img
-                  src={event.cover_image_url}
-                  alt={event.title}
-                  className="h-full w-full object-cover"
-                />
+                <img src={event.cover_image_url} alt={event.title} className="h-full w-full object-cover" />
               ) : (
                 <div className={`h-full w-full bg-gradient-to-br ${gradients[gradientIndex]}`} />
               )}
@@ -232,14 +295,13 @@ export function EventDetailClient({ event: initialEvent, initialRsvps, currentUs
                 </p>
               )}
 
-              {/* Date + optional end time + location */}
+              {/* Date + location */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
                 <span className="inline-flex items-center gap-1.5 font-body text-sm text-foreground-muted">
                   <Calendar size={13} className="shrink-0 text-accent" />
                   {fmtEventDateTime(event.event_date)}
                   {event.end_date && ` – ${fmtTime(event.end_date)}`}
                 </span>
-
                 {event.is_online ? (
                   <span className="inline-flex items-center gap-1.5 font-body text-sm text-foreground-muted">
                     <Video size={13} className="shrink-0" />
@@ -269,7 +331,6 @@ export function EventDetailClient({ event: initialEvent, initialRsvps, currentUs
               {/* Avatar stack */}
               <AvatarStack rsvps={rsvps} count={event.rsvp_count} />
 
-              {/* Capacity note */}
               {event.max_attendees && (
                 <p className="font-body text-xs text-foreground-subtle">
                   {event.max_attendees - event.rsvp_count > 0
@@ -283,22 +344,157 @@ export function EventDetailClient({ event: initialEvent, initialRsvps, currentUs
           </div>
         </div>
 
-        {/* Attendees grid */}
-        {rsvps.length > 0 && (
-          <section className="mt-6">
-            <h2 className="mb-3 font-body text-xs font-semibold uppercase tracking-wider text-foreground-subtle">
-              Going ({rsvps.length})
-            </h2>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {rsvps.map((r) => (
-                <div key={r.user_id} className="flex items-center gap-2.5 rounded-lg border border-border bg-surface px-3 py-2">
-                  <Avatar name={r.users?.name ?? "M"} avatarUrl={r.users?.avatar_url ?? null} size="sm" />
-                  <span className="truncate font-body text-xs text-foreground">{r.users?.name ?? "Member"}</span>
+        {/* ── Tabs ─────────────────────────────────────────────── */}
+        <div className="mt-6">
+          {/* Tab bar */}
+          <div className="flex border-b border-border">
+            <button
+              type="button"
+              onClick={() => setActiveTab("discussion")}
+              className={`inline-flex items-center gap-2 px-4 pb-3 font-body text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === "discussion"
+                  ? "border-accent text-foreground"
+                  : "border-transparent text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              <MessageSquare size={14} />
+              Discussion
+              {comments.length > 0 && (
+                <span className="rounded-full bg-surface-raised px-1.5 py-0.5 font-body text-[10px] text-foreground-subtle">
+                  {comments.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("attendees")}
+              className={`inline-flex items-center gap-2 px-4 pb-3 font-body text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === "attendees"
+                  ? "border-accent text-foreground"
+                  : "border-transparent text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              <Users size={14} />
+              Attendees
+              {event.rsvp_count > 0 && (
+                <span className="rounded-full bg-surface-raised px-1.5 py-0.5 font-body text-[10px] text-foreground-subtle">
+                  {event.rsvp_count}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* ── Discussion tab ──────────────────────────────────── */}
+          {activeTab === "discussion" && (
+            <div className="mt-5 space-y-5">
+              {/* Comment input */}
+              <form onSubmit={handlePostComment} className="flex gap-3">
+                <div className="flex-1">
+                  <textarea
+                    ref={textareaRef}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                        e.preventDefault();
+                        void handlePostComment(e as unknown as React.FormEvent);
+                      }
+                    }}
+                    placeholder="Share your thoughts about this event…"
+                    rows={3}
+                    maxLength={2000}
+                    className="w-full resize-none rounded-xl border border-border bg-surface px-4 py-3 font-body text-sm text-foreground placeholder:text-foreground-subtle focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
+                  />
+                  {commentError && (
+                    <p className="mt-1 font-body text-xs text-red-400">{commentError}</p>
+                  )}
                 </div>
-              ))}
+                <button
+                  type="submit"
+                  disabled={posting || !commentText.trim()}
+                  className="self-end flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Post comment"
+                >
+                  {posting ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                </button>
+              </form>
+
+              {/* Comments list */}
+              {commentsLoading ? (
+                <div className="space-y-3 animate-pulse">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="h-8 w-8 rounded-full bg-surface-raised shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-24 rounded bg-surface-raised" />
+                        <div className="h-4 w-full rounded bg-surface-raised" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
+                  <MessageSquare size={22} className="mx-auto text-foreground-subtle" />
+                  <p className="mt-2 font-body text-sm text-foreground-muted">No comments yet. Be the first to start the discussion!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {comments.map((c) => (
+                    <div key={c.id} className="group flex gap-3">
+                      <Avatar name={c.users?.name ?? "M"} avatarUrl={c.users?.avatar_url ?? null} size="md" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-body text-sm font-semibold text-foreground">
+                            {c.users?.name ?? "Member"}
+                          </span>
+                          <span className="font-body text-[11px] text-foreground-subtle">
+                            {fmtRelative(c.created_at)}
+                          </span>
+                          {c.user_id === currentUserId && (
+                            <button
+                              type="button"
+                              onClick={() => void handleDeleteComment(c.id)}
+                              disabled={deletingCommentId === c.id}
+                              className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity font-body text-[11px] text-red-400 hover:text-red-300 disabled:opacity-50"
+                            >
+                              {deletingCommentId === c.id ? "Deleting…" : "Delete"}
+                            </button>
+                          )}
+                        </div>
+                        <p className="mt-1 font-body text-sm text-foreground-muted leading-relaxed whitespace-pre-wrap break-words">
+                          {c.body}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </section>
-        )}
+          )}
+
+          {/* ── Attendees tab ───────────────────────────────────── */}
+          {activeTab === "attendees" && (
+            <div className="mt-5">
+              {rsvps.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
+                  <Users size={22} className="mx-auto text-foreground-subtle" />
+                  <p className="mt-2 font-body text-sm text-foreground-muted">
+                    No attendees yet. Be the first to join!
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {rsvps.map((r) => (
+                    <div key={r.user_id} className="flex items-center gap-2.5 rounded-lg border border-border bg-surface px-3 py-2.5">
+                      <Avatar name={r.users?.name ?? "M"} avatarUrl={r.users?.avatar_url ?? null} size="sm" />
+                      <span className="truncate font-body text-xs text-foreground">{r.users?.name ?? "Member"}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {showEditModal && (

@@ -25,3 +25,13 @@ export interface EventRsvp {
   created_at: string;
   users: { name: string; avatar_url: string | null } | null;
 }
+
+export interface EventComment {
+  id: string;
+  event_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  users: { name: string; avatar_url: string | null } | null;
+}
