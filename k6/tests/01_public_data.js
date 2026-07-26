@@ -2,25 +2,25 @@
  * Public data endpoints — no authentication required.
  *
  * Endpoints covered:
- *   GET /api/data/cities
- *   GET /api/data/companies
- *   GET /api/data/sectors
- *   GET /api/data/interests
- *   GET /api/data/experience-levels
+ *   GET /api/data/cities            → { cities: [] }
+ *   GET /api/data/companies         → { companies: [] }
+ *   GET /api/data/sectors           → { sectors: [] }
+ *   GET /api/data/interests         → { interests: [] }
+ *   GET /api/data/experience-levels → { experience_levels: [] }
  *   GET /api/giphy?type=trending&limit=10
  */
 
 import http from 'k6/http';
 import { check, group, sleep } from 'k6';
 import { BASE_URL } from '../config.js';
-import { arrayResponse } from '../utils/checks.js';
 
+// Each endpoint returns a wrapped object { <key>: [] } — not a raw array.
 const ENDPOINTS = [
-  { name: 'cities',            path: '/api/data/cities' },
-  { name: 'companies',         path: '/api/data/companies' },
-  { name: 'sectors',           path: '/api/data/sectors' },
-  { name: 'interests',         path: '/api/data/interests' },
-  { name: 'experience-levels', path: '/api/data/experience-levels' },
+  { name: 'cities',             path: '/api/data/cities',             key: 'cities' },
+  { name: 'companies',          path: '/api/data/companies',          key: 'companies' },
+  { name: 'sectors',            path: '/api/data/sectors',            key: 'sectors' },
+  { name: 'interests',          path: '/api/data/interests',          key: 'interests' },
+  { name: 'experience-levels',  path: '/api/data/experience-levels',  key: 'experience_levels' },
 ];
 
 export function publicDataTests() {
@@ -30,7 +30,15 @@ export function publicDataTests() {
         const res = http.get(`${BASE_URL}${ep.path}`, {
           tags: { name: `data/${ep.name}` },
         });
-        check(res, arrayResponse(`data/${ep.name}`));
+        check(res, {
+          [`data/${ep.name}: status 200`]: (r) => r.status === 200,
+          [`data/${ep.name}: body has ${ep.key} array`]: (r) => {
+            try {
+              const b = JSON.parse(r.body);
+              return Array.isArray(b[ep.key]);
+            } catch { return false; }
+          },
+        });
         sleep(0.1);
       });
     }

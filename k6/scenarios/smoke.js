@@ -6,11 +6,11 @@
  *
  * Usage:
  *   k6 run k6/scenarios/smoke.js \
- *     -e BASE_URL=http://localhost:3000 \
- *     -e ADMIN_EMAIL=admin@example.com \
- *     -e ADMIN_PASSWORD=secret \
+ *     -e BASE_URL=https://drafthub-web.vercel.app \
+ *     -e ADMIN_EMAIL=admin@drafthub.com \
+ *     -e ADMIN_PASSWORD=your-admin-password \
  *     -e TEST_USER_EMAIL=member@example.com \
- *     -e TEST_USER_PASSWORD=secret \
+ *     -e TEST_USER_PASSWORD=your-user-password \
  *     -e TEST_COMMUNITY_ID=<uuid>
  */
 
@@ -34,31 +34,32 @@ const ADMIN_EMAIL    = __ENV.ADMIN_EMAIL         || 'admin@example.com';
 const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD      || 'adminpassword';
 
 export default function () {
-  // ── 1. Public endpoints (no auth) ─────────────────────────────────────────
+  // ── 1. Public endpoints — no auth needed ──────────────────────────────────
   publicDataTests();
 
-  // ── 2. Application submission (no auth) ───────────────────────────────────
+  // ── 2. Application submission — no auth needed ────────────────────────────
   applicationTests();
 
-  // ── 3. Auth guard: admin routes must reject unauthenticated requests ───────
+  // ── 3. Guard check — admin routes must reject unauthenticated requests ─────
   adminAuthGuardTests();
 
   // ── 4. Member session ─────────────────────────────────────────────────────
+  // Log in once here; authTests() does NOT call login/logout itself.
   loginUser(USER_EMAIL, USER_PASSWORD);
 
-  authTests();
-  communityTests();
-  threadTests();
-  eventTests();
-  profileTests();
+  authTests();       // /me, invalid login, reset-request (session stays active)
+  communityTests();  // communities, messages, reactions
+  threadTests();     // threads, votes, comments
+  eventTests();      // events, rsvp, event comments
+  profileTests();    // profile get/patch, interests, lottie-settings
 
   logout();
 
   // ── 5. Admin session ──────────────────────────────────────────────────────
   loginAdmin(ADMIN_EMAIL, ADMIN_PASSWORD);
 
-  adminReadTests();
-  adminWriteSmoke(); // write smoke only — not run during load/stress
+  adminReadTests();  // all admin GET endpoints
+  adminWriteSmoke(); // create city + interest (smoke only — not in load/stress)
 
   logout();
 

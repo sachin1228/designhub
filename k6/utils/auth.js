@@ -25,8 +25,8 @@ export function loginUser(email, password) {
   );
   check(res, {
     'login: status 200': (r) => r.status === 200,
-    'login: has user in body': (r) => {
-      try { return !!JSON.parse(r.body).user; } catch { return false; }
+    'login: success true': (r) => {
+      try { return JSON.parse(r.body).success === true; } catch { return false; }
     },
   });
   return res;
@@ -47,6 +47,9 @@ export function loginAdmin(email, password) {
   );
   check(res, {
     'admin login: status 200': (r) => r.status === 200,
+    'admin login: success true': (r) => {
+      try { return JSON.parse(r.body).success === true; } catch { return false; }
+    },
   });
   return res;
 }

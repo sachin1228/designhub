@@ -28,7 +28,12 @@ export function communityTests() {
     const res = http.get(`${BASE_URL}/api/communities`, {
       tags: { name: 'communities/list' },
     });
-    check(res, arrayResponse('communities/list'));
+    check(res, {
+      'communities/list: status 200': (r) => r.status === 200,
+      'communities/list: has communities array': (r) => {
+        try { return Array.isArray(JSON.parse(r.body).communities); } catch { return false; }
+      },
+    });
     sleep(0.1);
   });
 
