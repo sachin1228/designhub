@@ -64,7 +64,7 @@ export function ProfileThreadCard({ thread, onUpdated, onVoteChanged }: ProfileT
 
   return (
     <>
-      <article className="group rounded-2xl border border-border bg-surface-raised transition-colors hover:border-accent/30">
+      <article className="group rounded-2xl border border-border bg-surface-raised">
         <div className="flex items-stretch">
           {/* Left — upvote column */}
           <div className="flex w-12 shrink-0 flex-col items-center justify-start gap-1 pt-4 pb-4 pl-2 pr-1">
@@ -176,10 +176,6 @@ export function ProfileThreadCard({ thread, onUpdated, onVoteChanged }: ProfileT
             </div>
           </div>
 
-          {/* Right edge — activity dot */}
-          <div className="flex items-start pt-4 pr-3">
-            <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Active" />
-          </div>
         </div>
       </article>
 

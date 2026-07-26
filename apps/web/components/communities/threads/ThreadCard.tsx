@@ -79,7 +79,7 @@ export function ThreadCard({
 
   return (
     <>
-      <article className="group rounded-2xl border border-border bg-surface transition-colors hover:border-accent/30">
+      <article className="group rounded-2xl border border-border bg-surface">
         <div className="flex items-stretch">
           {/* Left — upvote column */}
           <div className="flex w-14 shrink-0 flex-col items-center justify-start gap-1 pt-5 pb-5 pl-3 pr-1">
@@ -197,10 +197,6 @@ export function ThreadCard({
             </div>
           </div>
 
-          {/* Right edge — activity dot */}
-          <div className="flex items-start pt-5 pr-4">
-            <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Active" />
-          </div>
         </div>
       </article>
 
