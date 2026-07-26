@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth/session";
 import { createServiceClient } from "@/lib/supabase/service";
 import { uploadToR2 } from "@/lib/r2";
+import { compressChatImage } from "@/lib/image-utils";
 
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = 20 * 1024 * 1024; // 20 MB raw limit (images shrink after compression)
+
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
 const ALLOWED_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
+  ...IMAGE_TYPES,
   "application/pdf",
   "application/zip",
   "application/x-zip-compressed",
@@ -53,16 +54,36 @@ export async function POST(
     return NextResponse.json({ error: "This file type is not supported." }, { status: 422 });
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Files must be 10 MB or smaller." }, { status: 422 });
+    return NextResponse.json({ error: "Files must be 20 MB or smaller." }, { status: 422 });
   }
 
-  const extension = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-  const key = `threads/${communityId}/${session.userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+  const slug = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const isImage = IMAGE_TYPES.has(file.type);
 
   try {
-    const url = await uploadToR2(key, Buffer.from(await file.arrayBuffer()), file.type);
+    let body: Buffer;
+    let contentType: string;
+    let key: string;
+    let storedSize: number;
+
+    if (isImage) {
+      // Compress: resize to max 1200×1200, convert to WebP
+      const compressed = await compressChatImage(Buffer.from(await file.arrayBuffer()));
+      body = compressed.data;
+      contentType = compressed.contentType;
+      key = `threads/${communityId}/${session.userId}/${slug}.webp`;
+      storedSize = body.length;
+    } else {
+      body = Buffer.from(await file.arrayBuffer());
+      contentType = file.type;
+      const extension = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+      key = `threads/${communityId}/${session.userId}/${slug}.${extension}`;
+      storedSize = file.size;
+    }
+
+    const url = await uploadToR2(key, body, contentType);
     return NextResponse.json(
-      { attachment: { name: file.name, url, type: file.type, size: file.size } },
+      { attachment: { name: file.name, url, type: contentType, size: storedSize } },
       { status: 201 },
     );
   } catch (error) {
