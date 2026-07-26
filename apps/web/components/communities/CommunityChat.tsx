@@ -16,6 +16,7 @@ import { useScrollAndUnread } from "./chat/useScrollAndUnread";
 import { useRealtimeChat } from "./chat/useRealtimeChat";
 import { useSendMessage } from "./chat/useSendMessage";
 import { useTypingPresence } from "./chat/useTypingPresence";
+import { useOnlinePresence } from "./chat/useOnlinePresence";
 import { TypingIndicator } from "./chat/TypingIndicator";
 import { extractFirstUrl } from "@/lib/communities/linkPreview";
 
@@ -225,6 +226,8 @@ export function CommunityChat({
     currentUserName,
   });
 
+  const { onlineCount } = useOnlinePresence({ communityId, currentUserId });
+
   // ── Scroll positioning + unread boundary ──────────────────────────────────
   const {
     bottomRef,
@@ -423,6 +426,7 @@ export function CommunityChat({
           community={displayCommunity}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          onlineCount={onlineCount}
         />
 
         {activeTab === "threads" ? (
