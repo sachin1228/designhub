@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MessageSquareText } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import type { ProfileThread } from "@/components/communities/threads/types";
@@ -18,6 +18,9 @@ export function ProfileThreads({
   currentUserAvatar: string | null;
 }) {
   const [threads, setThreads] = useState(initialThreads);
+  // Tracks thread IDs with an in-flight optimistic vote from THIS page so we
+  // don't double-apply the realtime event for those specific votes.
+  const pendingVotes = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let supabase: ReturnType<typeof createBrowserClient>;
@@ -61,9 +64,12 @@ export function ProfileThreads({
         (payload) => {
           const record = (payload.new ?? payload.old) as { thread_id?: string; user_id?: string } | null;
           if (!record?.thread_id) return;
-          // Skip own votes — already handled optimistically on click
-          if (record.user_id === currentUserId) return;
           const threadId = record.thread_id;
+          // Skip own votes only when there is a pending optimistic update from
+          // THIS page for that thread. If the vote came from another page (e.g.
+          // the community view), pendingVotes won't contain the thread and we
+          // must apply the update so the count stays in sync.
+          if (record.user_id === currentUserId && pendingVotes.current.has(threadId)) return;
 
           setThreads((current) =>
             current.map((thread) => {
@@ -94,6 +100,12 @@ export function ProfileThreads({
   }
 
   function handleVoteChanged(threadId: string, voted: boolean, newCount: number) {
+    // Mark this thread as having a pending optimistic vote from this page so
+    // the realtime handler knows to skip the echo event for it.
+    pendingVotes.current.add(threadId);
+    // Clear after enough time for the API round-trip + realtime delivery.
+    setTimeout(() => pendingVotes.current.delete(threadId), 5000);
+
     setThreads((current) =>
       current.map((thread) =>
         thread.id === threadId ? { ...thread, user_voted: voted, vote_count: newCount } : thread,
