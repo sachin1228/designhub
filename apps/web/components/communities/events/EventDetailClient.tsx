@@ -33,21 +33,6 @@ function fmtRelative(iso: string) {
 }
 function isPast(iso: string) { return new Date(iso) < new Date(); }
 
-/** Build a comment tree from a flat array. */
-function buildTree(flat: EventComment[]): EventComment[] {
-  const map = new Map<string, EventComment>();
-  const roots: EventComment[] = [];
-  flat.forEach((c) => map.set(c.id, { ...c, replies: [] }));
-  map.forEach((c) => {
-    if (c.parent_id && map.has(c.parent_id)) {
-      map.get(c.parent_id)!.replies!.push(c);
-    } else {
-      roots.push(c);
-    }
-  });
-  return roots;
-}
-
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 function Avatar({ name, avatarUrl, size = "md" }: { name: string; avatarUrl: string | null; size?: "sm" | "md" | "lg" }) {
@@ -93,23 +78,22 @@ function AvatarStack({ rsvps, count }: { rsvps: EventRsvp[]; count: number }) {
 interface CommentNodeProps {
   comment: EventComment;
   currentUserId: string;
-  currentUserName: string;
-  currentUserAvatar: string | null;
   communityId: string;
   eventId: string;
-  depth?: number;
-  onDelete: (id: string) => Promise<void>;
+  isReply?: boolean;
+  /** Only top-level comments show the reply composer */
+  allowReply?: boolean;
+  onDelete: (id: string) => void;
   onReplyPosted: (comment: EventComment) => void;
 }
 
 function CommentNode({
   comment,
   currentUserId,
-  currentUserName,
-  currentUserAvatar,
   communityId,
   eventId,
-  depth = 0,
+  isReply = false,
+  allowReply = true,
   onDelete,
   onReplyPosted,
 }: CommentNodeProps) {
@@ -139,7 +123,13 @@ function CommentNode({
   async function handleDelete() {
     setMenuOpen(false);
     setDeleting(true);
-    try { await onDelete(comment.id); } finally { setDeleting(false); }
+    try {
+      const res = await fetch(
+        `/api/communities/${communityId}/events/${eventId}/comments/${comment.id}`,
+        { method: "DELETE" },
+      );
+      if (res.ok) onDelete(comment.id);
+    } finally { setDeleting(false); }
   }
 
   async function handleReply(e?: React.FormEvent) {
@@ -162,43 +152,43 @@ function CommentNode({
     } finally { setReplyPosting(false); }
   }
 
-  // Cap visual indent at 4 levels
-  const indentPx = Math.min(depth, 4) * 28;
-
   return (
-    <div style={{ paddingLeft: indentPx }}>
-      {/* Thread connector line for replies */}
-      {depth > 0 && (
-        <div className="flex items-start gap-2 mb-1">
-          <CornerDownRight size={12} className="mt-0.5 text-foreground-subtle/40 shrink-0" />
+    <div className={isReply ? "pl-8" : ""}>
+      {isReply && (
+        <div className="mb-1 flex items-center gap-1">
+          <CornerDownRight size={11} className="text-foreground-subtle/40 shrink-0" />
         </div>
       )}
 
-      <div className="group flex gap-3">
-        <Avatar name={comment.users?.name ?? "M"} avatarUrl={comment.users?.avatar_url ?? null} size={depth > 0 ? "sm" : "md"} />
+      <div className="group flex gap-2.5">
+        <Avatar
+          name={comment.users?.name ?? "M"}
+          avatarUrl={comment.users?.avatar_url ?? null}
+          size={isReply ? "sm" : "md"}
+        />
         <div className="flex-1 min-w-0">
           {/* Header row */}
           <div className="flex items-center gap-2">
-            <span className="font-body text-sm font-semibold text-foreground">
+            <span className="font-body text-xs font-semibold text-foreground">
               {comment.users?.name ?? "Member"}
             </span>
-            <span className="font-body text-[11px] text-foreground-subtle flex-1">
+            <span className="font-body text-[11px] text-foreground-subtle">
               {fmtRelative(comment.created_at)}
             </span>
 
             {/* ⋯ menu — own comments only */}
             {isOwn && (
-              <div ref={menuRef} className="relative shrink-0">
+              <div ref={menuRef} className="relative ml-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => setMenuOpen((p) => !p)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-foreground-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-raised hover:text-foreground focus:opacity-100"
+                  className="flex h-5 w-5 items-center justify-center rounded text-foreground-subtle hover:text-foreground"
                   aria-label="Comment options"
                 >
                   <MoreHorizontal size={13} />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-7 z-30 min-w-[120px] rounded-lg border border-border bg-surface py-1 shadow-lg">
+                  <div className="absolute right-0 top-6 z-30 min-w-[110px] rounded-lg border border-border bg-surface py-1 shadow-lg">
                     <button
                       type="button"
                       onClick={handleDelete}
@@ -232,22 +222,22 @@ function CommentNode({
             </a>
           )}
 
-          {/* Reply button */}
-          <div className="mt-1.5">
+          {/* Reply button — only on top-level comments */}
+          {allowReply && (
             <button
               type="button"
               onClick={() => { setReplyOpen((p) => !p); setReplyError(null); }}
-              className="font-body text-[11px] font-medium text-foreground-subtle transition-colors hover:text-accent"
+              className="mt-1.5 inline-flex items-center gap-1 font-body text-[11px] text-foreground-subtle hover:text-accent"
             >
+              <CornerDownRight size={11} />
               Reply
             </button>
-          </div>
+          )}
 
           {/* Inline reply composer */}
           {replyOpen && (
-            <form onSubmit={handleReply} className="mt-2 flex gap-2">
-              <Avatar name={currentUserName || "M"} avatarUrl={currentUserAvatar} size="sm" />
-              <div className="flex-1 min-w-0 rounded-xl border border-border bg-surface-raised px-3 py-2">
+            <div className="mt-2">
+              <form onSubmit={handleReply} className="space-y-2">
                 <textarea
                   ref={replyRef}
                   value={replyText}
@@ -256,54 +246,34 @@ function CommentNode({
                     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void handleReply();
                     if (e.key === "Escape") { setReplyOpen(false); setReplyText(""); }
                   }}
-                  placeholder={`Reply to ${comment.users?.name ?? "this comment"}…`}
+                  placeholder={`Write a reply…`}
                   rows={2}
                   maxLength={2000}
-                  className="w-full resize-none bg-transparent font-body text-xs text-foreground placeholder:text-foreground-subtle focus:outline-none"
+                  className="w-full resize-none rounded-lg border border-border bg-surface-raised px-3 py-2 font-body text-xs text-foreground placeholder:text-foreground-subtle focus:border-accent focus:outline-none"
                 />
-                {replyError && <p className="mt-1 font-body text-[11px] text-red-400">{replyError}</p>}
-                <div className="mt-2 flex items-center justify-end gap-2">
+                {replyError && <p className="font-body text-[11px] text-red-400">{replyError}</p>}
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => { setReplyOpen(false); setReplyText(""); setReplyError(null); }}
-                    className="font-body text-[11px] text-foreground-muted hover:text-foreground"
+                    className="font-body text-xs text-foreground-subtle hover:text-foreground"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={!replyText.trim() || replyPosting}
-                    className="inline-flex items-center gap-1 rounded-lg bg-accent px-3 py-1 font-body text-[11px] font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                    className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 font-body text-xs font-medium text-accent-foreground hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {replyPosting ? <Loader2 size={10} className="animate-spin" /> : null}
-                    {replyPosting ? "Posting…" : "Reply"}
+                    {replyPosting ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
+                    {replyPosting ? "Posting…" : "Post"}
                   </button>
                 </div>
-              </div>
-            </form>
+              </form>
+            </div>
           )}
         </div>
       </div>
-
-      {/* Children (recursive) */}
-      {(comment.replies?.length ?? 0) > 0 && (
-        <div className="mt-3 space-y-3">
-          {comment.replies!.map((child) => (
-            <CommentNode
-              key={child.id}
-              comment={child}
-              currentUserId={currentUserId}
-              currentUserName={currentUserName}
-              currentUserAvatar={currentUserAvatar}
-              communityId={communityId}
-              eventId={eventId}
-              depth={depth + 1}
-              onDelete={onDelete}
-              onReplyPosted={onReplyPosted}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -431,18 +401,18 @@ export function EventDetailClient({
 
   // ── Comment actions passed to CommentNode ──
 
-  const handleDeleteComment = useCallback(async (commentId: string) => {
-    const res = await fetch(`/api/communities/${communityId}/events/${event.id}/comments/${commentId}`, { method: "DELETE" });
-    if (res.ok) setComments((prev) => prev.filter((c) => c.id !== commentId));
-  }, [communityId, event.id]);
+  const handleDeleteComment = useCallback((commentId: string) => {
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+  }, []);
 
   const handleReplyPosted = useCallback((comment: EventComment) => {
     setComments((prev) => [...prev, comment]);
   }, []);
 
-  // ── Build tree ──
-  const commentTree = buildTree(comments);
-  const topLevelCount = comments.filter((c) => !c.parent_id).length;
+  // ── Flat lists for rendering (ThreadDetailClient-style) ──
+  const rootComments = comments.filter((c) => !c.parent_id);
+  const totalCommentCount = comments.length;
+  const topLevelCount = rootComments.length;
 
   // Gradient placeholder
   const gradients = [
@@ -639,7 +609,7 @@ export function EventDetailClient({
               {!commentsLoading && (
                 <div className="flex items-center gap-2 pt-1">
                   <span className="font-display text-sm font-semibold text-foreground">
-                    {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
+                    {totalCommentCount} {totalCommentCount === 1 ? "Comment" : "Comments"}
                   </span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
@@ -658,27 +628,42 @@ export function EventDetailClient({
                     </div>
                   ))}
                 </div>
-              ) : commentTree.length === 0 ? (
+              ) : rootComments.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
                   <MessageSquare size={22} className="mx-auto text-foreground-subtle" />
                   <p className="mt-2 font-body text-sm text-foreground-muted">No comments yet. Be the first to start the discussion!</p>
                 </div>
               ) : (
                 <div className="space-y-5">
-                  {commentTree.map((c) => (
-                    <CommentNode
-                      key={c.id}
-                      comment={c}
-                      currentUserId={currentUserId}
-                      currentUserName={currentUserName}
-                      currentUserAvatar={currentUserAvatar}
-                      communityId={communityId}
-                      eventId={event.id}
-                      depth={0}
-                      onDelete={handleDeleteComment}
-                      onReplyPosted={handleReplyPosted}
-                    />
-                  ))}
+                  {rootComments.map((root) => {
+                    const replies = comments.filter((c) => c.parent_id === root.id);
+                    return (
+                      <div key={root.id} className="space-y-3">
+                        <CommentNode
+                          comment={root}
+                          currentUserId={currentUserId}
+                          communityId={communityId}
+                          eventId={event.id}
+                          allowReply
+                          onDelete={handleDeleteComment}
+                          onReplyPosted={handleReplyPosted}
+                        />
+                        {replies.map((reply) => (
+                          <CommentNode
+                            key={reply.id}
+                            comment={reply}
+                            currentUserId={currentUserId}
+                            communityId={communityId}
+                            eventId={event.id}
+                            isReply
+                            allowReply={false}
+                            onDelete={handleDeleteComment}
+                            onReplyPosted={handleReplyPosted}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
