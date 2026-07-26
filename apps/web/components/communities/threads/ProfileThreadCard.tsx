@@ -6,6 +6,7 @@ import { ChevronUp, MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide
 import type { ProfileThread } from "./types";
 import { THREAD_CATEGORIES } from "./types";
 import type { CommunityThread } from "./types";
+import { CategoryIcon } from "./categoryIcons";
 import { EditThreadModal } from "./EditThreadModal";
 
 function formatRelativeDate(value: string) {
@@ -128,7 +129,7 @@ export function ProfileThreadCard({
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                 {category && (
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 font-body text-[10px] text-foreground-muted">
-                    <span>{category.emoji}</span>
+                    <CategoryIcon category={category.value} size={10} />
                     {category.label}
                   </span>
                 )}
