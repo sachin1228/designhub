@@ -455,11 +455,8 @@ export function EventDetailClient({
                       <p className="font-body text-xs text-foreground-subtle">Ask a question or share something about this event…</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2 pl-2">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground-subtle hover:text-foreground">
-                        <ImageIcon size={16} />
-                      </span>
                       <span className="rounded-lg bg-accent px-3.5 py-1.5 font-body text-xs font-semibold text-accent-foreground">
-                        Post
+                        Add comment
                       </span>
                     </div>
                   </button>
