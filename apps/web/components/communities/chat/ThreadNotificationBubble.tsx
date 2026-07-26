@@ -22,24 +22,6 @@ interface ThreadNotificationBubbleProps {
   communityId: string;
 }
 
-/** Gradient palettes cycled by thread id for thumbnail placeholders. */
-const GRADIENTS = [
-  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-  "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
-  "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-  "linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)",
-];
-
-function pickGradient(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  return GRADIENTS[hash % GRADIENTS.length];
-}
-
 function categoryLabel(value: string): string {
   return (
     THREAD_CATEGORIES.find((c) => c.value === value)?.label ?? value
@@ -70,14 +52,13 @@ export function ThreadNotificationBubble({
   event,
   communityId,
 }: ThreadNotificationBubbleProps) {
-  const sender    = event.users;
-  const name      = sender?.name ?? "Someone";
-  const timeAgo   = fmtTimeAgo(event.created_at);
-  const imgUrl    = thumbnailUrl(event);
-  const gradient  = pickGradient(event.id);
-  const label     = categoryLabel(event.category);
-  const href      = `/dashboard/communities/${communityId}/threads/${event.id}`;
-  const CatIcon   = CATEGORY_ICON[event.category] ?? HelpCircle;
+  const sender  = event.users;
+  const name    = sender?.name ?? "Someone";
+  const timeAgo = fmtTimeAgo(event.created_at);
+  const imgUrl  = thumbnailUrl(event);
+  const label   = categoryLabel(event.category);
+  const href    = `/dashboard/communities/${communityId}/threads/${event.id}`;
+  const CatIcon = CATEGORY_ICON[event.category] ?? HelpCircle;
 
   return (
     <div className="flex items-start gap-2 w-full px-5 mt-3">
@@ -106,10 +87,7 @@ export function ThreadNotificationBubble({
             className="flex items-center gap-3 flex-1 min-w-0 rounded-xl bg-surface-raised border border-white/[0.06] px-3 py-2.5 hover:bg-white/[0.06] transition-colors group"
           >
             {/* Thumbnail */}
-            <div
-              className="h-12 w-12 shrink-0 rounded-lg overflow-hidden flex items-center justify-center"
-              style={{ background: gradient }}
-            >
+            <div className="h-12 w-12 shrink-0 rounded-lg overflow-hidden flex items-center justify-center bg-white/[0.06]">
               {imgUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -118,7 +96,7 @@ export function ThreadNotificationBubble({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <CatIcon size={22} strokeWidth={1.75} className="text-white/90" />
+                <CatIcon size={22} strokeWidth={1.5} className="text-foreground-muted" />
               )}
             </div>
 
