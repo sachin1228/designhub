@@ -23,7 +23,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 function EmptyState({ icon, message }: { icon: React.ReactNode; message: string }) {
   return (
     <div className="rounded-xl border border-dashed border-border px-5 py-10 text-center">
-      <div className="mx-auto mb-2 text-foreground-subtle">{icon}</div>
+      <div className="mx-auto flex justify-center mb-2 text-foreground-subtle">{icon}</div>
       <p className="font-body text-sm text-foreground-muted">{message}</p>
     </div>
   );
