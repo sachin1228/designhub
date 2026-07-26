@@ -57,18 +57,18 @@ export function ProfileThreads({
         (payload) => {
           const record = (payload.new ?? payload.old) as { thread_id?: string; user_id?: string } | null;
           if (!record?.thread_id) return;
+          // Skip own votes — already handled optimistically on click
+          if (record.user_id === currentUserId) return;
           const threadId = record.thread_id;
 
           setThreads((current) =>
             current.map((thread) => {
               if (thread.id !== threadId) return thread;
               if (payload.eventType === "INSERT") {
-                const voted = record.user_id === currentUserId;
-                return { ...thread, vote_count: thread.vote_count + 1, user_voted: voted ? true : thread.user_voted };
+                return { ...thread, vote_count: thread.vote_count + 1 };
               }
               if (payload.eventType === "DELETE") {
-                const wasMe = (payload.old as { user_id?: string })?.user_id === currentUserId;
-                return { ...thread, vote_count: Math.max(0, thread.vote_count - 1), user_voted: wasMe ? false : thread.user_voted };
+                return { ...thread, vote_count: Math.max(0, thread.vote_count - 1) };
               }
               return thread;
             }),
