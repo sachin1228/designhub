@@ -150,10 +150,10 @@ export function ThreadCard({
 
             {/* Tags */}
             {thread.tags.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {thread.tags.map((tag) => (
-                  <span key={tag} className="rounded border border-border px-1.5 py-0.5 font-body text-[10px] text-foreground-subtle">
-                    {tag}
+                  <span key={tag} className="font-body text-[11px] text-foreground-subtle">
+                    #{tag}
                   </span>
                 ))}
               </div>

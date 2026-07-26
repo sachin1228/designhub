@@ -442,10 +442,10 @@ export function ThreadDetailClient({ thread: initialThread, initialComments, cur
 
                 {/* Tags */}
                 {thread.tags.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-1.5">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {thread.tags.map((tag) => (
-                      <span key={tag} className="rounded border border-border px-2 py-0.5 font-body text-[11px] text-foreground-subtle">
-                        {tag}
+                      <span key={tag} className="font-body text-[11px] text-foreground-subtle">
+                        #{tag}
                       </span>
                     ))}
                   </div>
