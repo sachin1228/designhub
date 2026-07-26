@@ -250,7 +250,6 @@ export function ProfileClient({
         email={email}
         avatarUrl={avatarUrl}
         memberSince={memberSince}
-        onNameChange={setName}
         onOpenAvatarPicker={() => setShowAvatarPicker(true)}
         city={city}
         company={company}
