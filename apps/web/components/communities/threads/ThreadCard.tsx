@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ChevronUp, MessageSquare, MoreHorizontal, Pencil } from "lucide-react";
+import { ChevronUp, MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import type { CommunityThread } from "./types";
 import { THREAD_CATEGORIES } from "./types";
 import { EditThreadModal } from "./EditThreadModal";
@@ -23,6 +23,7 @@ interface ThreadCardProps {
   communityId: string;
   onUpdated: (thread: CommunityThread) => void;
   onVoteChanged: (threadId: string, voted: boolean, newCount: number) => void;
+  onDeleted: (threadId: string) => void;
 }
 
 export function ThreadCard({
@@ -31,6 +32,7 @@ export function ThreadCard({
   communityId,
   onUpdated,
   onVoteChanged,
+  onDeleted,
 }: ThreadCardProps) {
   const category = THREAD_CATEGORIES.find((item) => item.value === thread.category);
   const isOwner = thread.user_id === currentUserId;
@@ -38,6 +40,7 @@ export function ThreadCard({
   const [votePending, setVotePending] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,6 +53,19 @@ export function ThreadCard({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!confirm("Delete this thread? This cannot be undone.")) return;
+    setDeleting(true);
+    setMenuOpen(false);
+    try {
+      const res = await fetch(`/api/communities/${communityId}/threads/${thread.id}`, { method: "DELETE" });
+      if (res.ok) onDeleted(thread.id);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function handleVote() {
     if (votePending) return;
@@ -124,7 +140,7 @@ export function ThreadCard({
                   <MoreHorizontal size={13} />
                 </button>
                 {menuOpen && isOwner && (
-                  <div className="absolute right-0 top-7 z-20 min-w-[120px] rounded-lg border border-border bg-surface py-1 shadow-lg">
+                  <div className="absolute right-0 top-7 z-20 min-w-[130px] rounded-lg border border-border bg-surface py-1 shadow-lg">
                     <button
                       type="button"
                       onClick={(e) => { e.preventDefault(); setMenuOpen(false); setShowEditModal(true); }}
@@ -132,6 +148,15 @@ export function ThreadCard({
                     >
                       <Pencil size={11} />
                       Edit thread
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-red-400 hover:bg-surface-raised disabled:opacity-50"
+                    >
+                      <Trash2 size={11} />
+                      {deleting ? "Deleting…" : "Delete thread"}
                     </button>
                   </div>
                 )}

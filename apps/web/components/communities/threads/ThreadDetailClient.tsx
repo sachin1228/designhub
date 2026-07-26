@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, ChevronUp, CornerDownRight, Link as LinkIcon,
   Loader2, MessageSquare, MoreHorizontal, Paperclip, Pencil, Send, Trash2,
@@ -247,11 +248,13 @@ interface Props {
 }
 
 export function ThreadDetailClient({ thread: initialThread, initialComments, currentUserId, communityId, communityName }: Props) {
+  const router = useRouter();
   const [thread, setThread] = useState(initialThread);
   const [comments, setComments] = useState(initialComments);
   const [votePending, setVotePending] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isOwner = thread.user_id === currentUserId;
   const category = THREAD_CATEGORIES.find((c) => c.value === thread.category);
@@ -310,6 +313,18 @@ export function ThreadDetailClient({ thread: initialThread, initialComments, cur
       supabase.removeChannel(voteChannel);
     };
   }, [thread.id, currentUserId, fetchComments]);
+
+  async function handleDelete() {
+    if (!confirm("Delete this thread? This cannot be undone.")) return;
+    setDeleting(true);
+    setMenuOpen(false);
+    try {
+      const res = await fetch(`/api/communities/${communityId}/threads/${thread.id}`, { method: "DELETE" });
+      if (res.ok) router.push(`/dashboard/communities/${communityId}`);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function handleVote() {
     if (votePending) return;
@@ -416,13 +431,22 @@ export function ThreadDetailClient({ thread: initialThread, initialComments, cur
                         <MoreHorizontal size={15} />
                       </button>
                       {menuOpen && (
-                        <div className="absolute right-0 top-8 z-20 min-w-[120px] rounded-lg border border-border bg-surface py-1 shadow-lg">
+                        <div className="absolute right-0 top-8 z-20 min-w-[130px] rounded-lg border border-border bg-surface py-1 shadow-lg">
                           <button
                             type="button"
                             onClick={() => { setMenuOpen(false); setShowEdit(true); }}
                             className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-foreground-muted hover:bg-surface-raised hover:text-foreground"
                           >
                             <Pencil size={11} /> Edit thread
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={deleting}
+                            className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-red-400 hover:bg-surface-raised disabled:opacity-50"
+                          >
+                            <Trash2 size={11} />
+                            {deleting ? "Deleting…" : "Delete thread"}
                           </button>
                         </div>
                       )}

@@ -126,6 +126,10 @@ export function ThreadsView({
     );
   }
 
+  function handleDeleted(threadId: string) {
+    setThreads((current) => current.filter((thread) => thread.id !== threadId));
+  }
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="mx-auto w-full max-w-4xl px-6 py-6">
@@ -206,6 +210,7 @@ export function ThreadsView({
                 communityId={communityId}
                 onUpdated={handleUpdated}
                 onVoteChanged={handleVoteChanged}
+                onDeleted={handleDeleted}
               />
             ))}
           </div>

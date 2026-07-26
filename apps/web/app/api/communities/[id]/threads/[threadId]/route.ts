@@ -148,3 +148,30 @@ export async function PATCH(
 
   return NextResponse.json({ thread: await enrichThread(db, updated as Record<string, unknown>, userId) });
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string; threadId: string }> },
+) {
+  let session;
+  try { session = await requireSession("user"); } catch (e) { return e as Response; }
+
+  const { id: communityId, threadId } = await params;
+  const userId = session.userId!;
+  const db = createServiceClient();
+
+  const { data: existing } = await db
+    .from("community_threads")
+    .select("id, user_id, community_id")
+    .eq("id", threadId)
+    .eq("community_id", communityId)
+    .maybeSingle();
+
+  if (!existing) return NextResponse.json({ error: "Thread not found." }, { status: 404 });
+  if (existing.user_id !== userId) return NextResponse.json({ error: "You can only delete your own threads." }, { status: 403 });
+
+  const { error } = await db.from("community_threads").delete().eq("id", threadId);
+  if (error) { console.error("[DELETE thread]", error); return NextResponse.json({ error: "Failed to delete thread." }, { status: 500 }); }
+
+  return new NextResponse(null, { status: 204 });
+}
