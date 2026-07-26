@@ -63,7 +63,7 @@ export async function POST(
 
   if (!event) return NextResponse.json({ error: "Event not found." }, { status: 404 });
 
-  let body: { body?: unknown };
+  let body: { body?: unknown; image_url?: unknown; parent_id?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON." }, { status: 400 }); }
 
   const text = typeof body.body === "string" ? body.body.trim() : "";
