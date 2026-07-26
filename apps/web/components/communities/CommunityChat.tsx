@@ -16,6 +16,7 @@ import { useScrollAndUnread } from "./chat/useScrollAndUnread";
 import { useRealtimeChat } from "./chat/useRealtimeChat";
 import { useSendMessage } from "./chat/useSendMessage";
 import { useTypingPresence } from "./chat/useTypingPresence";
+import { TypingIndicator } from "./chat/TypingIndicator";
 import { extractFirstUrl } from "@/lib/communities/linkPreview";
 
 const useIsomorphicLayoutEffect =
@@ -455,7 +456,6 @@ export function CommunityChat({
               displayCommunity={displayCommunity}
               communityId={communityId}
               highlightedMsgId={highlightedMsgId}
-              typingUsers={typingUsers}
               onReplyClick={handleReplyClick}
               onCancelSend={handleCancelSend}
               onRetrySend={handleRetrySend}
@@ -478,6 +478,7 @@ export function CommunityChat({
                 <ChevronDown size={16} />
               </button>
             )}
+            <TypingIndicator users={typingUsers} />
             <div className="bg-black/40 backdrop-blur-sm">
               <ChatInput
                 ref={inputRef}
