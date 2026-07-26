@@ -1,11 +1,9 @@
 export const THREAD_CATEGORIES = [
   { value: "question", label: "Question" },
   { value: "discussion", label: "Discussion" },
-  { value: "showcase", label: "Showcase" },
-  { value: "resource", label: "Resource" },
   { value: "idea", label: "Idea" },
   { value: "feedback", label: "Feedback" },
-  { value: "job", label: "Job" },
+  { value: "referral", label: "Referral" },
   { value: "collaboration", label: "Collaboration" },
 ] as const;
 
