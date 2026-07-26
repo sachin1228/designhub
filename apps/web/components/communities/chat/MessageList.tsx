@@ -187,8 +187,14 @@ export function MessageList({
               // message item
               const msg = item.msg;
               const isMe = msg.user_id === currentUserId;
+              // isSameAuthor is true only when the immediately preceding
+              // timeline item was a non-deleted message from the same user.
+              // Deleted messages don't render an avatar, so they must break
+              // the visual grouping chain — otherwise the next real message
+              // from the same user would have no avatar either.
               const isSameAuthor =
                 prevItem?.kind === "message" &&
+                !prevItem.msg.deleted_at &&
                 prevItem.msg.user_id === msg.user_id;
               prevItem = item;
               const isFirstUnread = firstUnreadMsgId !== null && msg.id === firstUnreadMsgId;
