@@ -109,7 +109,7 @@ export function ProfileThreads({
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-surface overflow-hidden mb-8">
+    <section className="">
 
       {/* Tab bar */}
       <div className="flex border-b border-border">
@@ -130,7 +130,7 @@ export function ProfileThreads({
       </div>
 
       {/* Tab content */}
-      <div className="p-6">
+      <div className="pt-5">
         {activeTab === "threads" && (
           threads.length === 0 ? (
             <EmptyState
