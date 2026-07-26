@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { MessageSquarePlus, RefreshCw } from "lucide-react";
+import { MessageSquarePlus } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import type { CommunityThread } from "./types";
 import { CreateThreadModal } from "./CreateThreadModal";
@@ -16,13 +16,12 @@ export function ThreadsView({
 }) {
   const [threads, setThreads] = useState<CommunityThread[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchThreads = useCallback(async (background = false) => {
-    if (background) setRefreshing(true);
-    else setLoading(true);
+    if (!background) setLoading(true);
     try {
       const response = await fetch(`/api/communities/${communityId}/threads`, { cache: "no-store" });
       const data = await response.json();
@@ -33,7 +32,6 @@ export function ThreadsView({
       setError(fetchError instanceof Error ? fetchError.message : "Failed to load threads.");
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [communityId]);
 
@@ -139,15 +137,6 @@ export function ThreadsView({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => void fetchThreads(true)}
-              disabled={refreshing}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-foreground-muted hover:border-accent/40 hover:text-foreground disabled:opacity-50"
-              aria-label="Refresh threads"
-            >
-              <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
-            </button>
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
