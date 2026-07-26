@@ -25,6 +25,7 @@ import { threadTests } from '../tests/05_threads.js';
 import { eventTests } from '../tests/06_events.js';
 import { profileTests } from '../tests/07_profile.js';
 import { adminReadTests, adminWriteSmoke, adminAuthGuardTests } from '../tests/08_admin.js';
+import { chatMessageTests } from '../tests/09_chat_messages.js';
 
 export const options = SMOKE_OPTIONS;
 
@@ -48,10 +49,11 @@ export default function () {
   loginUser(USER_EMAIL, USER_PASSWORD);
 
   authTests();       // /me, invalid login, reset-request (session stays active)
-  communityTests();  // communities, messages, reactions
-  threadTests();     // threads, votes, comments
-  eventTests();      // events, rsvp, event comments
-  profileTests();    // profile get/patch, interests, lottie-settings
+  communityTests();   // communities, messages, reactions
+  chatMessageTests(); // deep chat: pagination, replies, reactions, rate-limit, read, stats
+  threadTests();      // threads, votes, comments
+  eventTests();       // events, rsvp, event comments
+  profileTests();     // profile get/patch, interests, lottie-settings
 
   logout();
 

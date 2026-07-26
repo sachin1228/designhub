@@ -109,6 +109,15 @@ k6 run k6/scenarios/stress.js \
   -e TEST_COMMUNITY_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
+### Chat load test (20 VUs steady + 100 VU spike)
+```bash
+k6 run k6/scenarios/chat_load.js \
+  -e BASE_URL=https://drafthub-web.vercel.app \
+  -e TEST_USER_EMAIL=member@example.com \
+  -e TEST_USER_PASSWORD=your-user-password \
+  -e TEST_COMMUNITY_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
 ### Soak test (30 minutes)
 ```bash
 k6 run k6/scenarios/soak.js \
@@ -147,6 +156,7 @@ The stress scenario relaxes the error-rate threshold to 15 % — the goal there 
 | Events | `/api/communities/:id/events`, `/api/communities/:id/events/:id`, `/api/communities/:id/events/:id/rsvp`, `/api/communities/:id/events/:id/rsvp/list`, `/api/communities/:id/events/:id/comments` |
 | Profile | `/api/profile`, `/api/profile/interests`, `/api/profile/threads`, `/api/lottie-settings`, `/api/link-preview` |
 | Admin (read) | `/api/admin/applications`, `/api/admin/users`, `/api/admin/communities`, `/api/admin/cities`, `/api/admin/sectors`, `/api/admin/companies`, `/api/admin/interests`, `/api/admin/moderation`, `/api/admin/tags` |
+| Chat (deep) | `GET /api/communities/:id/messages` (list + pagination), `POST` (text, reply, burst), `GET /api/communities/:id/messages/:id` (single), `POST /api/communities/:id/messages/:id/reactions` (add, toggle, switch), `DELETE` (soft-delete), `PATCH /api/communities/:id/read`, `GET /api/communities/:id/stats` |
 | Admin (write, smoke only) | `POST /api/admin/cities`, `POST /api/admin/interests` |
 
 ---
