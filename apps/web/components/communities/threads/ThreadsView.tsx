@@ -158,9 +158,36 @@ export function ThreadsView({
         )}
 
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2].map((item) => (
-              <div key={item} className="h-40 animate-pulse rounded-2xl border border-border bg-surface" />
+          <div className="space-y-3 animate-pulse">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="rounded-xl border border-border bg-surface">
+                <div className="flex items-stretch">
+                  {/* Upvote column */}
+                  <div className="flex w-11 shrink-0 flex-col items-center gap-1 px-1 py-3">
+                    <div className="h-7 w-7 rounded-md bg-surface-raised" />
+                    <div className="h-3 w-4 rounded bg-surface-raised" />
+                  </div>
+                  {/* Content */}
+                  <div className="min-w-0 flex-1 py-3 pr-3">
+                    {/* Category pill */}
+                    <div className="h-4 w-20 rounded-full bg-surface-raised" />
+                    {/* Title */}
+                    <div className="mt-2 h-3.5 w-3/4 rounded bg-surface-raised" />
+                    {/* Description */}
+                    <div className="mt-2 space-y-1.5">
+                      <div className="h-2.5 w-full rounded bg-surface-raised" />
+                      <div className="h-2.5 w-4/5 rounded bg-surface-raised" />
+                    </div>
+                    {/* Footer */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="h-4 w-4 rounded-full bg-surface-raised" />
+                      <div className="h-2.5 w-16 rounded bg-surface-raised" />
+                      <div className="h-2.5 w-12 rounded bg-surface-raised" />
+                      <div className="h-2.5 w-16 rounded bg-surface-raised" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         ) : threads.length === 0 ? (
