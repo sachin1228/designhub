@@ -24,21 +24,47 @@ interface UpcomingEvent {
   rsvp_count: number;
 }
 
+interface CommunityData {
+  member_count: number;
+  type?: string;
+  description?: string | null;
+  reference_name?: string | null;
+  created_at?: string;
+}
+
 interface CommunityInfoPanelProps {
   members: Member[];
-  community: { member_count: number } | null;
+  community: CommunityData | null;
   communityId: string;
   onlineCount?: number;
 }
 
-// ─── Static about data (community-agnostic fallback display) ─────────────────
-const STATIC_ABOUT = {
-  description:
-    "A community for designers working at Amazon across India to connect, share, and grow together.",
-  location: "Pune, India",
-  createdAt: "23 May 2024",
-  tags: ["Design", "Amazon", "Product Design"],
+const TYPE_LABELS: Record<string, string> = {
+  city:             "City",
+  sector:           "Industry",
+  interest:         "Interest",
+  company:          "Company",
+  experience_level: "Experience",
 };
+
+function fallbackDescription(type?: string, referenceName?: string | null): string {
+  const name = referenceName ?? "this topic";
+  switch (type) {
+    case "city":             return `Connect with designers based in ${name}.`;
+    case "company":          return `A space for designers working at ${name} to connect and grow together.`;
+    case "sector":           return `A community for designers in the ${name} industry.`;
+    case "interest":         return `Designers who share a passion for ${name}.`;
+    case "experience_level": return `A space for ${name} designers to connect and share.`;
+    default:                 return "A designer community on Drafthub.";
+  }
+}
+
+function fmtCreatedAt(iso?: string): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric", month: "short", year: "numeric",
+  });
+}
 
 function fmtEventDate(iso: string) {
   const d = new Date(iso);
@@ -155,31 +181,47 @@ export function CommunityInfoPanel({ members, community, communityId, onlineCoun
         </Section>
 
         {/* About */}
-        <Section title="About">
-          <p className="font-body text-[13px] text-foreground-muted leading-relaxed mb-3">
-            {STATIC_ABOUT.description}
-          </p>
-          <div className="space-y-2 mb-3">
-            <div className="flex items-center gap-2 font-body text-[13px] text-foreground-muted">
-              <MapPin size={13} className="shrink-0 text-foreground-subtle" />
-              {STATIC_ABOUT.location}
-            </div>
-            <div className="flex items-center gap-2 font-body text-[13px] text-foreground-muted">
-              <Calendar size={13} className="shrink-0 text-foreground-subtle" />
-              Created {STATIC_ABOUT.createdAt}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {STATIC_ABOUT.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2.5 py-0.5 rounded-full border border-border font-body text-[12px] text-foreground-muted"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </Section>
+        {(() => {
+          const type = community?.type;
+          const refName = community?.reference_name ?? null;
+          const description = community?.description
+            ?? fallbackDescription(type, refName);
+          const tags: string[] = [
+            ...(type ? [TYPE_LABELS[type] ?? type] : []),
+            ...(refName ? [refName] : []),
+          ];
+          return (
+            <Section title="About">
+              <p className="font-body text-[13px] text-foreground-muted leading-relaxed mb-3">
+                {description}
+              </p>
+              <div className="space-y-2 mb-3">
+                {type === "city" && refName && (
+                  <div className="flex items-center gap-2 font-body text-[13px] text-foreground-muted">
+                    <MapPin size={13} className="shrink-0 text-foreground-subtle" />
+                    {refName}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 font-body text-[13px] text-foreground-muted">
+                  <Calendar size={13} className="shrink-0 text-foreground-subtle" />
+                  Created {fmtCreatedAt(community?.created_at)}
+                </div>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2.5 py-0.5 rounded-full border border-border font-body text-[12px] text-foreground-muted"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Section>
+          );
+        })()}
 
         {/* Upcoming Events — only shown when a real upcoming event exists */}
         {upcomingEvent && (
