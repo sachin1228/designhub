@@ -435,18 +435,6 @@ export function ThreadDetailClient({ thread: initialThread, initialComments, cur
                   {thread.title}
                 </h1>
 
-                {/* Author row */}
-                <div className="mt-2 flex items-center gap-2">
-                  <Avatar name={authorName} avatarUrl={thread.users?.avatar_url ?? null} size="sm" />
-                  <span className="font-body text-xs text-foreground-muted">{authorName}</span>
-                  <span className="font-body text-[11px] text-foreground-subtle">·</span>
-                  <span className="font-body text-[11px] text-foreground-subtle">{formatFullDate(thread.created_at)}</span>
-                  <span className="font-body text-[11px] text-foreground-subtle">·</span>
-                  <span className="inline-flex items-center gap-1 font-body text-[11px] text-foreground-subtle">
-                    <MessageSquare size={11} /> {totalComments} {totalComments === 1 ? "comment" : "comments"}
-                  </span>
-                </div>
-
                 {/* Description */}
                 <p className="mt-4 font-body text-sm leading-relaxed text-foreground-muted whitespace-pre-wrap">
                   {thread.description}
@@ -501,6 +489,18 @@ export function ThreadDetailClient({ thread: initialThread, initialComments, cur
                     ))}
                   </div>
                 )}
+
+                {/* Author row */}
+                <div className="mt-4 flex items-center gap-2">
+                  <Avatar name={authorName} avatarUrl={thread.users?.avatar_url ?? null} size="sm" />
+                  <span className="font-body text-xs text-foreground-muted">{authorName}</span>
+                  <span className="font-body text-[11px] text-foreground-subtle">·</span>
+                  <span className="font-body text-[11px] text-foreground-subtle">{formatFullDate(thread.created_at)}</span>
+                  <span className="font-body text-[11px] text-foreground-subtle">·</span>
+                  <span className="inline-flex items-center gap-1 font-body text-[11px] text-foreground-subtle">
+                    <MessageSquare size={11} /> {totalComments} {totalComments === 1 ? "comment" : "comments"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
