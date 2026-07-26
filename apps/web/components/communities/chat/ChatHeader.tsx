@@ -25,7 +25,7 @@ export function ChatHeader({
   onTabChange,
 }: ChatHeaderProps) {
   return (
-    <div className="px-5 pt-5 border-b border-border shrink-0">
+    <div className="px-5 pt-3 border-b border-border shrink-0">
       {community ? (
         <>
           <div className="flex items-center justify-between">
@@ -64,7 +64,7 @@ export function ChatHeader({
               </span>
             </div>
           </div>
-          <nav className="flex items-center gap-5 mt-3" aria-label="Community views">
+          <nav className="flex items-center gap-5 mt-5" aria-label="Community views">
             {([
               ["chat", "Chat", MessageCircle],
               ["threads", "Threads", MessagesSquare],
