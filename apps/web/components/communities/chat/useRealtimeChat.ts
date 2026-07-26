@@ -381,7 +381,7 @@ export function useRealtimeChat({
             );
           });
 
-          // Lazy-fetch profile if we don't have it yet.
+          // Lazy-fetch profile if the author isn't in our member list yet.
           if (!senderMember && !pendingProfileFetchRef.current.has(row.user_id)) {
             const targetUserId  = row.user_id;
             const targetEventId = row.id;
@@ -408,6 +408,53 @@ export function useRealtimeChat({
               .finally(() => { pendingProfileFetchRef.current.delete(targetUserId); });
             pendingProfileFetchRef.current.set(targetUserId, p);
           }
+        }
+      )
+      // ── Thread updated (title / description / category / attachments) ───
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "community_threads",
+          filter: `community_id=eq.${communityId}`,
+        },
+        (payload) => {
+          const row = payload.new as {
+            id: string;
+            title: string;
+            description: string;
+            category: string;
+            attachments: Array<{ name: string; url: string; type: string; size: number }>;
+          };
+          setThreadEvents((prev) =>
+            prev.map((e) =>
+              e.id === row.id
+                ? {
+                    ...e,
+                    title:       row.title,
+                    description: row.description,
+                    category:    row.category,
+                    attachments: row.attachments ?? [],
+                  }
+                : e
+            )
+          );
+        }
+      )
+      // ── Thread deleted ───────────────────────────────────────────────────
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "community_threads",
+          filter: `community_id=eq.${communityId}`,
+        },
+        (payload) => {
+          const row = payload.old as { id?: string };
+          if (!row.id) return;
+          setThreadEvents((prev) => prev.filter((e) => e.id !== row.id));
         }
       )
       .subscribe((status) => {
