@@ -208,7 +208,7 @@ export function ProfileClient({
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto  mt-8">
       {/* Page header */}
       <div className="flex items-center justify-between mb-8">
         <div>
