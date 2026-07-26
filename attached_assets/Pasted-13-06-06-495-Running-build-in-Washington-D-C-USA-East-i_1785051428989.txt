@@ -1,0 +1,49 @@
+13:06:06.495 Running build in Washington, D.C., USA (East) – iad1
+13:06:06.496 Build machine configuration: 2 cores, 8 GB
+13:06:06.646 Cloning github.com/sachin1228/drafthub (Branch: feat/chat-threads-tabs, Commit: 2e065b3)
+13:06:08.049 Cloning completed: 1.402s
+13:06:08.212 Restored build cache from previous deployment (DV3dHAKrbYmbKJ25FNPfQqrjCRzK)
+13:06:08.412 Running "vercel build"
+13:06:08.431 Vercel CLI 56.5.0
+13:06:08.649 Installing dependencies...
+13:06:10.072 
+13:06:10.073 changed 2 packages in 1s
+13:06:10.073 
+13:06:10.074 173 packages are looking for funding
+13:06:10.074   run `npm fund` for details
+13:06:10.100 Detected Next.js version: 16.2.11
+13:06:10.106 Running "npm run build"
+13:06:10.247 
+13:06:10.247 > web@0.1.0 build
+13:06:10.248 > next build
+13:06:10.248 
+13:06:10.933   Applying modifyConfig from Vercel
+13:06:11.005 ▲ Next.js 16.2.11 (Turbopack)
+13:06:11.006 
+13:06:11.009 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+13:06:11.057   Creating an optimized production build ...
+13:06:29.076 ✓ Compiled successfully in 17.7s
+13:06:29.083   Running TypeScript ...
+13:06:41.500 Failed to type check.
+13:06:41.500 
+13:06:41.501 ./app/dashboard/profile/page.tsx:69:21
+13:06:41.501 Type error: Conversion of type '{ id: any; community_id: any; user_id: any; title: any; description: any; category: any; tags: any; attachments: any; links: any; allow_replies: any; created_at: any; updated_at: any; communities: { name: any; }[]; }' to type '{ communities?: { name: string; } | null | undefined; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+13:06:41.501   Types of property 'communities' are incompatible.
+13:06:41.501     Property 'name' is missing in type '{ name: any; }[]' but required in type '{ name: string; }'.
+13:06:41.502 
+13:06:41.502   67 |         ...thread,
+13:06:41.502   68 |         users: null,
+13:06:41.502 > 69 |         community: (thread as { communities?: { name: string } | null }).communities ?? null,
+13:06:41.502      |                     ^
+13:06:41.502   70 |         vote_count: 0,
+13:06:41.502   71 |         user_voted: false,
+13:06:41.502   72 |         comment_count: 0,
+13:06:41.567 Next.js build worker exited with code: 1 and signal: null
+13:06:41.605 npm error Lifecycle script `build` failed with error:
+13:06:41.605 npm error code 1
+13:06:41.605 npm error path /vercel/path0/apps/web
+13:06:41.605 npm error workspace web@0.1.0
+13:06:41.606 npm error location /vercel/path0/apps/web
+13:06:41.606 npm error command failed
+13:06:41.606 npm error command sh -c next build
+13:06:41.634 Error: Command "npm run build" exited with 1

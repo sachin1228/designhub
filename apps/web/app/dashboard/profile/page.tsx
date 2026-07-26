@@ -66,7 +66,7 @@ export default async function ProfilePage() {
       initialThreads={(threads ?? []).map((thread) => ({
         ...thread,
         users: null,
-        community: (thread as { communities?: { name: string } | null }).communities ?? null,
+        community: (thread as { communities?: { name: string }[] | null }).communities?.[0] ?? null,
         vote_count: 0,
         user_voted: false,
         comment_count: 0,
