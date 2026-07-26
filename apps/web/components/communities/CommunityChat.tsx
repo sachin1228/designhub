@@ -504,7 +504,7 @@ export function CommunityChat({
         )}
       </div>
 
-      <CommunityInfoPanel members={members} community={displayCommunity} />
+      <CommunityInfoPanel members={members} community={displayCommunity} communityId={communityId} />
     </div>
   );
 }
