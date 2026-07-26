@@ -250,9 +250,7 @@ export function ProfileClient({
         email={email}
         avatarUrl={avatarUrl}
         memberSince={memberSince}
-        bio={bio}
         onNameChange={setName}
-        onBioChange={setBio}
         onOpenAvatarPicker={() => setShowAvatarPicker(true)}
         city={city}
         company={company}
@@ -262,9 +260,6 @@ export function ProfileClient({
         portfolio={portfolio}
         onLinkedinChange={setLinkedin}
         onPortfolioChange={setPortfolio}
-        allInterests={allInterests}
-        interestIds={interestIds}
-        onInterestsChange={setInterestIds}
       />
 
       <ProfileThreads
