@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Calendar, ExternalLink, Image as ImageIcon,
   Loader2, MapPin, MessageSquare, MoreHorizontal, Pencil,
-  Trash2, Users, Video, X,
+  Smile, Trash2, Users, Video, X,
 } from "lucide-react";
 import type { CommunityEvent, EventComment, EventRsvp } from "./types";
 import { EditEventModal } from "./EditEventModal";
+import { EmojiGifPicker } from "@/components/communities/chat/EmojiGifPicker";
 
 function fmtEventDateTime(iso: string) {
   const d = new Date(iso);
@@ -110,8 +111,22 @@ export function EventDetailClient({
   const [commentError, setCommentError] = useState<string | null>(null);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close emoji picker on outside click
+  useEffect(() => {
+    if (!emojiOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
+        setEmojiOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [emojiOpen]);
 
   const isOwner = event.user_id === currentUserId;
   const past = isPast(event.end_date ?? event.event_date);
@@ -181,6 +196,22 @@ export function EventDetailClient({
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImageFile(null);
     setImagePreview(null);
+  }
+
+  function handleEmojiInsert(emoji: string) {
+    const ta = textareaRef.current;
+    if (!ta) { setCommentText((p) => p + emoji); return; }
+    const start = ta.selectionStart ?? commentText.length;
+    const end = ta.selectionEnd ?? commentText.length;
+    const next = commentText.slice(0, start) + emoji + commentText.slice(end);
+    setCommentText(next);
+    setEmojiOpen(false);
+    // Restore cursor after state update
+    setTimeout(() => {
+      ta.focus();
+      const pos = start + emoji.length;
+      ta.setSelectionRange(pos, pos);
+    }, 0);
   }
 
   function handleComposerClick() {
@@ -508,7 +539,7 @@ export function EventDetailClient({
                     {/* Action row */}
                     <div className="flex items-center justify-between pl-11">
                       <div className="flex items-center gap-1">
-                        {/* Image upload */}
+                        {/* Hidden file input */}
                         <input
                           ref={imageInputRef}
                           type="file"
@@ -516,6 +547,44 @@ export function EventDetailClient({
                           className="hidden"
                           onChange={handleImageSelect}
                         />
+
+                        {/* Emoji picker */}
+                        <div ref={emojiPickerRef} className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setEmojiOpen((p) => !p)}
+                            title="Add emoji"
+                            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-surface-raised ${
+                              emojiOpen ? "text-accent" : "text-foreground-subtle hover:text-foreground"
+                            }`}
+                          >
+                            <Smile size={16} />
+                          </button>
+                          {emojiOpen && (
+                            <div className="absolute bottom-full left-0 mb-2 z-50">
+                              <EmojiGifPicker
+                                onEmojiSelect={handleEmojiInsert}
+                                onGifSelect={() => setEmojiOpen(false)}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* GIF — coming soon */}
+                        <div className="relative group/gif">
+                          <button
+                            type="button"
+                            disabled
+                            className="flex h-8 items-center justify-center rounded-lg px-2 font-body text-[11px] font-black tracking-wide text-foreground-subtle opacity-40 cursor-not-allowed"
+                          >
+                            GIF
+                          </button>
+                          <div className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-surface px-2.5 py-1 font-body text-[11px] text-foreground-muted shadow-md opacity-0 transition-opacity group-hover/gif:opacity-100">
+                            Coming soon
+                          </div>
+                        </div>
+
+                        {/* Image upload */}
                         <button
                           type="button"
                           onClick={() => imageInputRef.current?.click()}
