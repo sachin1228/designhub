@@ -109,6 +109,44 @@ k6 run k6/scenarios/stress.js \
   -e TEST_COMMUNITY_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
+### Concurrent chat with thousands of distinct users
+
+This is the big one. Each VU logs in as a **different real user**, so rate
+limits don't interfere across VUs.
+
+**Step 1 — seed users into your DB (run once):**
+```bash
+SUPABASE_URL=https://xxx.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=eyJ... \
+TEST_COMMUNITY_ID=2d98706f-367c-441b-9d5d-ace92fa8a859 \
+K6_USER_COUNT=500 \
+node k6/scripts/seed-users.js
+```
+
+This creates 500 users with profiles + community membership and writes
+`k6/data/test-users.json` (gitignored — credentials stay local).
+
+**Step 2 — run the concurrent chat scenario:**
+```bash
+k6 run k6/scenarios/chat_concurrent.js \
+  -e BASE_URL=https://drafthub-web.vercel.app \
+  -e TEST_COMMUNITY_ID=2d98706f-367c-441b-9d5d-ace92fa8a859 \
+  -e CONCURRENT_VUS=500
+```
+
+Each VU: login → poll messages → send message → reply (40%) → react → mark read → delete own message → logout.
+
+Custom metrics tracked: `chat_messages_sent`, `chat_rate_limit_hits`, `chat_reactions_sent`, `chat_message_send_ms`, `chat_poll_ms`.
+
+**Step 3 — clean up after testing:**
+```bash
+SUPABASE_URL=https://xxx.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=eyJ... \
+node k6/scripts/cleanup-users.js
+```
+
+---
+
 ### Chat load test (20 VUs steady + 100 VU spike)
 ```bash
 k6 run k6/scenarios/chat_load.js \
