@@ -138,10 +138,17 @@ export function threadTests() {
       });
     }
 
-    group('threads — patch (update title)', () => {
+    group('threads — patch (update title + description)', () => {
       const res = http.patch(
         `${BASE_URL}/api/communities/${COMMUNITY_ID}/threads/${threadId}`,
-        JSON.stringify({ title: `k6 updated thread [VU:${__VU}]` }),
+        JSON.stringify({
+          title:       `k6 updated thread [VU:${__VU}]`,
+          description: 'Updated by k6 stress test — safe to delete.',
+          category:    'discussion',
+          tags:        [],
+          links:       [],
+          attachments: [],
+        }),
         { headers: JSON_HEADERS, tags: { name: 'threads/patch' } },
       );
       check(res, {
