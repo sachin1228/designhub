@@ -17,11 +17,16 @@ async function isMember(
   return Boolean(data);
 }
 
+type EnrichedRow = Record<string, unknown> & {
+  users: { name: string; avatar_url: string | null } | null;
+  replies: EnrichedRow[];
+};
+
 async function attachUsers(
   db: ReturnType<typeof createServiceClient>,
   rows: Array<Record<string, unknown>>,
-) {
-  if (!rows.length) return rows.map((r) => ({ ...r, users: null }));
+): Promise<EnrichedRow[]> {
+  if (!rows.length) return rows.map((r) => ({ ...r, users: null, replies: [] }));
   const userIds = [...new Set(rows.map((r) => r.user_id).filter((id): id is string => typeof id === "string"))];
   const [{ data: users }, { data: profiles }] = await Promise.all([
     db.from("users").select("id, name").in("id", userIds),
