@@ -148,6 +148,28 @@ export function ThreadCard({
               {thread.description}
             </p>
 
+            {/* Image attachments */}
+            {(() => {
+              const images = thread.attachments.filter((a) => a.type.startsWith("image/"));
+              if (images.length === 0) return null;
+              const visible = images.slice(0, 4);
+              const overflow = images.length - visible.length;
+              return (
+                <div className="mt-2 flex gap-1.5">
+                  {visible.map((img, i) => (
+                    <div key={img.url} className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-raised">
+                      <img src={img.url} alt={img.name} className="h-full w-full object-cover" />
+                      {i === visible.length - 1 && overflow > 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                          <span className="font-display text-sm font-semibold text-white">+{overflow}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
             {/* Tags */}
             {thread.tags.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">

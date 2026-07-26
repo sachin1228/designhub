@@ -470,25 +470,42 @@ export function ThreadDetailClient({ thread: initialThread, initialComments, cur
                 )}
 
                 {/* Attachments */}
-                {thread.attachments.length > 0 && (
-                  <div className="mt-4 space-y-1.5">
-                    {thread.attachments.map((att) => (
-                      <a
-                        key={att.url}
-                        href={att.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 font-body text-xs text-foreground-muted hover:border-accent/40 hover:text-accent"
-                      >
-                        <Paperclip size={12} />
-                        <span className="min-w-0 flex-1 truncate">{att.name}</span>
-                        <span className="shrink-0 text-foreground-subtle">
-                          {(att.size / 1024).toFixed(0)} KB
-                        </span>
-                      </a>
-                    ))}
-                  </div>
-                )}
+                {thread.attachments.length > 0 && (() => {
+                  const images = thread.attachments.filter((a) => a.type.startsWith("image/"));
+                  const files = thread.attachments.filter((a) => !a.type.startsWith("image/"));
+                  return (
+                    <>
+                      {images.length > 0 && (
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                          {images.map((img) => (
+                            <a key={img.url} href={img.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg border border-border">
+                              <img src={img.url} alt={img.name} className="h-48 w-full object-cover transition-opacity hover:opacity-90" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      {files.length > 0 && (
+                        <div className="mt-4 space-y-1.5">
+                          {files.map((att) => (
+                            <a
+                              key={att.url}
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 font-body text-xs text-foreground-muted hover:border-accent/40 hover:text-accent"
+                            >
+                              <Paperclip size={12} />
+                              <span className="min-w-0 flex-1 truncate">{att.name}</span>
+                              <span className="shrink-0 text-foreground-subtle">
+                                {(att.size / 1024).toFixed(0)} KB
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {/* Author row */}
                 <div className="mt-4 flex items-center gap-2">
