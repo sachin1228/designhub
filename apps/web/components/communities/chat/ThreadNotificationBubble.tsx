@@ -1,0 +1,122 @@
+"use client";
+
+import { ChevronRight } from "lucide-react";
+import { ChatAvatar } from "./ChatAvatar";
+import { fmtTimeAgo } from "./chatUtils";
+import type { CachedThreadEvent } from "@/lib/communities/cache";
+import { THREAD_CATEGORIES } from "@/components/communities/threads/types";
+
+interface ThreadNotificationBubbleProps {
+  event: CachedThreadEvent;
+  communityId: string;
+}
+
+/** Gradient palettes cycled by thread id for thumbnail placeholders. */
+const GRADIENTS = [
+  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+  "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+  "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
+  "linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)",
+];
+
+function pickGradient(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return GRADIENTS[hash % GRADIENTS.length];
+}
+
+function categoryLabel(value: string): string {
+  return (
+    THREAD_CATEGORIES.find((c) => c.value === value)?.label ?? value
+  );
+}
+
+/** Picks the first image attachment from a thread, if any. */
+function thumbnailUrl(event: CachedThreadEvent): string | null {
+  const img = event.attachments.find((a) =>
+    a.type.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)$/i.test(a.name)
+  );
+  return img?.url ?? null;
+}
+
+export function ThreadNotificationBubble({
+  event,
+  communityId,
+}: ThreadNotificationBubbleProps) {
+  const sender   = event.users;
+  const name     = sender?.name ?? "Someone";
+  const timeAgo  = fmtTimeAgo(event.created_at);
+  const imgUrl   = thumbnailUrl(event);
+  const gradient = pickGradient(event.id);
+  const label    = categoryLabel(event.category);
+  const href     = `/dashboard/communities/${communityId}/threads/${event.id}`;
+
+  return (
+    <div className="flex items-start gap-2 w-full px-5 mt-3">
+      {/* Avatar column */}
+      <div className="w-7 shrink-0 mt-0.5">
+        {sender && (
+          <ChatAvatar name={name} url={sender.avatar_url} size={7} />
+        )}
+      </div>
+
+      {/* Content column */}
+      <div className="flex-1 min-w-0">
+        {/* Header line */}
+        <p className="font-body text-[11px] text-foreground-muted mb-1.5 ml-0.5">
+          <span className="font-semibold text-foreground">{name}</span>
+          {" created a new thread"}
+          <span className="mx-1.5 opacity-40">·</span>
+          {timeAgo}
+        </p>
+
+        {/* Card row */}
+        <div className="flex items-center gap-3">
+          {/* Thread card */}
+          <a
+            href={href}
+            className="flex items-center gap-3 flex-1 min-w-0 rounded-xl bg-surface-raised border border-white/[0.06] px-3 py-2.5 hover:bg-white/[0.06] transition-colors group"
+          >
+            {/* Thumbnail */}
+            <div
+              className="h-12 w-12 shrink-0 rounded-lg overflow-hidden"
+              style={{ background: imgUrl ? undefined : gradient }}
+            >
+              {imgUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imgUrl}
+                  alt={event.title}
+                  className="h-full w-full object-cover"
+                />
+              )}
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-sm font-semibold text-foreground truncate leading-snug">
+                {event.title}
+              </p>
+              <p className="font-body text-xs text-foreground-muted line-clamp-1 leading-snug mt-0.5">
+                {event.description}
+              </p>
+              <p className="font-body text-xs text-accent mt-1 flex items-center gap-0.5 group-hover:underline">
+                View Thread
+                <ChevronRight size={12} strokeWidth={2.5} />
+              </p>
+            </div>
+          </a>
+
+          {/* Category badge */}
+          <span className="shrink-0 font-body text-xs text-foreground-muted border border-white/[0.12] rounded-full px-3 py-1 bg-surface-raised whitespace-nowrap">
+            {label}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}

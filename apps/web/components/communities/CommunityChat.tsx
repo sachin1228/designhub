@@ -3,7 +3,7 @@
 import { useState, useLayoutEffect, useEffect, useCallback, useMemo, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import { sidebarStore, msgCache } from "@/lib/communities/cache";
-import type { CachedMessage, CachedMeta, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
+import type { CachedMessage, CachedMeta, CachedThreadEvent, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
 import { fmtDate } from "./chat/chatUtils";
 import { ChatHeader, type ChatTab } from "./chat/ChatHeader";
 import { ChatInput } from "./chat/ChatInput";
@@ -40,6 +40,7 @@ export function CommunityChat({
 }) {
   const [hasMounted, setHasMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>("chat");
+  const [threadEvents, setThreadEvents] = useState<CachedThreadEvent[]>([]);
   useIsomorphicLayoutEffect(() => { setHasMounted(true); }, []);
 
   // ── Highlighted message state (scroll-to-reply) — handler defined after scrollContainerRef ──
@@ -223,6 +224,7 @@ export function CommunityChat({
     communityId,
     fetchMessages,
     setMessages,
+    setThreadEvents,
     membersRef,
     pendingProfileFetchRef,
     scrollContainerRef,
@@ -399,6 +401,7 @@ export function CommunityChat({
           >
             <MessageList
               grouped={grouped}
+              threadEvents={threadEvents}
               currentUserId={currentUserId}
               firstUnreadMsgId={firstUnreadMsgId}
               unreadDisplayCount={unreadDisplayCount}
