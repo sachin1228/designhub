@@ -20,6 +20,7 @@ import { THREAD_CATEGORIES } from "@/components/communities/threads/types";
 interface ThreadNotificationBubbleProps {
   event: CachedThreadEvent;
   communityId: string;
+  currentUserId: string;
 }
 
 function categoryLabel(value: string): string {
@@ -51,9 +52,11 @@ function thumbnailUrl(event: CachedThreadEvent): string | null {
 export function ThreadNotificationBubble({
   event,
   communityId,
+  currentUserId,
 }: ThreadNotificationBubbleProps) {
   const sender  = event.users;
-  const name    = sender?.name ?? "Someone";
+  const isMe    = event.user_id === currentUserId;
+  const name    = isMe ? "You" : (sender?.name ?? "Someone");
   const timeAgo = fmtTimeAgo(event.created_at);
   const imgUrl  = thumbnailUrl(event);
   const label   = categoryLabel(event.category);

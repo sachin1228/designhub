@@ -183,6 +183,7 @@ export function MessageList({
                     key={`thread-${item.event.id}`}
                     event={item.event}
                     communityId={communityId}
+                    currentUserId={currentUserId}
                   />
                 );
               }
