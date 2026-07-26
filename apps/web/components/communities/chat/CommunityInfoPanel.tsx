@@ -236,7 +236,7 @@ export function CommunityInfoPanel({ members, community, communityId, onlineCoun
           {[
             { label: "Members",     value: memberCount.toLocaleString() },
             { label: "Online",      value: onlineCount.toLocaleString() },
-            { label: "Posts today", value: postsToday != null ? postsToday.toLocaleString() : "—" },
+            { label: "Messages", value: postsToday != null ? postsToday.toLocaleString() : "—" },
           ].map(({ label, value }) => (
             <div
               key={label}
