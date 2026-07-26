@@ -1,6 +1,17 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import {
+  ChevronRight,
+  HelpCircle,
+  MessageCircle,
+  Sparkles,
+  BookOpen,
+  Lightbulb,
+  Flag,
+  Briefcase,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
 import { fmtTimeAgo } from "./chatUtils";
 import type { CachedThreadEvent } from "@/lib/communities/cache";
@@ -35,6 +46,18 @@ function categoryLabel(value: string): string {
   );
 }
 
+/** Icon shown in the thumbnail when there is no image attachment. */
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  question:      HelpCircle,
+  discussion:    MessageCircle,
+  showcase:      Sparkles,
+  resource:      BookOpen,
+  idea:          Lightbulb,
+  feedback:      Flag,
+  job:           Briefcase,
+  collaboration: Users,
+};
+
 /** Picks the first image attachment from a thread, if any. */
 function thumbnailUrl(event: CachedThreadEvent): string | null {
   const img = event.attachments.find((a) =>
@@ -47,13 +70,14 @@ export function ThreadNotificationBubble({
   event,
   communityId,
 }: ThreadNotificationBubbleProps) {
-  const sender   = event.users;
-  const name     = sender?.name ?? "Someone";
-  const timeAgo  = fmtTimeAgo(event.created_at);
-  const imgUrl   = thumbnailUrl(event);
-  const gradient = pickGradient(event.id);
-  const label    = categoryLabel(event.category);
-  const href     = `/dashboard/communities/${communityId}/threads/${event.id}`;
+  const sender    = event.users;
+  const name      = sender?.name ?? "Someone";
+  const timeAgo   = fmtTimeAgo(event.created_at);
+  const imgUrl    = thumbnailUrl(event);
+  const gradient  = pickGradient(event.id);
+  const label     = categoryLabel(event.category);
+  const href      = `/dashboard/communities/${communityId}/threads/${event.id}`;
+  const CatIcon   = CATEGORY_ICON[event.category] ?? HelpCircle;
 
   return (
     <div className="flex items-start gap-2 w-full px-5 mt-3">
@@ -83,16 +107,18 @@ export function ThreadNotificationBubble({
           >
             {/* Thumbnail */}
             <div
-              className="h-12 w-12 shrink-0 rounded-lg overflow-hidden"
-              style={{ background: imgUrl ? undefined : gradient }}
+              className="h-12 w-12 shrink-0 rounded-lg overflow-hidden flex items-center justify-center"
+              style={{ background: gradient }}
             >
-              {imgUrl && (
+              {imgUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={imgUrl}
                   alt={event.title}
                   className="h-full w-full object-cover"
                 />
+              ) : (
+                <CatIcon size={22} strokeWidth={1.75} className="text-white/90" />
               )}
             </div>
 
