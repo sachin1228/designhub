@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { MessageSquarePlus } from "lucide-react";
+import { MessageSquarePlus, Plus } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import type { CommunityThread } from "./types";
 import { CreateThreadModal } from "./CreateThreadModal";
@@ -146,7 +146,7 @@ export function ThreadsView({
               onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 font-body text-sm font-medium text-accent-foreground hover:bg-accent-hover"
             >
-              <MessageSquarePlus size={16} />
+              <Plus size={16} />
               Create Thread
             </button>
           </div>
