@@ -16,7 +16,7 @@ async function getEvent(
 ): Promise<CommunityEvent | null> {
   const { data } = await db
     .from("community_events")
-    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, created_at, updated_at")
+    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, cover_image_url, created_at, updated_at")
     .eq("id", eventId)
     .eq("community_id", communityId)
     .maybeSingle();

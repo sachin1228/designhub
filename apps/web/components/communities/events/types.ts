@@ -10,6 +10,7 @@ export interface CommunityEvent {
   location: string | null;
   meet_link: string | null;
   max_attendees: number | null;
+  cover_image_url: string | null;
   created_at: string;
   updated_at: string;
   // enriched

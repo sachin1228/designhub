@@ -91,6 +91,12 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
     <>
       <article className="group rounded-xl border border-border bg-surface overflow-hidden">
         <Link href={eventHref} className="block">
+          {/* Cover image */}
+          {event.cover_image_url && (
+            <div className="h-36 w-full overflow-hidden border-b border-border">
+              <img src={event.cover_image_url} alt={event.title} className="h-full w-full object-cover" />
+            </div>
+          )}
           {/* Date banner */}
           <div className="flex items-center gap-3 border-b border-border bg-surface-raised px-4 py-2.5">
             <Calendar size={13} className="shrink-0 text-accent" />

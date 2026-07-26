@@ -76,7 +76,7 @@ export async function GET(
 
   const { data, error } = await db
     .from("community_events")
-    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, created_at, updated_at")
+    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, cover_image_url, created_at, updated_at")
     .eq("community_id", communityId)
     .order("event_date", { ascending: true });
 
@@ -141,6 +141,10 @@ export async function POST(
     ? Math.floor(body.max_attendees)
     : null;
 
+  const rawCoverImageUrl = typeof body.cover_image_url === "string" && body.cover_image_url.trim()
+    ? body.cover_image_url.trim()
+    : null;
+
   const { data, error } = await db
     .from("community_events")
     .insert({
@@ -154,8 +158,9 @@ export async function POST(
       location,
       meet_link: meetLink,
       max_attendees: maxAttendees,
+      cover_image_url: rawCoverImageUrl,
     })
-    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, created_at, updated_at")
+    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, cover_image_url, created_at, updated_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

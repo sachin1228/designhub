@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Calendar, Check, Clock, Loader2, MapPin, Users, Video, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Calendar, Check, Clock, ImagePlus, Loader2, MapPin, Users, Video, X } from "lucide-react";
 import type { CommunityEvent } from "./types";
 
 interface CreateEventModalProps {
@@ -11,8 +11,11 @@ interface CreateEventModalProps {
 }
 
 export function CreateEventModal({ communityId, onClose, onCreated }: CreateEventModalProps) {
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -23,6 +26,26 @@ export function CreateEventModal({ communityId, onClose, onCreated }: CreateEven
   const [maxAttendees, setMaxAttendees] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImageUploading(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/communities/${communityId}/events/upload`, { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed.");
+      setCoverImageUrl(data.url as string);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Image upload failed.");
+    } finally {
+      setImageUploading(false);
+    }
+  }
 
   function buildIso(date: string, time: string) {
     if (!date) return null;
@@ -50,6 +73,7 @@ export function CreateEventModal({ communityId, onClose, onCreated }: CreateEven
           location: location.trim() || null,
           meet_link: meetLink.trim() || null,
           max_attendees: maxAttendees ? Number(maxAttendees) : null,
+          cover_image_url: coverImageUrl,
         }),
       });
       const data = await res.json();
@@ -91,6 +115,38 @@ export function CreateEventModal({ communityId, onClose, onCreated }: CreateEven
         </div>
 
         <div className="mt-6 space-y-5">
+          {/* Cover image */}
+          <div>
+            <span className="mb-1.5 block font-body text-xs font-medium text-foreground-muted">
+              Cover image <span className="font-normal text-foreground-subtle">(optional)</span>
+            </span>
+            <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleImageSelect} />
+            {coverImageUrl ? (
+              <div className="relative h-40 w-full overflow-hidden rounded-lg border border-border bg-surface-raised">
+                <img src={coverImageUrl} alt="Cover" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setCoverImageUrl(null)}
+                  className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                  aria-label="Remove cover image"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={imageUploading}
+                onClick={() => imageInputRef.current?.click()}
+                className="flex h-32 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-surface-raised text-foreground-muted hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {imageUploading ? <Loader2 size={20} className="animate-spin" /> : <ImagePlus size={20} />}
+                <span className="font-body text-xs">{imageUploading ? "Uploading…" : "Click to upload a cover image"}</span>
+                <span className="font-body text-[11px] text-foreground-subtle">JPEG, PNG, WebP or GIF · max 5 MB</span>
+              </button>
+            )}
+          </div>
+
           {/* Title */}
           <label className="block">
             <span className="mb-1.5 block font-body text-xs font-medium text-foreground-muted">

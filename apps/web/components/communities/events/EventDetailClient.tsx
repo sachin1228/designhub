@@ -95,6 +95,12 @@ export function EventDetailClient({ event: initialEvent, initialRsvps, currentUs
 
         {/* Event card */}
         <div className="rounded-xl border border-border bg-surface overflow-hidden">
+          {/* Cover image */}
+          {event.cover_image_url && (
+            <div className="h-56 w-full overflow-hidden border-b border-border">
+              <img src={event.cover_image_url} alt={event.title} className="h-full w-full object-cover" />
+            </div>
+          )}
           {/* Date banner */}
           <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-raised px-5 py-3">
             <Calendar size={14} className="shrink-0 text-accent" />

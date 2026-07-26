@@ -43,7 +43,7 @@ export async function GET(
 
   const { data, error } = await db
     .from("community_events")
-    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, created_at, updated_at")
+    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, cover_image_url, created_at, updated_at")
     .eq("id", eventId)
     .eq("community_id", communityId)
     .maybeSingle();
@@ -114,6 +114,11 @@ export async function PATCH(
       ? Math.floor(body.max_attendees)
       : null;
   }
+  if ("cover_image_url" in body) {
+    patch.cover_image_url = typeof body.cover_image_url === "string" && body.cover_image_url.trim()
+      ? body.cover_image_url.trim()
+      : null;
+  }
 
   if (!Object.keys(patch).length) return NextResponse.json({ error: "Nothing to update." }, { status: 422 });
 
@@ -121,7 +126,7 @@ export async function PATCH(
     .from("community_events")
     .update(patch)
     .eq("id", eventId)
-    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, created_at, updated_at")
+    .select("id, community_id, user_id, title, description, event_date, end_date, is_online, location, meet_link, max_attendees, cover_image_url, created_at, updated_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
