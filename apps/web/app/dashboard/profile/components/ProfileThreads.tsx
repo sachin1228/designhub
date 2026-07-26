@@ -4,17 +4,15 @@ import { useEffect, useState } from "react";
 import { MessageSquareText } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import type { ProfileThread } from "@/components/communities/threads/types";
-import { THREAD_CATEGORIES } from "@/components/communities/threads/types";
+import { ProfileThreadCard } from "@/components/communities/threads/ProfileThreadCard";
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-export function ProfileThreads({ initialThreads }: { initialThreads: ProfileThread[] }) {
+export function ProfileThreads({
+  initialThreads,
+  currentUserId,
+}: {
+  initialThreads: ProfileThread[];
+  currentUserId: string;
+}) {
   const [threads, setThreads] = useState(initialThreads);
 
   useEffect(() => {
@@ -25,7 +23,7 @@ export function ProfileThreads({ initialThreads }: { initialThreads: ProfileThre
       return;
     }
 
-    const channel = supabase
+    const threadChannel = supabase
       .channel("profile-threads")
       .on(
         "postgres_changes",
@@ -41,16 +39,63 @@ export function ProfileThreads({ initialThreads }: { initialThreads: ProfileThre
             const data = await response.json();
             setThreads(data.threads as ProfileThread[]);
           } catch {
-            // The next profile refresh will reconcile the list if this request fails.
+            // The next profile refresh will reconcile the list.
           }
         },
       )
       .subscribe();
 
+    const voteChannel = supabase
+      .channel("profile-thread-votes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "thread_votes",
+        },
+        (payload) => {
+          const record = (payload.new ?? payload.old) as { thread_id?: string; user_id?: string } | null;
+          if (!record?.thread_id) return;
+          const threadId = record.thread_id;
+
+          setThreads((current) =>
+            current.map((thread) => {
+              if (thread.id !== threadId) return thread;
+              if (payload.eventType === "INSERT") {
+                const voted = record.user_id === currentUserId;
+                return { ...thread, vote_count: thread.vote_count + 1, user_voted: voted ? true : thread.user_voted };
+              }
+              if (payload.eventType === "DELETE") {
+                const wasMe = (payload.old as { user_id?: string })?.user_id === currentUserId;
+                return { ...thread, vote_count: Math.max(0, thread.vote_count - 1), user_voted: wasMe ? false : thread.user_voted };
+              }
+              return thread;
+            }),
+          );
+        },
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(threadChannel);
+      supabase.removeChannel(voteChannel);
     };
-  }, []);
+  }, [currentUserId]);
+
+  function handleUpdated(updated: ProfileThread) {
+    setThreads((current) =>
+      current.map((thread) => (thread.id === updated.id ? { ...thread, ...updated } : thread)),
+    );
+  }
+
+  function handleVoteChanged(threadId: string, voted: boolean, newCount: number) {
+    setThreads((current) =>
+      current.map((thread) =>
+        thread.id === threadId ? { ...thread, user_voted: voted, vote_count: newCount } : thread,
+      ),
+    );
+  }
 
   return (
     <section className="mb-8 rounded-2xl border border-border bg-surface p-6">
@@ -73,39 +118,14 @@ export function ProfileThreads({ initialThreads }: { initialThreads: ProfileThre
         </div>
       ) : (
         <div className="space-y-3">
-          {threads.map((thread) => {
-            const category = THREAD_CATEGORIES.find((item) => item.value === thread.category);
-            return (
-              <div key={thread.id} className="rounded-xl border border-border bg-surface-raised p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <h3 className="font-display text-sm font-semibold text-foreground">
-                      {thread.title}
-                    </h3>
-                    <p className="mt-1 line-clamp-2 font-body text-sm text-foreground-muted">
-                      {thread.description}
-                    </p>
-                  </div>
-                  {category && (
-                    <span className="shrink-0 rounded-full border border-accent/25 bg-accent/10 px-2 py-1 font-body text-[11px] text-accent">
-                      {category.emoji} {category.label}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2 font-body text-xs text-foreground-subtle">
-                  <span>{thread.community?.name ?? "Community"}</span>
-                  <span>·</span>
-                  <span>{formatDate(thread.created_at)}</span>
-                  {thread.tags.length > 0 && (
-                    <>
-                      <span>·</span>
-                      <span>{thread.tags.map((tag) => `#${tag}`).join(" ")}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {threads.map((thread) => (
+            <ProfileThreadCard
+              key={thread.id}
+              thread={thread}
+              onUpdated={handleUpdated}
+              onVoteChanged={handleVoteChanged}
+            />
+          ))}
         </div>
       )}
     </section>

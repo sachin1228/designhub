@@ -31,6 +31,8 @@ export interface CommunityThread {
   allow_replies: boolean;
   created_at: string;
   updated_at: string;
+  vote_count: number;
+  user_voted: boolean;
   users: {
     name: string;
     avatar_url: string | null;

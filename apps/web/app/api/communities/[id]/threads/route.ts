@@ -92,25 +92,47 @@ async function isMember(
   return Boolean(data);
 }
 
-async function withAuthor(
+async function withAuthorAndVotes(
   db: ReturnType<typeof createServiceClient>,
   rows: Array<Record<string, unknown>>,
+  currentUserId: string,
 ) {
-  const userIds = [...new Set(rows.map((row) => row.user_id).filter((id): id is string => typeof id === "string"))];
-  if (!userIds.length) return rows.map((row) => ({ ...row, users: null }));
+  if (!rows.length) return [];
 
-  const [{ data: users }, { data: profiles }] = await Promise.all([
-    db.from("users").select("id, name").in("id", userIds),
-    db.from("designer_profiles").select("user_id, avatar_url").in("user_id", userIds),
+  const threadIds = rows.map((row) => row.id).filter((id): id is string => typeof id === "string");
+  const userIds = [...new Set(rows.map((row) => row.user_id).filter((id): id is string => typeof id === "string"))];
+
+  const [
+    { data: users },
+    { data: profiles },
+    { data: allVotes },
+    { data: myVotes },
+  ] = await Promise.all([
+    userIds.length ? db.from("users").select("id, name").in("id", userIds) : { data: [] },
+    userIds.length ? db.from("designer_profiles").select("user_id, avatar_url").in("user_id", userIds) : { data: [] },
+    db.from("thread_votes").select("thread_id").in("thread_id", threadIds),
+    db.from("thread_votes").select("thread_id").in("thread_id", threadIds).eq("user_id", currentUserId),
   ]);
-  const userMap = Object.fromEntries((users ?? []).map((user) => [user.id, user.name]));
-  const avatarMap = Object.fromEntries((profiles ?? []).map((profile) => [profile.user_id, profile.avatar_url]));
+
+  const userMap = Object.fromEntries((users ?? []).map((u) => [u.id, u.name]));
+  const avatarMap = Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p.avatar_url]));
+
+  // Count votes per thread
+  const voteCountMap: Record<string, number> = {};
+  for (const vote of allVotes ?? []) {
+    voteCountMap[vote.thread_id] = (voteCountMap[vote.thread_id] ?? 0) + 1;
+  }
+
+  // My votes set
+  const myVoteSet = new Set((myVotes ?? []).map((v) => v.thread_id));
 
   return rows.map((row) => ({
     ...row,
     users: userMap[row.user_id as string]
       ? { name: userMap[row.user_id as string], avatar_url: avatarMap[row.user_id as string] ?? null }
       : null,
+    vote_count: voteCountMap[row.id as string] ?? 0,
+    user_voted: myVoteSet.has(row.id as string),
   }));
 }
 
@@ -146,7 +168,9 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch threads." }, { status: 500 });
   }
 
-  return NextResponse.json({ threads: await withAuthor(db, (data ?? []) as Array<Record<string, unknown>>) });
+  return NextResponse.json({
+    threads: await withAuthorAndVotes(db, (data ?? []) as Array<Record<string, unknown>>, userId),
+  });
 }
 
 export async function POST(
@@ -243,8 +267,6 @@ export async function POST(
     decision,
   });
 
-  return NextResponse.json(
-    { thread: (await withAuthor(db, [inserted as Record<string, unknown>]))[0] },
-    { status: 201 },
-  );
+  const enriched = (await withAuthorAndVotes(db, [inserted as Record<string, unknown>], userId))[0];
+  return NextResponse.json({ thread: enriched }, { status: 201 });
 }

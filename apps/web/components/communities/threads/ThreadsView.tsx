@@ -9,8 +9,10 @@ import { ThreadCard } from "./ThreadCard";
 
 export function ThreadsView({
   communityId,
+  currentUserId,
 }: {
   communityId: string;
+  currentUserId: string;
 }) {
   const [threads, setThreads] = useState<CommunityThread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,8 @@ export function ThreadsView({
       return;
     }
 
-    const channel = supabase
+    // Subscribe to thread changes
+    const threadChannel = supabase
       .channel(`community-threads:${communityId}`)
       .on(
         "postgres_changes",
@@ -58,6 +61,48 @@ export function ThreadsView({
       )
       .subscribe();
 
+    // Subscribe to vote changes for realtime vote counts
+    const voteChannel = supabase
+      .channel(`thread-votes:${communityId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "thread_votes",
+        },
+        (payload) => {
+          // Update vote count optimistically in state using the realtime event
+          const record = (payload.new ?? payload.old) as { thread_id?: string; user_id?: string } | null;
+          if (!record?.thread_id) return;
+          const threadId = record.thread_id;
+
+          setThreads((current) =>
+            current.map((thread) => {
+              if (thread.id !== threadId) return thread;
+              if (payload.eventType === "INSERT") {
+                const voted = record.user_id === currentUserId;
+                return {
+                  ...thread,
+                  vote_count: thread.vote_count + 1,
+                  user_voted: voted ? true : thread.user_voted,
+                };
+              }
+              if (payload.eventType === "DELETE") {
+                const wasMe = (payload.old as { user_id?: string })?.user_id === currentUserId;
+                return {
+                  ...thread,
+                  vote_count: Math.max(0, thread.vote_count - 1),
+                  user_voted: wasMe ? false : thread.user_voted,
+                };
+              }
+              return thread;
+            }),
+          );
+        },
+      )
+      .subscribe();
+
     const handleFocus = () => {
       if (document.visibilityState === "visible") void fetchThreads(true);
     };
@@ -65,14 +110,31 @@ export function ThreadsView({
     window.addEventListener("focus", handleFocus);
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(threadChannel);
+      supabase.removeChannel(voteChannel);
       document.removeEventListener("visibilitychange", handleFocus);
       window.removeEventListener("focus", handleFocus);
     };
-  }, [communityId, fetchThreads]);
+  }, [communityId, currentUserId, fetchThreads]);
 
   function handleCreated(thread: CommunityThread) {
     setThreads((current) => [thread, ...current.filter((item) => item.id !== thread.id)]);
+  }
+
+  function handleUpdated(updated: CommunityThread) {
+    setThreads((current) =>
+      current.map((thread) => (thread.id === updated.id ? { ...thread, ...updated } : thread)),
+    );
+  }
+
+  function handleVoteChanged(threadId: string, voted: boolean, newCount: number) {
+    setThreads((current) =>
+      current.map((thread) =>
+        thread.id === threadId
+          ? { ...thread, user_voted: voted, vote_count: newCount }
+          : thread,
+      ),
+    );
   }
 
   return (
@@ -118,7 +180,7 @@ export function ThreadsView({
         {loading ? (
           <div className="space-y-4">
             {[1, 2].map((item) => (
-              <div key={item} className="h-48 animate-pulse rounded-2xl border border-border bg-surface" />
+              <div key={item} className="h-40 animate-pulse rounded-2xl border border-border bg-surface" />
             ))}
           </div>
         ) : threads.length === 0 ? (
@@ -128,9 +190,16 @@ export function ThreadsView({
             <p className="mt-1 font-body text-sm text-foreground-muted">Be the first person to start a discussion.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {threads.map((thread) => (
-              <ThreadCard key={thread.id} thread={thread} />
+              <ThreadCard
+                key={thread.id}
+                thread={thread}
+                currentUserId={currentUserId}
+                communityId={communityId}
+                onUpdated={handleUpdated}
+                onVoteChanged={handleVoteChanged}
+              />
             ))}
           </div>
         )}

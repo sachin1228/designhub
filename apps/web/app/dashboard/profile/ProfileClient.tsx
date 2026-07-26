@@ -31,6 +31,7 @@ interface Props {
   initialInterestIds: string[];
   allInterests: { id: string; name: string; image_url?: string | null }[];
   initialThreads: ProfileThread[];
+  currentUserId: string;
 }
 
 export function ProfileClient({
@@ -38,7 +39,7 @@ export function ProfileClient({
   city, company, sector, experienceLevel,
   initialLinkedIn, initialPortfolio, initialBio,
   initialInterestIds, allInterests,
-  initialThreads,
+  initialThreads, currentUserId,
 }: Props) {
   const router = useRouter();
 
@@ -278,7 +279,7 @@ export function ProfileClient({
         onChange={setInterestIds}
       />
 
-      <ProfileThreads initialThreads={initialThreads} />
+      <ProfileThreads initialThreads={initialThreads} currentUserId={currentUserId} />
 
       {/* Sticky save bar */}
       {hasChanges && (

@@ -382,7 +382,7 @@ export function CommunityChat({
         />
 
         {activeTab === "threads" ? (
-          <ThreadsView communityId={communityId} />
+          <ThreadsView communityId={communityId} currentUserId={currentUserId} />
         ) : (
           <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-hidden relative">
