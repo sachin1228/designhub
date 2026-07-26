@@ -116,7 +116,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="px-4 py-4 border-b border-border">
+    <div className="px-4 py-4 border-b border-border last:border-b-0">
       <div className="flex items-center justify-between mb-3">
         <span className="font-body text-sm font-semibold text-foreground">
           {title}
