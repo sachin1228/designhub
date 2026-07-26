@@ -511,7 +511,7 @@ export function CommunityChat({
         )}
       </div>
 
-      <CommunityInfoPanel members={members} community={displayCommunity} communityId={communityId} />
+      <CommunityInfoPanel members={members} community={displayCommunity} communityId={communityId} onlineCount={onlineCount} />
     </div>
   );
 }

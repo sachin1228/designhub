@@ -5,9 +5,7 @@ import Link from "next/link";
 import {
   MapPin,
   Calendar,
-  Download,
   Users,
-  FileText,
   ExternalLink,
 } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
@@ -30,6 +28,7 @@ interface CommunityInfoPanelProps {
   members: Member[];
   community: { member_count: number } | null;
   communityId: string;
+  onlineCount?: number;
 }
 
 // ─── Static about data (community-agnostic fallback display) ─────────────────
@@ -40,12 +39,6 @@ const STATIC_ABOUT = {
   createdAt: "23 May 2024",
   tags: ["Design", "Amazon", "Product Design"],
 };
-
-const STATIC_RESOURCES = [
-  { name: "Design System Guidelines", meta: "PDF · 2.4 MB" },
-  { name: "Amazon Design Principles",  meta: "PDF · 1.1 MB" },
-  { name: "Figma Component Library",   meta: "Figma File · 12.4 MB" },
-];
 
 function fmtEventDate(iso: string) {
   const d = new Date(iso);
@@ -118,10 +111,11 @@ function SeeAll() {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export function CommunityInfoPanel({ members, community, communityId }: CommunityInfoPanelProps) {
+export function CommunityInfoPanel({ members, community, communityId, onlineCount = 0 }: CommunityInfoPanelProps) {
   const memberCount = community?.member_count ?? members.length;
 
   const [upcomingEvent, setUpcomingEvent] = useState<UpcomingEvent | null>(null);
+  const [postsToday, setPostsToday] = useState<number | null>(null);
 
   useEffect(() => {
     if (!communityId) return;
@@ -134,6 +128,13 @@ export function CommunityInfoPanel({ members, community, communityId }: Communit
           .filter((e) => new Date(e.event_date) > now)
           .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
         setUpcomingEvent(upcoming[0] ?? null);
+      })
+      .catch(() => {/* silent */});
+
+    fetch(`/api/communities/${communityId}/stats`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { posts_today: number } | null) => {
+        if (data != null) setPostsToday(data.posts_today);
       })
       .catch(() => {/* silent */});
   }, [communityId]);
@@ -224,36 +225,6 @@ export function CommunityInfoPanel({ members, community, communityId }: Communit
           </Section>
         )}
 
-        {/* Popular Resources — last section, no border-b */}
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-body text-sm font-semibold text-foreground">
-              Popular Resources
-            </span>
-            <SeeAll />
-          </div>
-          <div className="space-y-3">
-            {STATIC_RESOURCES.map((r) => (
-              <div key={r.name} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center shrink-0 border border-border">
-                  <FileText size={14} className="text-accent" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-[13px] font-medium text-foreground truncate">
-                    {r.name}
-                  </p>
-                  <p className="font-body text-[11px] text-foreground-muted">
-                    {r.meta}
-                  </p>
-                </div>
-                <button className="shrink-0 text-foreground-muted hover:text-foreground transition-colors">
-                  <Download size={15} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>{/* end main info card */}
 
       {/* Community Stats — separate card below */}
@@ -264,8 +235,8 @@ export function CommunityInfoPanel({ members, community, communityId }: Communit
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: "Members",     value: memberCount.toLocaleString() },
-            { label: "Online",      value: "156" },
-            { label: "Posts today", value: "32" },
+            { label: "Online",      value: onlineCount.toLocaleString() },
+            { label: "Posts today", value: postsToday != null ? postsToday.toLocaleString() : "—" },
           ].map(({ label, value }) => (
             <div
               key={label}
