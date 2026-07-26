@@ -63,7 +63,7 @@ winget install k6 --source winget
 
 | Variable | Required | Description |
 |---|---|---|
-| `BASE_URL` | No | Target server. Default: `http://localhost:3000` |
+| `BASE_URL` | No | Target server. Default: `drafthub-web.vercel.app` |
 | `TEST_USER_EMAIL` | Yes* | Approved member account email |
 | `TEST_USER_PASSWORD` | Yes* | Approved member account password |
 | `ADMIN_EMAIL` | Smoke/admin only | Admin account email |
@@ -83,30 +83,30 @@ Always run the **smoke test first** to confirm the app is up and all routes resp
 ### Smoke test
 ```bash
 k6 run k6/scenarios/smoke.js \
-  -e BASE_URL=http://localhost:3000 \
-  -e ADMIN_EMAIL=admin@example.com \
-  -e ADMIN_PASSWORD=your-admin-password \
-  -e TEST_USER_EMAIL=member@example.com \
-  -e TEST_USER_PASSWORD=your-user-password \
-  -e TEST_COMMUNITY_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  -e BASE_URL=drafthub-web.vercel.app \
+  -e ADMIN_EMAIL=admin@drafthub.com \
+  -e ADMIN_PASSWORD=sachingalaxy1228@ \
+  -e TEST_USER_EMAIL=patilsachin1228@gmail.com \
+  -e TEST_USER_PASSWORD=sachin1228 \
+  -e TEST_COMMUNITY_ID=2d98706f-367c-441b-9d5d-ace92fa8a859
 ```
 
 ### Load test (steady-state)
 ```bash
 k6 run k6/scenarios/load.js \
-  -e BASE_URL=http://localhost:3000 \
-  -e TEST_USER_EMAIL=member@example.com \
-  -e TEST_USER_PASSWORD=your-user-password \
-  -e TEST_COMMUNITY_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  -e BASE_URL=drafthub-web.vercel.app \
+  -e TEST_USER_EMAIL=patilsachin1228@gmail.com \
+  -e TEST_USER_PASSWORD=sachin1228 \
+  -e TEST_COMMUNITY_ID=2d98706f-367c-441b-9d5d-ace92fa8a859
 ```
 
 ### Stress test (spike to 200 VUs)
 ```bash
 k6 run k6/scenarios/stress.js \
-  -e BASE_URL=http://localhost:3000 \
-  -e TEST_USER_EMAIL=member@example.com \
-  -e TEST_USER_PASSWORD=your-user-password \
-  -e TEST_COMMUNITY_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  -e BASE_URL=drafthub-web.vercel.app \
+  -e TEST_USER_EMAIL=patilsachin1228@gmail.com \
+  -e TEST_USER_PASSWORD=sachin1228 \
+  -e TEST_COMMUNITY_ID=2d98706f-367c-441b-9d5d-ace92fa8a859
 ```
 
 ### Concurrent chat with thousands of distinct users
@@ -159,10 +159,10 @@ k6 run k6/scenarios/chat_load.js \
 ### Soak test (30 minutes)
 ```bash
 k6 run k6/scenarios/soak.js \
-  -e BASE_URL=http://localhost:3000 \
-  -e TEST_USER_EMAIL=member@example.com \
-  -e TEST_USER_PASSWORD=your-user-password \
-  -e TEST_COMMUNITY_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  -e BASE_URL=drafthub-web.vercel.app \
+  -e TEST_USER_EMAIL=patilsachin1228@gmail.com \
+  -e TEST_USER_PASSWORD=sachin1228 \
+  -e TEST_COMMUNITY_ID=2d98706f-367c-441b-9d5d-ace92fa8a859
 ```
 
 ---
