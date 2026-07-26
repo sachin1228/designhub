@@ -9,9 +9,13 @@ import { ProfileThreadCard } from "@/components/communities/threads/ProfileThrea
 export function ProfileThreads({
   initialThreads,
   currentUserId,
+  currentUserName,
+  currentUserAvatar,
 }: {
   initialThreads: ProfileThread[];
   currentUserId: string;
+  currentUserName: string;
+  currentUserAvatar: string | null;
 }) {
   const [threads, setThreads] = useState(initialThreads);
 
@@ -97,6 +101,10 @@ export function ProfileThreads({
     );
   }
 
+  function handleDeleted(threadId: string) {
+    setThreads((current) => current.filter((thread) => thread.id !== threadId));
+  }
+
   return (
     <section className="mb-8 rounded-2xl border border-border bg-surface p-6">
       <div className="mb-5 flex items-center gap-3">
@@ -122,8 +130,11 @@ export function ProfileThreads({
             <ProfileThreadCard
               key={thread.id}
               thread={thread}
+              currentUserName={currentUserName}
+              currentUserAvatar={currentUserAvatar}
               onUpdated={handleUpdated}
               onVoteChanged={handleVoteChanged}
+              onDeleted={handleDeleted}
             />
           ))}
         </div>
