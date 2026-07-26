@@ -85,10 +85,12 @@ export default async function EventDetailPage({ params }: Props) {
 
   if (!membership) redirect(`/dashboard/communities/${communityId}`);
 
-  const [event, initialRsvps, communityData] = await Promise.all([
+  const [event, initialRsvps, communityData, userRow, profileRow] = await Promise.all([
     getEvent(db, communityId, eventId, userId),
     getRsvps(db, eventId),
     db.from("communities").select("name").eq("id", communityId).maybeSingle(),
+    db.from("users").select("name").eq("id", userId).maybeSingle(),
+    db.from("designer_profiles").select("avatar_url").eq("user_id", userId).maybeSingle(),
   ]);
 
   if (!event) redirect(`/dashboard/communities/${communityId}`);
@@ -98,6 +100,8 @@ export default async function EventDetailPage({ params }: Props) {
       event={event}
       initialRsvps={initialRsvps}
       currentUserId={userId}
+      currentUserName={userRow.data?.name ?? ""}
+      currentUserAvatar={profileRow.data?.avatar_url ?? null}
       communityId={communityId}
       communityName={communityData.data?.name ?? "Community"}
     />

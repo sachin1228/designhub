@@ -16,7 +16,7 @@ export async function GET(
 
   const { data, error } = await db
     .from("event_comments")
-    .select("id, event_id, user_id, body, created_at, updated_at")
+    .select("id, event_id, user_id, body, image_url, created_at, updated_at")
     .eq("event_id", eventId)
     .order("created_at", { ascending: true });
 
@@ -67,14 +67,19 @@ export async function POST(
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON." }, { status: 400 }); }
 
   const text = typeof body.body === "string" ? body.body.trim() : "";
-  if (!text || text.length > 2000) {
+  const imageUrl = typeof body.image_url === "string" && body.image_url.trim() ? body.image_url.trim() : null;
+
+  if (!text && !imageUrl) {
+    return NextResponse.json({ error: "Comment must have text or an image." }, { status: 422 });
+  }
+  if (text.length > 2000) {
     return NextResponse.json({ error: "Comment must be 1–2000 characters." }, { status: 422 });
   }
 
   const { data: comment, error } = await db
     .from("event_comments")
-    .insert({ event_id: eventId, user_id: userId, body: text })
-    .select("id, event_id, user_id, body, created_at, updated_at")
+    .insert({ event_id: eventId, user_id: userId, body: text, image_url: imageUrl })
+    .select("id, event_id, user_id, body, image_url, created_at, updated_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

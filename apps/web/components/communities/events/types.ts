@@ -31,6 +31,7 @@ export interface EventComment {
   event_id: string;
   user_id: string;
   body: string;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
   users: { name: string; avatar_url: string | null } | null;
