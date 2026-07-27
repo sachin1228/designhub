@@ -35,7 +35,7 @@ const users = new SharedArray('flood-users', function () {
 
 // ── Config ────────────────────────────────────────────────────────────────
 const COMMUNITY_ID = __ENV.TEST_COMMUNITY_ID || 'test-community-id';
-const FLOOD_VUS    = parseInt(__ENV.FLOOD_VUS      || '50',  10);
+const FLOOD_VUS    = parseInt(__ENV.FLOOD_VUS      || '500', 10);
 const DURATION     = __ENV.FLOOD_DURATION          || '3m';
 const MSG_URL      = `${BASE_URL}/api/communities/${COMMUNITY_ID}/messages`;
 
@@ -52,12 +52,14 @@ export const options = {
       executor:  'constant-vus',
       vus:       FLOOD_VUS,
       duration:  DURATION,
+      // All VUs start at the same time — simultaneous burst from the first second
+      startTime: '0s',
     },
   },
   thresholds: {
     flood_send_ms:       ['p(95)<5000'],
-    flood_errors:        ['rate<0.30'], // up to 30% 429s expected under heavy flood
-    http_req_failed:     ['rate<0.30'],
+    flood_errors:        ['rate<0.40'], // 429s expected when 500 users blast at once
+    http_req_failed:     ['rate<0.40'],
   },
 };
 
@@ -70,9 +72,19 @@ const PHRASES = [
   'Struggling with dark mode contrast — any tips?',
   'New portfolio drop 🔥',
   'Design systems save lives, fight me.',
-  'k6 flood message — ignore this one.',
-  'Testing 1 2 3',
-  'Load test in progress — this message will stay.',
+  'Just joined this community — excited to be here!',
+  'What's everyone's go-to prototyping tool right now?',
+  'Figma auto-layout still breaks my brain sometimes.',
+  'Anyone going to Config this year?',
+  'Dark mode > light mode, don't @ me.',
+  'Trying out a new grid system — game changer.',
+  'Finally got my portfolio site to load under 1s.',
+  'Motion design is so underrated in product work.',
+  'Accessibility first, always.',
+  'Just landed my first full-time design role 🎉',
+  'Open to feedback on my latest case study.',
+  'The best design is invisible.',
+  'Responsive typography is genuinely hard.',
 ];
 
 function randomMsg(vu, iter) {

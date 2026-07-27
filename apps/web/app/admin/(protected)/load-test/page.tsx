@@ -42,7 +42,7 @@ export default function LoadTestPage() {
   const [baseUrl,        setBaseUrl]        = useState("https://drafthub-web.vercel.app");
   const [communityId,    setCommunityId]    = useState("");
   const [concurrentVus,  setConcurrentVus]  = useState(50);
-  const [floodVus,       setFloodVus]       = useState(50);
+  const [floodVus,       setFloodVus]       = useState(500);
   const [floodDuration,  setFloodDuration]  = useState("3m");
   const [testUserEmail,  setTestUserEmail]  = useState("k6user001@k6test.invalid");
   const [testUserPass,   setTestUserPass]   = useState("K6testPass123!");
@@ -255,7 +255,7 @@ export default function LoadTestPage() {
                       className="rounded-lg border border-border bg-surface-raised px-3 py-2 font-body text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     />
                     <p className="font-body text-[11px] text-foreground-muted">
-                      50 VUs × 2s sleep ≈ 25 msg/s
+                      500 VUs × 2s sleep ≈ 250 msg/s · ~45k msgs in 3 min
                     </p>
                   </div>
                   <div className="flex flex-col gap-1">
