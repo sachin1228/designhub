@@ -97,7 +97,7 @@ function AvatarStack({ members, total }: { members: Member[]; total: number }) {
       ))}
       {extra > 0 && (
         <div
-          className="h-7 w-7 shrink-0 rounded-full bg-surface-raised ring-2 ring-surface flex items-center justify-center font-body text-[10px] font-semibold text-foreground-muted"
+          className="h-7 min-w-[28px] px-1.5 shrink-0 rounded-full bg-surface-raised ring-2 ring-surface flex items-center justify-center font-body text-[10px] font-semibold text-foreground-muted"
           style={{ marginLeft: -10 }}
         >
           {extra >= 1000 ? `+${Math.round(extra / 1000)}K` : `+${extra}`}
