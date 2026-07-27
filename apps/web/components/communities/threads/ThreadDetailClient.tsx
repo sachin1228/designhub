@@ -297,6 +297,10 @@ export function ThreadDetailClient({
     setThread((t) => ({ ...t, user_voted: voted, vote_count: newCount }));
   }
 
+  function handleSaveChanged(_threadId: string, saved: boolean) {
+    setThread((t) => ({ ...t, user_saved: saved }));
+  }
+
   function handleUpdated(updated: CommunityThread) {
     setThread((t) => ({ ...t, ...updated }));
   }
@@ -350,6 +354,7 @@ export function ThreadDetailClient({
           communityId={communityId}
           variant="detail"
           onVoteChanged={handleVoteChanged}
+          onSaveChanged={handleSaveChanged}
           onUpdated={handleUpdated}
           onDeleted={handleDeleted}
         />

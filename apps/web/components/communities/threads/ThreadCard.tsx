@@ -19,6 +19,7 @@ interface ThreadCardProps {
   communityId: string;
   onUpdated: (thread: CommunityThread) => void;
   onVoteChanged: (threadId: string, voted: boolean, newCount: number) => void;
+  onSaveChanged: (threadId: string, saved: boolean) => void;
   onDeleted: (threadId: string) => void;
   /** When set, shows a small "in CommunityName" badge — used on the profile page */
   communityName?: string;
@@ -35,6 +36,7 @@ export function ThreadCard({
   communityId,
   onUpdated,
   onVoteChanged,
+  onSaveChanged,
   onDeleted,
   communityName,
   variant = "list",
@@ -45,6 +47,7 @@ export function ThreadCard({
   const isOwner = thread.user_id === currentUserId;
 
   const [votePending, setVotePending] = useState(false);
+  const [savePending, setSavePending] = useState(false);
   const [menuOpen, setMenuOpen]       = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleting, setDeleting]       = useState(false);
@@ -71,6 +74,27 @@ export function ThreadCard({
       if (res.ok) onDeleted(thread.id);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleSave(e: React.MouseEvent) {
+    e.preventDefault();
+    if (savePending) return;
+    const newSaved = !thread.user_saved;
+    onSaveChanged(thread.id, newSaved);
+    setSavePending(true);
+    try {
+      const response = await fetch(
+        `/api/communities/${communityId}/threads/${thread.id}/save`,
+        { method: "POST" },
+      );
+      if (!response.ok) {
+        onSaveChanged(thread.id, thread.user_saved);
+      }
+    } catch {
+      onSaveChanged(thread.id, thread.user_saved);
+    } finally {
+      setSavePending(false);
     }
   }
 
@@ -159,9 +183,7 @@ export function ThreadCard({
             type="button"
             onClick={(e) => { e.preventDefault(); setMenuOpen((prev) => !prev); }}
             aria-label="Thread options"
-            className={`flex h-7 w-7 items-center justify-center rounded-md text-foreground-subtle transition-opacity hover:bg-surface-raised hover:text-foreground focus:opacity-100 ${
-              isDetail ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-            }`}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-raised hover:text-foreground"
           >
             <MoreHorizontal size={15} />
           </button>
@@ -342,22 +364,27 @@ export function ThreadCard({
 
         <div className="flex-1" />
 
-        {/* Bookmark + Share — list mode only */}
+        {/* Bookmark + Share */}
         {!isDetail && (
           <>
             <button
               type="button"
-              aria-label="Bookmark"
-              onClick={(e) => e.preventDefault()}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
+              aria-label={thread.user_saved ? "Unsave thread" : "Save thread"}
+              onClick={handleSave}
+              disabled={savePending}
+              className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors disabled:opacity-50 ${
+                thread.user_saved
+                  ? "text-accent"
+                  : "text-foreground-subtle hover:text-foreground"
+              }`}
             >
-              <Bookmark size={14} />
+              <Bookmark size={14} fill={thread.user_saved ? "currentColor" : "none"} />
             </button>
             <button
               type="button"
               aria-label="Share"
-              onClick={(e) => e.preventDefault()}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
+              onClick={(e) => { e.preventDefault(); navigator.clipboard?.writeText(window.location.origin + `/dashboard/communities/${communityId}/threads/${thread.id}`).catch(() => {}); }}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-subtle hover:text-foreground transition-colors"
             >
               <Share2 size={14} />
             </button>
