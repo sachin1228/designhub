@@ -55,7 +55,7 @@ export function MembersView({ communityId }: MembersViewProps) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Search bar */}
-      <div className="px-5 py-3 border-b border-border shrink-0">
+      <div className="px-5 py-3 shrink-0">
         <div className="relative">
           <Search
             size={14}
