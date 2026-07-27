@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 // Repo root relative to apps/web (process.cwd() during Next.js dev)
-const REPO_ROOT = path.resolve(process.cwd(), "../../");
-const K6_DIR    = path.join(REPO_ROOT, "k6");
+// turbopackIgnore prevents Turbopack from statically tracing these paths as module imports
+const REPO_ROOT = path.resolve(/*turbopackIgnore: true*/ process.cwd(), "../../");
+const K6_DIR    = path.join(/*turbopackIgnore: true*/ REPO_ROOT, "k6");
 
 const SCENARIO_FILES: Record<string, string> = {
   smoke:            "scenarios/smoke.js",
