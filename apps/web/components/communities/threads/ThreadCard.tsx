@@ -36,6 +36,8 @@ interface ThreadCardProps {
   onUpdated: (thread: CommunityThread) => void;
   onVoteChanged: (threadId: string, voted: boolean, newCount: number) => void;
   onDeleted: (threadId: string) => void;
+  /** When set, shows a small "in CommunityName" badge — used on the profile page */
+  communityName?: string;
 }
 
 export function ThreadCard({
@@ -45,6 +47,7 @@ export function ThreadCard({
   onUpdated,
   onVoteChanged,
   onDeleted,
+  communityName,
 }: ThreadCardProps) {
   const category = THREAD_CATEGORIES.find((item) => item.value === thread.category);
   const categoryColor = CATEGORY_COLORS[thread.category] ?? CATEGORY_COLORS["discussion"];
@@ -131,7 +134,7 @@ export function ThreadCard({
                 </span>
                 {category && (
                   <>
-                    <span className="font-body text-xs text-foreground-subtle">·</span>
+                    <span className="font-body text-[11px] text-foreground-subtle">·</span>
                     <span
                       className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 font-body text-[11px] font-medium"
                       style={{
@@ -142,6 +145,14 @@ export function ThreadCard({
                     >
                       <CategoryIcon category={category.value} size={10} />
                       {category.label}
+                    </span>
+                  </>
+                )}
+                {communityName && (
+                  <>
+                    <span className="font-body text-[11px] text-foreground-subtle">·</span>
+                    <span className="font-body text-[11px] text-foreground-subtle">
+                      in <span className="text-foreground-muted">{communityName}</span>
                     </span>
                   </>
                 )}

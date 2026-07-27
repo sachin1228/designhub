@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import type { ProfileThread } from "@/components/communities/threads/types";
-import { ProfileThreadCard } from "@/components/communities/threads/ProfileThreadCard";
+import { ThreadCard } from "@/components/communities/threads/ThreadCard";
 
 type Tab = "threads" | "showcase" | "events" | "resources";
 
@@ -88,10 +88,12 @@ export function ProfileThreads({
     };
   }, [currentUserId]);
 
-  function handleUpdated(updated: ProfileThread) {
-    setThreads((current) =>
-      current.map((t) => (t.id === updated.id ? { ...t, ...updated } : t)),
-    );
+  function handleUpdated(threadId: string, community: ProfileThread["community"]) {
+    return (updated: ProfileThread) => {
+      setThreads((current) =>
+        current.map((t) => (t.id === updated.id ? { ...t, ...updated, community } : t)),
+      );
+    };
   }
 
   function handleVoteChanged(threadId: string, voted: boolean, newCount: number) {
@@ -110,7 +112,6 @@ export function ProfileThreads({
 
   return (
     <section className="">
-
       {/* Tab bar */}
       <div className="flex border-b border-border">
         {TABS.map((tab) => (
@@ -139,17 +140,25 @@ export function ProfileThreads({
             />
           ) : (
             <div className="space-y-3">
-              {threads.map((thread) => (
-                <ProfileThreadCard
-                  key={thread.id}
-                  thread={thread}
-                  currentUserName={currentUserName}
-                  currentUserAvatar={currentUserAvatar}
-                  onUpdated={handleUpdated}
-                  onVoteChanged={handleVoteChanged}
-                  onDeleted={handleDeleted}
-                />
-              ))}
+              {threads.map((thread) => {
+                // Ensure users is populated — fall back to current user's info
+                const patchedThread = {
+                  ...thread,
+                  users: thread.users ?? { name: currentUserName, avatar_url: currentUserAvatar },
+                };
+                return (
+                  <ThreadCard
+                    key={thread.id}
+                    thread={patchedThread}
+                    currentUserId={currentUserId}
+                    communityId={thread.community_id}
+                    communityName={thread.community?.name}
+                    onUpdated={handleUpdated(thread.id, thread.community)}
+                    onVoteChanged={handleVoteChanged}
+                    onDeleted={handleDeleted}
+                  />
+                );
+              })}
             </div>
           )
         )}
