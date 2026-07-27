@@ -29,10 +29,12 @@ import { chatMessageTests } from '../tests/09_chat_messages.js';
 
 export const options = SMOKE_OPTIONS;
 
-const USER_EMAIL     = __ENV.TEST_USER_EMAIL    || 'testuser@example.com';
-const USER_PASSWORD  = __ENV.TEST_USER_PASSWORD || 'password123';
-const ADMIN_EMAIL    = __ENV.ADMIN_EMAIL         || 'admin@example.com';
-const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD      || 'adminpassword';
+// Use a real seeded k6 test user. Override via -e TEST_USER_EMAIL / TEST_USER_PASSWORD.
+// The seeder creates users with pattern k6userNNN@k6test.invalid / K6testPass123!
+const USER_EMAIL     = __ENV.TEST_USER_EMAIL    || 'k6user001@k6test.invalid';
+const USER_PASSWORD  = __ENV.TEST_USER_PASSWORD || 'K6testPass123!';
+const ADMIN_EMAIL    = __ENV.ADMIN_EMAIL         || '';
+const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD      || '';
 
 export default function () {
   // ── 1. Public endpoints — no auth needed ──────────────────────────────────

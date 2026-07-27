@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Play, Square, RefreshCw, Users, Gauge, ChevronDown, ChevronRight } from "lucide-react";
+import { Play, Square, RefreshCw, Users, Gauge, ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -37,10 +37,14 @@ export default function LoadTestPage() {
   const [tab, setTab] = useState<Tab>("test");
 
   // ── Run-test state ────────────────────────────────────────────────────────
-  const [scenario,      setScenario]      = useState("smoke");
-  const [baseUrl,       setBaseUrl]       = useState("https://drafthub-web.vercel.app");
-  const [communityId,   setCommunityId]   = useState("");
-  const [concurrentVus, setConcurrentVus] = useState(50);
+  const [scenario,       setScenario]       = useState("smoke");
+  const [baseUrl,        setBaseUrl]        = useState("https://drafthub-web.vercel.app");
+  const [communityId,    setCommunityId]    = useState("");
+  const [concurrentVus,  setConcurrentVus]  = useState(50);
+  const [testUserEmail,  setTestUserEmail]  = useState("k6user001@k6test.invalid");
+  const [testUserPass,   setTestUserPass]   = useState("K6testPass123!");
+  const [adminEmail,     setAdminEmail]     = useState("");
+  const [adminPass,      setAdminPass]      = useState("");
 
   // ── Seed state ────────────────────────────────────────────────────────────
   const [supabaseUrl,  setSupabaseUrl]  = useState("");
@@ -118,11 +122,15 @@ export default function LoadTestPage() {
   }, []);
 
   const runTest = () => run({
-    type:         "test",
+    type:          "test",
     scenario,
     baseUrl,
     communityId,
     concurrentVus,
+    testUserEmail,
+    testUserPass,
+    adminEmail,
+    adminPass,
   });
 
   const runSeed = () => run({
@@ -225,6 +233,38 @@ export default function LoadTestPage() {
                   />
                 </div>
               )}
+
+              {/* Credentials — divider */}
+              <div className="border-t border-border pt-3 flex flex-col gap-3">
+                <p className="font-body text-[11px] text-foreground-muted uppercase tracking-wide font-medium">
+                  Credentials
+                </p>
+
+                <Field
+                  label="Test User Email"
+                  value={testUserEmail}
+                  onChange={setTestUserEmail}
+                  placeholder="k6user001@k6test.invalid"
+                />
+                <PasswordField
+                  label="Test User Password"
+                  value={testUserPass}
+                  onChange={setTestUserPass}
+                  placeholder="K6testPass123!"
+                />
+                <Field
+                  label="Admin Email"
+                  value={adminEmail}
+                  onChange={setAdminEmail}
+                  placeholder="admin@yourdomain.com"
+                />
+                <PasswordField
+                  label="Admin Password"
+                  value={adminPass}
+                  onChange={setAdminPass}
+                  placeholder="••••••••"
+                />
+              </div>
 
               <RunButton running={isRunning} onClick={runTest} onStop={stop} label="Run Test" />
             </div>
@@ -354,6 +394,38 @@ function Field({
         placeholder={placeholder}
         className="rounded-lg border border-border bg-surface-raised px-3 py-2 font-body text-xs text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:ring-1 focus:ring-accent"
       />
+    </div>
+  );
+}
+
+function PasswordField({
+  label, value, onChange, placeholder,
+}: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="font-body text-[11px] font-medium text-foreground-muted uppercase tracking-wide">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 pr-8 font-body text-xs text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:ring-1 focus:ring-accent"
+        />
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          className="absolute right-2.5 top-2 text-foreground-muted hover:text-foreground"
+          tabIndex={-1}
+        >
+          {show ? <EyeOff size={12} /> : <Eye size={12} />}
+        </button>
+      </div>
     </div>
   );
 }

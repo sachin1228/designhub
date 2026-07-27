@@ -84,11 +84,18 @@ export async function POST(req: NextRequest) {
 
       } else {
         // type === "test"
-        const { scenario, baseUrl, communityId, concurrentVus } = body as {
+        const {
+          scenario, baseUrl, communityId, concurrentVus,
+          testUserEmail, testUserPass, adminEmail, adminPass,
+        } = body as {
           scenario:      string;
           baseUrl:       string;
           communityId:   string;
           concurrentVus: number;
+          testUserEmail: string;
+          testUserPass:  string;
+          adminEmail:    string;
+          adminPass:     string;
         };
 
         const scenarioFile = SCENARIO_FILES[scenario];
@@ -109,7 +116,11 @@ export async function POST(req: NextRequest) {
           path.join(K6_DIR, scenarioFile),
           "-e", `BASE_URL=${baseUrl}`,
           "-e", `TEST_COMMUNITY_ID=${communityId}`,
-          ...(concurrentVus ? ["-e", `CONCURRENT_VUS=${concurrentVus}`] : []),
+          ...(concurrentVus  ? ["-e", `CONCURRENT_VUS=${concurrentVus}`]           : []),
+          ...(testUserEmail  ? ["-e", `TEST_USER_EMAIL=${testUserEmail}`]           : []),
+          ...(testUserPass   ? ["-e", `TEST_USER_PASSWORD=${testUserPass}`]         : []),
+          ...(adminEmail     ? ["-e", `ADMIN_EMAIL=${adminEmail}`]                  : []),
+          ...(adminPass      ? ["-e", `ADMIN_PASSWORD=${adminPass}`]                : []),
         ];
         env = { ...process.env };
 
@@ -117,6 +128,8 @@ export async function POST(req: NextRequest) {
         send(`  BASE_URL=${baseUrl}`);
         send(`  TEST_COMMUNITY_ID=${communityId}`);
         if (concurrentVus) send(`  CONCURRENT_VUS=${concurrentVus}`);
+        if (testUserEmail) send(`  TEST_USER_EMAIL=${testUserEmail}`);
+        if (adminEmail)    send(`  ADMIN_EMAIL=${adminEmail}`);
         send("");
       }
 
