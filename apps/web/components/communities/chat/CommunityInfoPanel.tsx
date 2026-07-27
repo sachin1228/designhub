@@ -85,7 +85,7 @@ function AvatarStack({ members, total }: { members: Member[]; total: number }) {
       {shown.map((m, i) => (
         <div
           key={m.user_id}
-          className="ring-2 ring-surface rounded-full shrink-0"
+          className="ring-2 ring-surface rounded-full shrink-0 bg-surface-raised"
           style={{ marginLeft: i === 0 ? 0 : -10, zIndex: shown.length - i }}
         >
           <ChatAvatar
