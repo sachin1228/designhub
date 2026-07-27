@@ -207,18 +207,34 @@ export function ThreadCard({
       {/* ── Links ── */}
       {thread.links.length > 0 && (
         <div className="mt-3 space-y-1.5">
-          {thread.links.map((link) => (
-            <a
-              key={link}
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 font-body text-xs text-foreground-muted hover:border-accent/40 hover:text-accent"
-            >
-              <LinkIcon size={12} />
-              <span className="min-w-0 truncate">{link}</span>
-            </a>
-          ))}
+          {thread.links.map((link) =>
+            isDetail ? (
+              // Detail: no outer <Link>, so a real <a> is safe
+              <a
+                key={link}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 font-body text-xs text-foreground-muted hover:border-accent/40 hover:text-accent"
+              >
+                <LinkIcon size={12} />
+                <span className="min-w-0 truncate">{link}</span>
+              </a>
+            ) : (
+              // List: whole card is already a <Link> (<a>), so avoid nesting
+              <div
+                key={link}
+                role="link"
+                tabIndex={0}
+                onClick={(e) => { e.preventDefault(); window.open(link, "_blank", "noopener,noreferrer"); }}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); window.open(link, "_blank", "noopener,noreferrer"); } }}
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 font-body text-xs text-foreground-muted hover:border-accent/40 hover:text-accent"
+              >
+                <LinkIcon size={12} />
+                <span className="min-w-0 truncate">{link}</span>
+              </div>
+            )
+          )}
         </div>
       )}
 
