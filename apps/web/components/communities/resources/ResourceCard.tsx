@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-  Bookmark, BookmarkCheck, ExternalLink, Heart,
+  Bookmark, BookmarkCheck, Heart,
   MoreHorizontal, Pencil, Trash2,
 } from "lucide-react";
 import type { CommunityResource } from "./types";
@@ -107,7 +107,7 @@ export function ResourceCard({
   }, [menuOpen]);
 
   async function handleDelete(e: React.MouseEvent) {
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
     if (!confirm("Delete this resource? This cannot be undone.")) return;
     setDeleting(true);
     setMenuOpen(false);
@@ -120,7 +120,7 @@ export function ResourceCard({
   }
 
   async function handleSave(e: React.MouseEvent) {
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
     if (savePending) return;
     const newSaved = !resource.user_saved;
     const newCount = resource.save_count + (newSaved ? 1 : -1);
@@ -137,7 +137,7 @@ export function ResourceCard({
   }
 
   async function handleBookmark(e: React.MouseEvent) {
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
     if (bookmarkPending) return;
     const newBookmarked = !resource.user_bookmarked;
     const newCount = resource.bookmark_count + (newBookmarked ? 1 : -1);
@@ -158,8 +158,9 @@ export function ResourceCard({
 
   return (
     <>
-      <article className="group rounded-2xl border border-border bg-surface transition-colors hover:border-border-strong">
-        <div>
+      <article className="group rounded-2xl border border-border bg-surface transition-colors hover:border-border-strong cursor-pointer">
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href={resource.url} target="_blank" rel="noopener noreferrer">
 
           {/* ── OG image ── */}
           {ogImage && (
@@ -212,11 +213,11 @@ export function ResourceCard({
             <div
               className="relative shrink-0"
               ref={menuRef}
-              onClick={(e) => e.preventDefault()}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
               <button
                 type="button"
-                onClick={(e) => { e.preventDefault(); setMenuOpen((p) => !p); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen((p) => !p); }}
                 aria-label="Resource options"
                 className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-raised hover:text-foreground focus:opacity-100"
               >
@@ -226,7 +227,7 @@ export function ResourceCard({
                 <div className="absolute right-0 top-8 z-20 min-w-[130px] rounded-lg border border-border bg-surface py-1 shadow-lg">
                   <button
                     type="button"
-                    onClick={(e) => { e.preventDefault(); setMenuOpen(false); setShowEditModal(true); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); setShowEditModal(true); }}
                     className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-foreground-muted hover:bg-surface-raised hover:text-foreground"
                   >
                     <Pencil size={11} /> Edit resource
@@ -257,17 +258,10 @@ export function ResourceCard({
             </p>
           )}
 
-          {/* ── URL pill ── */}
-          <a
-            href={resource.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="mt-2 inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 font-body text-[11px] text-foreground-subtle hover:text-accent hover:border-accent/40 transition-colors"
-          >
-            <ExternalLink size={10} />
-            <span className="truncate max-w-[220px]">{getDomain(resource.url)}</span>
-          </a>
+          {/* ── Domain label ── */}
+          <p className="mt-2 font-body text-[11px] text-foreground-subtle">
+            {getDomain(resource.url)}
+          </p>
 
           {/* ── Divider ── */}
           <div className="mt-4 border-t border-border" />
@@ -316,7 +310,7 @@ export function ResourceCard({
             <div className="flex-1" />
           </div>
           </div>{/* end p-5 */}
-        </div>
+        </a>
       </article>
 
       {showEditModal && (
