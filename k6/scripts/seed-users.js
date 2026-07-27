@@ -84,10 +84,19 @@ async function hashPassword(plain) {
   return bcrypt.hash(plain, 10);
 }
 
-// Generated avatar URL — no storage upload is needed for load-test users.
-// The email is used as the seed so each member gets a stable, unique avatar.
+// Generated avatar URL — no storage upload or external image request is needed
+// for load-test users. AvatarImg renders the boring:// protocol locally, and
+// the email is used as the seed so each member gets a stable, unique avatar.
 function avatarUrlFor(email) {
-  return `https://source.boringavatars.com/beam/80/${encodeURIComponent(email)}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`;
+  return `boring://beam/${encodeURIComponent(email)}`;
+}
+
+// Older versions of the seeder stored URLs from source.boringavatars.com.
+// Those remote URLs can fail to load in the deployed app, while a manually
+// selected boring avatar is stored as boring://... and should be preserved.
+function isLegacyGeneratedAvatar(profile) {
+  return typeof profile?.avatar_url === 'string' &&
+    profile.avatar_url.startsWith('https://source.boringavatars.com/');
 }
 
 // ── Fetch existing seeded users (skip already-created ones) ────────────────
@@ -181,20 +190,25 @@ async function main() {
   );
 
   // Check which profiles already exist, including their avatar fields. The
-  // seeder must repair older profiles created before avatar support was added.
+  // seeder must repair older profiles created before avatar support was added
+  // and profiles created with the old remote avatar URL format.
   const existingProfiles = new Map();
   for (let b = 0; b < allIds.length; b += BATCH_SIZE) {
     const batch = allIds.slice(b, b + BATCH_SIZE);
     const { data } = await db
       .from('designer_profiles')
-      .select('user_id, avatar_url')
+      .select('user_id, avatar_url, avatar_source')
       .in('user_id', batch);
     for (const p of data || []) existingProfiles.set(p.user_id, p);
   }
 
   const profilesNeeded = allIds.filter(id => !existingProfiles.has(id));
   const profilesMissingAvatars = allIds.filter(
-    id => existingProfiles.has(id) && !existingProfiles.get(id).avatar_url,
+    id => {
+      const profile = existingProfiles.get(id);
+      return existingProfiles.has(id) &&
+        (!profile.avatar_url || isLegacyGeneratedAvatar(profile));
+    },
   );
   console.log(`   ${profilesNeeded.length} profiles to create.`);
   console.log(`   ${profilesMissingAvatars.length} existing profiles need avatars.\n`);
