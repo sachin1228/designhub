@@ -198,14 +198,14 @@ export function CommunityChat({
     pendingProfileFetchRef,
   } = useChatData({ communityId, initialMeta, initialMessages });
 
-  // ── Top-sentinel ref (load older messages when scrolled to the top) ───────
+  // ── Top-sentinel ref — kept only for the "beginning of chat" marker render.
   const topSentinelRef   = useRef<HTMLDivElement>(null);
   /** Captured scroll position just before we prepend older messages. */
   const prependAnchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null);
-  /** Stable callback ref so the IntersectionObserver closure never goes stale. */
+  /** Always points to the latest load-older logic; never stale inside event handlers. */
   const loadOlderCallbackRef = useRef<(() => void) | null>(null);
 
-  // Keep the callback ref current without recreating the observer.
+  // Keep the callback ref current on every render (no deps needed).
   useEffect(() => {
     loadOlderCallbackRef.current = () => {
       const oldest = messages.find((m) => !m.id.startsWith("temp-"));
@@ -233,22 +233,21 @@ export function CommunityChat({
     if (delta > 0) container.scrollTop = anchor.scrollTop + delta;
   }, [messages]);
 
-  // Observe the top sentinel with the scroll container as the root.
-  // Re-runs only when hasMoreAbove changes (observer is torn down when false).
+  // Scroll-based trigger: when the user scrolls within 200 px of the top,
+  // load the next older page.  Set up once — the callback ref is always current.
+  // This avoids the IntersectionObserver timing problem where the sentinel div
+  // doesn't exist yet when the effect first runs (MessageList shows a loader).
   useEffect(() => {
-    if (!hasMoreAbove) return;
-    const sentinel  = topSentinelRef.current;
     const container = scrollContainerRef.current;
-    if (!sentinel || !container) return;
-    const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) loadOlderCallbackRef.current?.(); },
-      { root: container, threshold: 0 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-    // scrollContainerRef is a stable ref object — safe to omit from deps.
+    if (!container) return;
+    const handleScroll = () => {
+      if (container.scrollTop < 200) loadOlderCallbackRef.current?.();
+    };
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+    // scrollContainerRef is a stable ref — safe to omit from deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasMoreAbove]);
+  }, []);
 
   const handleDelete = useCallback(async (msgId: string) => {
     // Optimistic update: mark as deleted locally immediately
