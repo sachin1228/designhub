@@ -224,7 +224,7 @@ export function ResourceCard({
                 <MoreHorizontal size={15} />
               </button>
               {menuOpen && isOwner && (
-                <div className="absolute right-0 top-8 z-20 min-w-[130px] rounded-lg border border-border bg-surface py-1 shadow-lg">
+                <div className="absolute right-0 top-8 z-20 min-w-[160px] rounded-lg border border-border bg-surface py-1 shadow-lg">
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); setShowEditModal(true); }}
