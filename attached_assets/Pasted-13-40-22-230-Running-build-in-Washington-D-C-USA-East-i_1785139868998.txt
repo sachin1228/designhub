@@ -1,0 +1,155 @@
+13:40:22.230 Running build in Washington, D.C., USA (East) – iad1
+13:40:22.231 Build machine configuration: 2 cores, 8 GB
+13:40:22.580 Cloning github.com/sachin1228/drafthub (Branch: feat/k6-stress-tests, Commit: 1268e45)
+13:40:24.494 Cloning completed: 1.911s
+13:40:24.759 Restored build cache from previous deployment (5UYxXhbtmsuxkewrWiq7CEnHTvH9)
+13:40:25.721 Running "vercel build"
+13:40:25.751 Vercel CLI 56.5.0
+13:40:26.042 Installing dependencies...
+13:40:27.793 
+13:40:27.793 changed 2 packages in 2s
+13:40:27.793 
+13:40:27.793 173 packages are looking for funding
+13:40:27.793   run `npm fund` for details
+13:40:27.822 Detected Next.js version: 16.2.11
+13:40:27.828 Running "npm run build"
+13:40:27.953 
+13:40:27.953 > web@0.1.0 build
+13:40:27.954 > next build
+13:40:27.954 
+13:40:28.568   Applying modifyConfig from Vercel
+13:40:28.648 ▲ Next.js 16.2.11 (Turbopack)
+13:40:28.649 
+13:40:28.656 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+13:40:28.704   Creating an optimized production build ...
+13:40:46.464 Turbopack build encountered 1 warnings:
+13:40:46.464 ./apps/web/next.config.js
+13:40:46.465 Encountered unexpected file in NFT list
+13:40:46.465 A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
+13:40:46.465 - filesystem operations (like path.join, path.resolve or fs.readFile), or
+13:40:46.465 - very dynamic requires (like require('./' + foo)).
+13:40:46.465 To resolve this, you can
+13:40:46.465 - remove them if possible, or
+13:40:46.466 - only use them in development, or
+13:40:46.466 - make sure they are statically scoped to some subfolder: path.join(process.cwd(), 'data', bar), or
+13:40:46.468 - add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
+13:40:46.468 
+13:40:46.468 Import trace:
+13:40:46.469   App Route:
+13:40:46.469     ./apps/web/next.config.js
+13:40:46.469     ./apps/web/app/api/admin/load-test/route.ts
+13:40:46.469 
+13:40:46.469 
+13:40:47.270 
+13:40:47.270 > Build error occurred
+13:40:47.275 Error: Turbopack build failed with 9 errors:
+13:40:47.275 ./apps/web/app/api/admin/load-test
+13:40:47.276 Module not found: Can't resolve './ROOT/apps/web../../k6/scripts/seed-users.js'
+13:40:47.276 server relative imports are not implemented yet. Please try an import relative to the file you are importing from.
+13:40:47.276 
+13:40:47.276 
+13:40:47.276 https://nextjs.org/docs/messages/module-not-found
+13:40:47.276 
+13:40:47.276 
+13:40:47.277 ./apps/web/app/api/admin/load-test
+13:40:47.277 Module not found: Can't resolve './ROOT/apps/web../../k6scripts/seed-users.js'
+13:40:47.277 server relative imports are not implemented yet. Please try an import relative to the file you are importing from.
+13:40:47.277 
+13:40:47.277 
+13:40:47.277 https://nextjs.org/docs/messages/module-not-found
+13:40:47.277 
+13:40:47.277 
+13:40:47.277 ./apps/web/app/api/admin/load-test
+13:40:47.277 Module not found: Can't resolve './ROOT/apps/web../..k6/scripts/seed-users.js'
+13:40:47.277 server relative imports are not implemented yet. Please try an import relative to the file you are importing from.
+13:40:47.277 
+13:40:47.278 
+13:40:47.278 https://nextjs.org/docs/messages/module-not-found
+13:40:47.278 
+13:40:47.278 
+13:40:47.278 ./apps/web/app/api/admin/load-test
+13:40:47.278 Module not found: Can't resolve './ROOT/apps/web../..k6scripts/seed-users.js'
+13:40:47.281 server relative imports are not implemented yet. Please try an import relative to the file you are importing from.
+13:40:47.281 
+13:40:47.281 
+13:40:47.281 https://nextjs.org/docs/messages/module-not-found
+13:40:47.281 
+13:40:47.281 
+13:40:47.281 ./apps/web/app/api/admin/load-test
+13:40:47.281 Module not found: Can't resolve './ROOT/apps/web/../../k6/scripts/seed-users.js'
+13:40:47.282 server relative imports are not implemented yet. Please try an import relative to the file you are importing from.
+13:40:47.284 
+13:40:47.284 
+13:40:47.284 https://nextjs.org/docs/messages/module-not-found
+13:40:47.284 
+13:40:47.284 
+13:40:47.284 ./apps/web/app/api/admin/load-test
+13:40:47.284 Module not found: Can't resolve './ROOT/apps/web/../../k6scripts/seed-users.js'
+13:40:47.284 server relative imports are not implemented yet. Please try an import relative to the file you are importing from.
+13:40:47.284 
+13:40:47.284 
+13:40:47.284 https://nextjs.org/docs/messages/module-not-found
+13:40:47.284 
+13:40:47.284 
+13:40:47.284 ./apps/web/app/api/admin/load-test
+13:40:47.285 Module not found: Can't resolve './ROOT/apps/web/../..k6/scripts/seed-users.js'
+13:40:47.285 server relative imports are not implemented yet. Please try an import relative to the file you are importing from.
+13:40:47.285 
+13:40:47.285 
+13:40:47.285 https://nextjs.org/docs/messages/module-not-found
+13:40:47.285 
+13:40:47.285 
+13:40:47.285 ./apps/web/app/api/admin/load-test
+13:40:47.285 Module not found: Can't resolve './ROOT/apps/web/../..k6scripts/seed-users.js'
+13:40:47.285 server relative imports are not implemented yet. Please try an import relative to the file you are importing from.
+13:40:47.285 
+13:40:47.285 
+13:40:47.285 https://nextjs.org/docs/messages/module-not-found
+13:40:47.285 
+13:40:47.285 
+13:40:47.285 ./apps/web/app/api/admin/load-test/route.ts:145:21
+13:40:47.285 Module not found: Can't resolve (<dynamic> | '/ROOT/apps/web/../../k6/scripts/seed-users.js' | '/ROOT/apps/web../../k6/scripts/seed-users.js' | '/ROOT/apps/web/../..k6/scripts/seed-users.js' | '/ROOT/apps/web../..k6/scripts/seed-users.js' | '/ROOT/apps/web/../../k6scripts/seed-users.js' | '/ROOT/apps/web../../k6scripts/seed-users.js' | '/ROOT/apps/web/../..k6scripts/seed-users.js' | '/ROOT/apps/web../..k6scripts/seed-users.js')
+13:40:47.285   143 |       }
+13:40:47.287   144 |
+13:40:47.287 > 145 |       const child = spawn(cmd, args, {
+13:40:47.288       |                     ^^^^^^^^^^^^^^^^^
+13:40:47.288 > 146 |         cwd: REPO_ROOT,
+13:40:47.288       | ^^^^^^^^^^^^^^^^^^^^^^^
+13:40:47.288 > 147 |         env,
+13:40:47.289       | ^^^^^^^^^^^^
+13:40:47.289 > 148 |         stdio: ["ignore", "pipe", "pipe"],
+13:40:47.290       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13:40:47.290 > 149 |       });
+13:40:47.290       | ^^^^^^^^
+13:40:47.291   150 |
+13:40:47.291   151 |       child.stdout.on("data", (chunk: Buffer) => {
+13:40:47.291   152 |         const lines = chunk.toString().split("\n");
+13:40:47.291 
+13:40:47.292 
+13:40:47.292 
+13:40:47.292 Import trace:
+13:40:47.292   App Route:
+13:40:47.292     ./apps/web/app/api/admin/load-test/route.ts
+13:40:47.292     ./apps/web/app/api/admin/load-test/route.ts
+13:40:47.293 
+13:40:47.293 https://nextjs.org/docs/messages/module-not-found
+13:40:47.293 
+13:40:47.293 
+13:40:47.293     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:40:47.293     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:40:47.293     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:40:47.293     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:40:47.293     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:40:47.293     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:40:47.293     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:40:47.293     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:40:47.294     at <unknown> (./apps/web/app/api/admin/load-test/route.ts:145:21)
+13:40:47.294     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:40:47.343 npm error Lifecycle script `build` failed with error:
+13:40:47.344 npm error code 1
+13:40:47.344 npm error path /vercel/path0/apps/web
+13:40:47.345 npm error workspace web@0.1.0
+13:40:47.345 npm error location /vercel/path0/apps/web
+13:40:47.345 npm error command failed
+13:40:47.345 npm error command sh -c next build
+13:40:47.369 Error: Command "npm run build" exited with 1
