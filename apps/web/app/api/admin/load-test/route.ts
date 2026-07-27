@@ -1,26 +1,19 @@
 import { NextRequest } from "next/server";
 import { requireSession } from "@/lib/auth/session";
-import { spawn } from "child_process";
-import path from "path";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Repo root computed at runtime only.
-// process.env._K6_BASE is intentionally never defined in the build, so Turbopack
-// treats the whole expression as an opaque runtime value and won't try to resolve
-// the resulting path as a module import. Falls back to process.cwd() at runtime.
-const REPO_ROOT = path.resolve(process.env._K6_BASE || process.cwd(), "../../");
-const K6_DIR    = path.join(REPO_ROOT, "k6");
-
+// Filenames stored WITHOUT the .js extension so Turbopack never sees a complete
+// ".js" path string at module scope that it could try to resolve as a module import.
 const SCENARIO_FILES: Record<string, string> = {
-  smoke:            "scenarios/smoke.js",
-  load:             "scenarios/load.js",
-  stress:           "scenarios/stress.js",
-  soak:             "scenarios/soak.js",
-  chat_load:        "scenarios/chat_load.js",
-  chat_concurrent:  "scenarios/chat_concurrent.js",
-  chat_flood:       "scenarios/chat_flood.js",
+  smoke:           "scenarios/smoke",
+  load:            "scenarios/load",
+  stress:          "scenarios/stress",
+  soak:            "scenarios/soak",
+  chat_load:       "scenarios/chat_load",
+  chat_concurrent: "scenarios/chat_concurrent",
+  chat_flood:      "scenarios/chat_flood",
 };
 
 export async function POST(req: NextRequest) {
@@ -29,6 +22,17 @@ export async function POST(req: NextRequest) {
   } catch {
     return new Response("Unauthorized", { status: 401 });
   }
+
+  // Import child_process and path with turbopackIgnore so Turbopack treats them
+  // as fully external. It will NOT trace arguments passed to spawn() as module
+  // import paths — which is the root cause of the build errors on this branch.
+  const { spawn } = await import(/* turbopackIgnore: true */ "child_process") as typeof import("child_process");
+  const nodePath   = await import(/* turbopackIgnore: true */ "path")         as typeof import("path");
+
+  // All path resolution happens at runtime after the opaque imports above.
+  const repoRoot = nodePath.resolve(process.cwd(), "../..");
+  const k6Dir    = nodePath.join(repoRoot, "k6");
+  const ext      = ".js";
 
   const body = await req.json();
   const { type } = body as { type: "test" | "seed" };
@@ -57,9 +61,9 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        const serviceKey   = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const serviceKey    = process.env.SUPABASE_SERVICE_ROLE_KEY;
         const sessionSecret = process.env.SESSION_SECRET;
-        const communityId  = body.communityId || process.env.TEST_COMMUNITY_ID;
+        const communityId   = body.communityId || process.env.TEST_COMMUNITY_ID;
 
         if (!serviceKey || !sessionSecret || !communityId) {
           send("ERROR: Missing server-side env vars:");
@@ -71,7 +75,7 @@ export async function POST(req: NextRequest) {
         }
 
         cmd  = "node";
-        args = [path.join(K6_DIR, "scripts/seed-users.js")];
+        args = [nodePath.join(k6Dir, "scripts", "seed-users" + ext)];
         env  = {
           ...process.env,
           SUPABASE_URL:              supabaseUrl,
@@ -105,8 +109,8 @@ export async function POST(req: NextRequest) {
           adminPass:     string;
         };
 
-        const scenarioFile = SCENARIO_FILES[scenario];
-        if (!scenarioFile) {
+        const scenarioStem = SCENARIO_FILES[scenario];
+        if (!scenarioStem) {
           send(`ERROR: Unknown scenario "${scenario}"`);
           controller.close();
           return;
@@ -117,23 +121,25 @@ export async function POST(req: NextRequest) {
           return;
         }
 
+        const scenarioPath = nodePath.join(k6Dir, scenarioStem + ext);
+
         cmd  = "k6";
         args = [
           "run",
-          path.join(K6_DIR, scenarioFile),
+          scenarioPath,
           "-e", `BASE_URL=${baseUrl}`,
           "-e", `TEST_COMMUNITY_ID=${communityId}`,
-          ...(concurrentVus  ? ["-e", `CONCURRENT_VUS=${concurrentVus}`]           : []),
-          ...(floodVus       ? ["-e", `FLOOD_VUS=${floodVus}`]                     : []),
-          ...(floodDuration  ? ["-e", `FLOOD_DURATION=${floodDuration}`]           : []),
-          ...(testUserEmail  ? ["-e", `TEST_USER_EMAIL=${testUserEmail}`]           : []),
-          ...(testUserPass   ? ["-e", `TEST_USER_PASSWORD=${testUserPass}`]         : []),
-          ...(adminEmail     ? ["-e", `ADMIN_EMAIL=${adminEmail}`]                  : []),
-          ...(adminPass      ? ["-e", `ADMIN_PASSWORD=${adminPass}`]                : []),
+          ...(concurrentVus ? ["-e", `CONCURRENT_VUS=${concurrentVus}`]     : []),
+          ...(floodVus      ? ["-e", `FLOOD_VUS=${floodVus}`]               : []),
+          ...(floodDuration ? ["-e", `FLOOD_DURATION=${floodDuration}`]     : []),
+          ...(testUserEmail ? ["-e", `TEST_USER_EMAIL=${testUserEmail}`]     : []),
+          ...(testUserPass  ? ["-e", `TEST_USER_PASSWORD=${testUserPass}`]   : []),
+          ...(adminEmail    ? ["-e", `ADMIN_EMAIL=${adminEmail}`]            : []),
+          ...(adminPass     ? ["-e", `ADMIN_PASSWORD=${adminPass}`]          : []),
         ];
         env = { ...process.env };
 
-        send(`▶ k6 run ${scenarioFile}`);
+        send(`▶ k6 run ${scenarioStem}${ext}`);
         send(`  BASE_URL=${baseUrl}`);
         send(`  TEST_COMMUNITY_ID=${communityId}`);
         if (concurrentVus) send(`  CONCURRENT_VUS=${concurrentVus}`);
@@ -143,7 +149,7 @@ export async function POST(req: NextRequest) {
       }
 
       const child = spawn(cmd, args, {
-        cwd: REPO_ROOT,
+        cwd: repoRoot,
         env,
         stdio: ["ignore", "pipe", "pipe"],
       });
@@ -190,9 +196,9 @@ export async function POST(req: NextRequest) {
 
   return new Response(stream, {
     headers: {
-      "Content-Type":  "text/plain; charset=utf-8",
+      "Content-Type":      "text/plain; charset=utf-8",
       "X-Accel-Buffering": "no",
-      "Cache-Control": "no-cache",
+      "Cache-Control":     "no-cache",
     },
   });
 }
