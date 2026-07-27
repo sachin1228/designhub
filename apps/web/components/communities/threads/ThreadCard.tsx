@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ArrowUp, MessageSquare, MoreHorizontal, Pencil, Trash2, Bookmark, Share2 } from "lucide-react";
+
 import type { CommunityThread } from "./types";
 import { THREAD_CATEGORIES } from "./types";
 import { CategoryIcon } from "./categoryIcons";
@@ -124,8 +125,8 @@ export function ThreadCard({
 
               {/* Name + time + category */}
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
-                <span className="font-body text-sm font-medium text-foreground">{authorName}</span>
-                <span className="font-body text-xs text-foreground-subtle">
+                <span className="font-body text-xs font-medium text-foreground">{authorName}</span>
+                <span className="font-body text-[11px] text-foreground-subtle">
                   {formatRelativeDate(thread.updated_at || thread.created_at)}
                 </span>
                 {category && (
@@ -185,12 +186,12 @@ export function ThreadCard({
           </div>
 
           {/* ── Title ── */}
-          <h3 className="mt-4 font-display text-lg font-bold leading-snug text-foreground">
+          <h3 className="mt-3 font-display text-sm font-semibold leading-snug text-foreground">
             {thread.title}
           </h3>
 
           {/* ── Description ── */}
-          <p className="mt-2 line-clamp-3 font-body text-sm leading-relaxed text-foreground-muted">
+          <p className="mt-1.5 line-clamp-3 font-body text-xs leading-relaxed text-foreground-muted">
             {thread.description}
           </p>
 
@@ -253,7 +254,7 @@ export function ThreadCard({
                 <ArrowUp size={14} strokeWidth={thread.user_voted ? 2.5 : 2} />
               </span>
               <span
-                className={`font-body text-sm font-semibold tabular-nums ${
+                className={`font-body text-xs font-semibold tabular-nums ${
                   thread.user_voted ? "text-emerald-400" : "text-foreground-muted"
                 }`}
               >
@@ -262,7 +263,7 @@ export function ThreadCard({
             </button>
 
             {/* Comments */}
-            <span className="inline-flex items-center gap-1.5 font-body text-sm text-foreground-subtle">
+            <span className="inline-flex items-center gap-1.5 font-body text-xs text-foreground-subtle">
               <MessageSquare size={14} />
               {thread.comment_count} {thread.comment_count === 1 ? "comment" : "comments"}
             </span>
