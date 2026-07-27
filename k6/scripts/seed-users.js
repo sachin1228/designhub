@@ -144,12 +144,20 @@ function avatarFor(email) {
 function isSeederGeneratedAvatar(profile, email) {
   if (typeof profile?.avatar_url !== 'string') return false;
 
-  // Older versions used a remote Boring Avatars URL or one local beam avatar.
+  // Legacy formats — always regenerate to the current varied style.
   if (profile.avatar_url.startsWith('https://source.boringavatars.com/')) return true;
+
+  // The pre-varied-styles seeder gave every user the same beam style.
   if (profile.avatar_url === `boring://beam/${encodeURIComponent(email)}`) return true;
 
-  // Recognize any current generated variant so rerunning the seeder does not
-  // overwrite it again. Manually selected avatars have different seeds/URLs.
+  // If the profile already has exactly the correct variant for this user's
+  // index, leave it alone — no update needed.
+  const correct = avatarFor(email);
+  if (profile.avatar_url === correct.avatar_url) return false;
+
+  // Has a seeder-generated URL for a different variant — update to the
+  // correct one. Manually selected avatars use the user's name (not their
+  // email) as seed and won't match any entry here.
   return AVATAR_VARIANTS.some(({ source, style }) => {
     const generated = avatarForWithVariant(email, source, style).avatar_url;
     return profile.avatar_url === generated;

@@ -7,6 +7,8 @@
  *                                      package (zero CDN dependency)
  *   https://...                     →  plain <img> tag
  *   https://source.boringavatars.com/... → local boring-avatars rendering
+ *   null / undefined                →  deterministic boring-avatar from name
+ *                                      (every user gets a unique avatar)
  *
  * Always use this component instead of raw <img> so the boring:// protocol
  * is handled everywhere automatically.
@@ -17,8 +19,8 @@ import Avatar from "boring-avatars";
 interface AvatarImgProps {
   /** The avatar_url from the database. May be null/undefined. */
   url: string | null | undefined;
-  /** Fallback name used to seed the boring-avatars component if the seed
-   *  is not embedded in the URL (rare edge case). */
+  /** Name used as the seed for the generated fallback avatar (and as fallback
+   *  seed when the URL does not embed one). */
   name?: string;
   size?: number;
   className?: string;
@@ -30,7 +32,25 @@ export function AvatarImg({
   size = 40,
   className,
 }: AvatarImgProps) {
-  if (!url) return null;
+  // No URL — generate a deterministic unique avatar from the user's name so
+  // every user is visually distinct even before they choose an avatar.
+  if (!url) {
+    return (
+      <span
+        style={{
+          width: size,
+          height: size,
+          display: "inline-flex",
+          borderRadius: "50%",
+          overflow: "hidden",
+          flexShrink: 0,
+        }}
+        className={className}
+      >
+        <Avatar size={size} name={name} variant="beam" />
+      </span>
+    );
+  }
 
   if (url.startsWith("boring://")) {
     const rest = url.slice("boring://".length);
