@@ -52,7 +52,7 @@ export default function LoadTestPage() {
   // ── Seed state ────────────────────────────────────────────────────────────
   const [supabaseUrl,  setSupabaseUrl]  = useState("");
   const [seedCommunityId, setSeedCommunityId] = useState("");
-  const [userCount,    setUserCount]    = useState(200);
+  const [userCount,    setUserCount]    = useState(500);
 
   // ── Shared log state ──────────────────────────────────────────────────────
   const [status, setStatus] = useState<Status>("idle");
@@ -146,6 +146,7 @@ export default function LoadTestPage() {
   });
 
   const isRunning = status === "running";
+  const usesSeededUsers = scenario === "chat_flood" || scenario === "chat_concurrent";
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -279,30 +280,40 @@ export default function LoadTestPage() {
                   Credentials
                 </p>
 
-                <Field
-                  label="Test User Email"
-                  value={testUserEmail}
-                  onChange={setTestUserEmail}
-                  placeholder="k6user001@k6test.invalid"
-                />
-                <PasswordField
-                  label="Test User Password"
-                  value={testUserPass}
-                  onChange={setTestUserPass}
-                  placeholder="K6testPass123!"
-                />
-                <Field
-                  label="Admin Email"
-                  value={adminEmail}
-                  onChange={setAdminEmail}
-                  placeholder="admin@yourdomain.com"
-                />
-                <PasswordField
-                  label="Admin Password"
-                  value={adminPass}
-                  onChange={setAdminPass}
-                  placeholder="••••••••"
-                />
+                {usesSeededUsers ? (
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 font-body text-[11px] text-amber-400 leading-relaxed">
+                    This scenario uses pre-signed sessions from the Seed Users tab.
+                    The email and password fields are not used. Seed at least{" "}
+                    {scenario === "chat_flood" ? floodVus : concurrentVus} users before running it.
+                  </div>
+                ) : (
+                  <>
+                    <Field
+                      label="Test User Email"
+                      value={testUserEmail}
+                      onChange={setTestUserEmail}
+                      placeholder="k6user001@k6test.invalid"
+                    />
+                    <PasswordField
+                      label="Test User Password"
+                      value={testUserPass}
+                      onChange={setTestUserPass}
+                      placeholder="K6testPass123!"
+                    />
+                    <Field
+                      label="Admin Email"
+                      value={adminEmail}
+                      onChange={setAdminEmail}
+                      placeholder="admin@yourdomain.com"
+                    />
+                    <PasswordField
+                      label="Admin Password"
+                      value={adminPass}
+                      onChange={setAdminPass}
+                      placeholder="••••••••"
+                    />
+                  </>
+                )}
               </div>
 
               <RunButton running={isRunning} onClick={runTest} onStop={stop} label="Run Test" />

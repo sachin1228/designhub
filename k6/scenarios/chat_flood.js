@@ -27,10 +27,11 @@ import { check, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
 import { Counter, Rate, Trend } from 'k6/metrics';
 import { BASE_URL, JSON_HEADERS } from '../config.js';
+import { loadSeededUsers } from '../utils/test-users.js';
 
 // ── Users ─────────────────────────────────────────────────────────────────
 const users = new SharedArray('flood-users', function () {
-  return JSON.parse(open('../data/test-users.json'));
+  return loadSeededUsers('../data/test-users.json');
 });
 
 // ── Config ────────────────────────────────────────────────────────────────

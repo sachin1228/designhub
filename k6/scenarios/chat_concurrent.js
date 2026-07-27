@@ -26,10 +26,11 @@ import { check, group, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
 import { Counter, Rate, Trend } from 'k6/metrics';
 import { BASE_URL, JSON_HEADERS } from '../config.js';
+import { loadSeededUsers } from '../utils/test-users.js';
 
 // ── Load pre-seeded users (includes pre-signed session tokens) ────────────
 const users = new SharedArray('test-users', function () {
-  return JSON.parse(open('../data/test-users.json'));
+  return loadSeededUsers('../data/test-users.json');
 });
 
 // ── Config ────────────────────────────────────────────────────────────────

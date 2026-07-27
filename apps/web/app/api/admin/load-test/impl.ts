@@ -13,6 +13,7 @@
 import { NextRequest } from "next/server";
 import { requireSession } from "@/lib/auth/session";
 import { spawn } from "child_process";
+import fs from "fs";
 import path from "path";
 
 // Scenario paths — stored as plain strings; the k6 dir prefix is prepended below.
@@ -38,6 +39,62 @@ const SCENARIO_FILES: Record<string, string> = {
 function k6Path(...segments: string[]): string {
   // Produce e.g. "/abs/apps/web/../../k6/scenarios/smoke.js"
   return [process.cwd(), "..", "..", "k6", ...segments].join("/");
+}
+
+/**
+ * Flood and concurrent scenarios use pre-signed sessions from this local,
+ * gitignored file. Validate it before spawning k6 so admins see the setup
+ * problem in the runner instead of k6's opaque JSON parse exception.
+ */
+function validateSeededUsersFile(
+  send: (line: string) => void,
+  requiredUsers: number,
+): boolean {
+  const file = k6Path("data", "test-users.json");
+
+  if (!fs.existsSync(file)) {
+    send("ERROR: This scenario requires seeded k6 users.");
+    send("  ✗ k6/data/test-users.json was not found");
+    send("  Run the Seed Users tab first, then run the chat test again.");
+    return false;
+  }
+
+  let users: unknown;
+  try {
+    users = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    send("ERROR: k6/data/test-users.json is not valid JSON.");
+    send("  Run the Seed Users tab to regenerate it.");
+    send("  Do not put an email address directly in k6/data/test-users.json.");
+    return false;
+  }
+
+  if (!Array.isArray(users) || users.length === 0) {
+    send("ERROR: k6/data/test-users.json contains no seeded users.");
+    send("  Run the Seed Users tab first.");
+    return false;
+  }
+
+  const missingSession = users.findIndex(
+    (user) =>
+      !user ||
+      typeof user !== "object" ||
+      typeof (user as { sessionToken?: unknown }).sessionToken !== "string" ||
+      !(user as { sessionToken: string }).sessionToken,
+  );
+  if (missingSession !== -1) {
+    send("ERROR: The seeded-user file has no pre-signed sessions.");
+    send("  Run the Seed Users tab again to regenerate it.");
+    return false;
+  }
+
+  if (users.length < requiredUsers) {
+    send(`ERROR: ${requiredUsers} VUs requested, but only ${users.length} seeded users are available.`);
+    send("  Increase Seed Users count and run the seeder again.");
+    return false;
+  }
+
+  return true;
 }
 
 export async function handlePost(req: NextRequest): Promise<Response> {
@@ -133,6 +190,15 @@ export async function handlePost(req: NextRequest): Promise<Response> {
         }
         if (!baseUrl || !communityId) {
           send("ERROR: baseUrl and communityId are required");
+          controller.close();
+          return;
+        }
+
+        const usesSeededUsers = scenario === "chat_flood" || scenario === "chat_concurrent";
+        const requestedVus = scenario === "chat_flood"
+          ? Number(floodVus || 500)
+          : Number(concurrentVus || 50);
+        if (usesSeededUsers && !validateSeededUsersFile(send, requestedVus)) {
           controller.close();
           return;
         }
