@@ -230,6 +230,14 @@ export function CommunityInfoPanel({ members, community, communityId, onlineCoun
         {/* Members */}
         <Section
           title={`Members (${memberCount.toLocaleString()})`}
+          action={
+            onlineCount > 0 ? (
+              <span className="inline-flex items-center gap-1 font-body text-[11px] text-foreground-muted">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
+                {onlineCount} online
+              </span>
+            ) : undefined
+          }
         >
           <AvatarStack members={members} total={memberCount} />
         </Section>
