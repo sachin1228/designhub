@@ -204,8 +204,8 @@ export function ThreadCard({
         {thread.description}
       </p>
 
-      {/* ── Links (detail only) ── */}
-      {isDetail && thread.links.length > 0 && (
+      {/* ── Links ── */}
+      {thread.links.length > 0 && (
         <div className="mt-3 space-y-1.5">
           {thread.links.map((link) => (
             <a
