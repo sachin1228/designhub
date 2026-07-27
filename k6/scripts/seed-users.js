@@ -84,9 +84,11 @@ async function hashPassword(plain) {
   return bcrypt.hash(plain, 10);
 }
 
-// Placeholder avatar — a boring-avatars SVG data URL so the login route's
-// avatar_url check passes without needing real storage.
-const PLACEHOLDER_AVATAR = 'https://source.boringavatars.com/beam/80/k6testuser?colors=264653,2a9d8f,e9c46a,f4a261,e76f51';
+// Generated avatar URL — no storage upload is needed for load-test users.
+// The email is used as the seed so each member gets a stable, unique avatar.
+function avatarUrlFor(email) {
+  return `https://source.boringavatars.com/beam/80/${encodeURIComponent(email)}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`;
+}
 
 // ── Fetch existing seeded users (skip already-created ones) ────────────────
 async function fetchExistingEmails() {
@@ -174,29 +176,36 @@ async function main() {
 
   // ── Create designer_profiles (required for login) ────────────────────────
   const allIds        = Object.values(createdUserIds);
-  const profileEmails = Object.keys(createdUserIds);
+  const emailByUserId = Object.fromEntries(
+    Object.entries(createdUserIds).map(([email, userId]) => [userId, email]),
+  );
 
-  // Check which profiles already exist
-  const existingProfiles = new Set();
+  // Check which profiles already exist, including their avatar fields. The
+  // seeder must repair older profiles created before avatar support was added.
+  const existingProfiles = new Map();
   for (let b = 0; b < allIds.length; b += BATCH_SIZE) {
     const batch = allIds.slice(b, b + BATCH_SIZE);
     const { data } = await db
       .from('designer_profiles')
-      .select('user_id')
+      .select('user_id, avatar_url')
       .in('user_id', batch);
-    for (const p of data || []) existingProfiles.add(p.user_id);
+    for (const p of data || []) existingProfiles.set(p.user_id, p);
   }
 
   const profilesNeeded = allIds.filter(id => !existingProfiles.has(id));
-  console.log(`   ${profilesNeeded.length} profiles to create.\n`);
+  const profilesMissingAvatars = allIds.filter(
+    id => existingProfiles.has(id) && !existingProfiles.get(id).avatar_url,
+  );
+  console.log(`   ${profilesNeeded.length} profiles to create.`);
+  console.log(`   ${profilesMissingAvatars.length} existing profiles need avatars.\n`);
 
   for (let b = 0; b < profilesNeeded.length; b += BATCH_SIZE) {
     const batch = profilesNeeded.slice(b, b + BATCH_SIZE);
     const rows  = batch.map(id => ({
       user_id:          id,
       experience_level: experienceLevel,
-      avatar_url:       PLACEHOLDER_AVATAR,
-      avatar_source:    'upload',
+      avatar_url:       avatarUrlFor(emailByUserId[id]),
+      avatar_source:    'boring-avatars',
     }));
 
     const { error } = await db.from('designer_profiles').insert(rows);
@@ -206,7 +215,31 @@ async function main() {
       process.stdout.write(`   Created profiles ${b + 1}–${Math.min(b + BATCH_SIZE, profilesNeeded.length)} / ${profilesNeeded.length}\r`);
     }
   }
-  console.log(`\n   ✓ Profiles done.\n`);
+
+  // Fill only missing avatars so rerunning the seeder never overwrites a
+  // member's existing custom avatar. Updates are chunked to avoid firing
+  // hundreds of requests at once.
+  for (let b = 0; b < profilesMissingAvatars.length; b += BATCH_SIZE) {
+    const batch = profilesMissingAvatars.slice(b, b + BATCH_SIZE);
+    const results = await Promise.all(
+      batch.map(userId =>
+        db
+          .from('designer_profiles')
+          .update({
+            avatar_url: avatarUrlFor(emailByUserId[userId]),
+            avatar_source: 'boring-avatars',
+          })
+          .eq('user_id', userId),
+      ),
+    );
+    const failed = results.find(result => result.error);
+    if (failed?.error) {
+      console.error(`   ✗ Avatar update batch ${b} error:`, failed.error.message);
+    } else {
+      process.stdout.write(`   Added avatars ${b + 1}–${Math.min(b + BATCH_SIZE, profilesMissingAvatars.length)} / ${profilesMissingAvatars.length}\r`);
+    }
+  }
+  console.log(`\n   ✓ Profiles and avatars done.\n`);
 
   // ── Join all users to the community ─────────────────────────────────────
   const { data: existingMembers } = await db
