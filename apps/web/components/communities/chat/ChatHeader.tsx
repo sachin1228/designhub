@@ -131,15 +131,15 @@ export function ChatHeader({
                    Joined <ChevronDown size={13} className={`transition-transform ${openMenu === "joined" ? "rotate-180" : ""}`} />
                  </button>
                  {openMenu === "joined" && (
-                   <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-30 min-w-48 rounded-lg border border-border bg-surface p-1.5 shadow-xl">
+                   <div role="menu" className="absolute right-0 top-[calc(100%+6px)] z-30 min-w-40 rounded-xl border border-white/[0.08] bg-surface-raised p-1 shadow-2xl animate-in fade-in zoom-in-95 duration-100 origin-top-right">
                      <button
                        type="button"
                        role="menuitem"
                        disabled={busy}
                        onClick={leaveCommunity}
-                       className="flex w-full items-center rounded-md px-3 py-2.5 text-left font-body text-sm text-red-400 hover:bg-red-400/10 disabled:opacity-50"
+                       className="flex w-full items-center rounded-lg px-3 py-2 text-left font-body text-xs text-red-400 hover:bg-red-400/10 disabled:opacity-50 transition-colors"
                      >
-                       {busy ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
+                       {busy ? <Loader2 size={12} className="mr-2 animate-spin" /> : null}
                        Leave community
                      </button>
                    </div>
@@ -157,15 +157,15 @@ export function ChatHeader({
                    <MoreHorizontal size={16} />
                  </button>
                  {openMenu === "more" && (
-                   <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-30 min-w-52 rounded-lg border border-border bg-surface p-1.5 shadow-xl">
+                   <div role="menu" className="absolute right-0 top-[calc(100%+6px)] z-30 min-w-44 rounded-xl border border-white/[0.08] bg-surface-raised p-1 shadow-2xl animate-in fade-in zoom-in-95 duration-100 origin-top-right">
                      <button
                        type="button"
                        role="menuitem"
                        disabled={busy}
                        onClick={archiveCommunity}
-                       className="flex w-full items-center rounded-md px-3 py-2.5 text-left font-body text-sm text-red-400 hover:bg-red-400/10 disabled:opacity-50"
+                       className="flex w-full items-center rounded-lg px-3 py-2 text-left font-body text-xs text-red-400 hover:bg-red-400/10 disabled:opacity-50 transition-colors"
                      >
-                       {busy ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
+                       {busy ? <Loader2 size={12} className="mr-2 animate-spin" /> : null}
                        Delete community
                      </button>
                    </div>
