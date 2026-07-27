@@ -88,10 +88,15 @@ export function ProfileThreads({
     };
   }, [currentUserId]);
 
-  function handleUpdated(threadId: string, community: ProfileThread["community"]) {
+  function handleUpdated(
+    threadId: string,
+    community: ProfileThread["community"],
+  ): (updated: CommunityThread) => void {
     return (updated: CommunityThread) => {
       setThreads((current) =>
-        current.map((t) => (t.id === threadId ? { ...t, ...updated, community } : t)),
+        current.map((t) =>
+          t.id === threadId ? ({ ...t, ...updated, community } as ProfileThread) : t,
+        ),
       );
     };
   }
