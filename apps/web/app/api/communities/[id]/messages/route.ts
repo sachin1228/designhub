@@ -84,17 +84,17 @@ export async function GET(
   const messageIds    = rows.map((m) => m.id);
   const replyToIds    = [...new Set(rows.map((m) => m.reply_to_id).filter(Boolean) as string[])];
 
-  const userMap: Record<string, { name: string; avatar_url: string | null }> = {};
+  const userMap: Record<string, { name: string; avatar_url: string | null; designation: string | null; company: string | null }> = {};
 
   const [usersResult, reactionsResult, replyMap] = await Promise.all([
     uniqueUserIds.length
       ? Promise.all([
           db.from("users").select("id, name").in("id", uniqueUserIds),
-          db.from("designer_profiles").select("user_id, avatar_url").in("user_id", uniqueUserIds),
+          db.from("designer_profiles").select("user_id, avatar_url, experience_level, companies(name)").in("user_id", uniqueUserIds),
         ])
       : Promise.resolve([
           { data: [] as { id: string; name: string }[] },
-          { data: [] as { user_id: string; avatar_url: string | null }[] },
+          { data: [] as { user_id: string; avatar_url: string | null; experience_level: string | null; companies: { name: string } | null }[] },
         ]),
     messageIds.length
       ? db.from("message_reactions").select("message_id, user_id, emoji").in("message_id", messageIds)
@@ -105,11 +105,33 @@ export async function GET(
   if (uniqueUserIds.length) {
     const [{ data: users }, { data: profiles }] = usersResult as [
       { data: { id: string; name: string }[] | null },
-      { data: { user_id: string; avatar_url: string | null }[] | null },
+      { data: { user_id: string; avatar_url: string | null; experience_level: string | null; companies: { name: string } | null }[] | null },
     ];
-    const avatarMap: Record<string, string | null> = {};
-    for (const p of profiles ?? []) avatarMap[p.user_id] = p.avatar_url;
-    for (const u of users ?? []) userMap[u.id] = { name: u.name, avatar_url: avatarMap[u.id] ?? null };
+
+    // Resolve experience level display names from slugs in a single batch query.
+    const slugs = [...new Set((profiles ?? []).map((p) => p.experience_level).filter(Boolean) as string[])];
+    const expLevelMap: Record<string, string> = {};
+    if (slugs.length) {
+      const { data: levels } = await db.from("experience_levels").select("slug, name").in("slug", slugs);
+      for (const l of levels ?? []) expLevelMap[l.slug] = l.name;
+    }
+
+    const avatarMap:    Record<string, string | null> = {};
+    const desigMap:     Record<string, string | null> = {};
+    const companyMap:   Record<string, string | null> = {};
+    for (const p of profiles ?? []) {
+      avatarMap[p.user_id]  = p.avatar_url;
+      desigMap[p.user_id]   = p.experience_level ? (expLevelMap[p.experience_level] ?? null) : null;
+      companyMap[p.user_id] = (p.companies as any)?.name ?? null;
+    }
+    for (const u of users ?? []) {
+      userMap[u.id] = {
+        name:        u.name,
+        avatar_url:  avatarMap[u.id] ?? null,
+        designation: desigMap[u.id]  ?? null,
+        company:     companyMap[u.id] ?? null,
+      };
+    }
   }
 
   const reactionsMap: Record<string, MessageReaction[]> = {};
@@ -223,9 +245,17 @@ export async function POST(
 
   const [{ data: user }, { data: profile }, replyMap] = await Promise.all([
     db.from("users").select("name").eq("id", userId).single(),
-    db.from("designer_profiles").select("avatar_url").eq("user_id", userId).maybeSingle(),
+    db.from("designer_profiles").select("avatar_url, experience_level, companies(name)").eq("user_id", userId).maybeSingle(),
     fetchReplyPreviews(db, reply_to_id ? [reply_to_id] : []),
   ]);
+
+  // Resolve experience level display name for the POST response.
+  let postDesignation: string | null = null;
+  const postExpSlug = (profile as any)?.experience_level ?? null;
+  if (postExpSlug) {
+    const { data: expLevel } = await db.from("experience_levels").select("name").eq("slug", postExpSlug).maybeSingle();
+    postDesignation = expLevel?.name ?? null;
+  }
 
   // ── Phase 2: AI moderation after the response is sent ────────────────────
   // `after()` runs the callback once the HTTP response has been flushed,
@@ -270,7 +300,14 @@ export async function POST(
     {
       message: {
         ...inserted,
-        users:     user ? { name: user.name, avatar_url: profile?.avatar_url ?? null } : null,
+        users: user
+          ? {
+              name:        user.name,
+              avatar_url:  profile?.avatar_url ?? null,
+              designation: postDesignation,
+              company:     (profile as any)?.companies?.name ?? null,
+            }
+          : null,
         reactions: [],
         reply_to:  reply_to_id ? (replyMap[reply_to_id] ?? null) : null,
         image_url: inserted.image_url ?? null,

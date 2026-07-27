@@ -640,10 +640,17 @@ export function MessageBubble({
         <div className="max-w-[65%]">
           {/* Sender name — hidden for the current user's own messages */}
           {showHeader && sender && !isDeleted && !isMe && (
-            <p className={`font-body text-[11px] font-semibold mb-0.5 ml-0.5 ${
-              isMe ? "text-accent" : "text-foreground-muted"
-            }`}>
-              {sender.name}
+            <p className="font-body text-[11px] font-semibold mb-0.5 ml-0.5 text-foreground-muted flex items-baseline gap-1 flex-wrap">
+              <span>{sender.name}</span>
+              {(sender.designation || sender.company) && (
+                <span className="font-normal text-foreground-muted/60 text-[10px]">
+                  {sender.designation && sender.company
+                    ? `${sender.designation} @ ${sender.company}`
+                    : sender.designation
+                    ? sender.designation
+                    : `@ ${sender.company}`}
+                </span>
+              )}
             </p>
           )}
 
