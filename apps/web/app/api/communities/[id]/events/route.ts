@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
+import { eventHref, getActorName, notifyCommunityMembers } from "@/lib/notifications";
 
 async function isMember(
   db: ReturnType<typeof createServiceClient>,
@@ -175,6 +176,19 @@ export async function POST(
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const actorName = await getActorName(db, userId);
+  await notifyCommunityMembers(db, {
+    communityId,
+    actorId: userId,
+    type: "community_event",
+    entityType: "event",
+    entityId: data.id,
+    title: `${actorName} created a new event`,
+    body: title,
+    href: eventHref(communityId, data.id),
+    metadata: { event_date: eventDate },
+  });
 
   const [enriched] = await enrichEvents(db, [data as unknown as Record<string, unknown>], userId);
   return NextResponse.json({ event: enriched }, { status: 201 });
