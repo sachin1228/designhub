@@ -11,6 +11,33 @@ import { RESOURCE_TYPES } from "./types";
 import { ResourceTypeIcon } from "./resourceTypeIcons";
 import { EditResourceModal } from "./EditResourceModal";
 
+// Module-level cache — shared across all cards, survives scroll / re-renders
+const ogImageCache = new Map<string, string | null>();
+
+function useOgImage(url: string): string | null {
+  const [image, setImage] = useState<string | null>(() =>
+    ogImageCache.has(url) ? (ogImageCache.get(url) ?? null) : null,
+  );
+
+  useEffect(() => {
+    if (ogImageCache.has(url)) return;
+    const ctrl = new AbortController();
+    fetch(`/api/link-preview?url=${encodeURIComponent(url)}`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { image?: string | null } | null) => {
+        const img = d?.image ?? null;
+        ogImageCache.set(url, img);
+        setImage(img);
+      })
+      .catch(() => {
+        ogImageCache.set(url, null);
+      });
+    return () => ctrl.abort();
+  }, [url]);
+
+  return image;
+}
+
 function formatRelativeDate(value: string) {
   const elapsed = Date.now() - new Date(value).getTime();
   const minutes = Math.max(1, Math.floor(elapsed / 60_000));
@@ -60,6 +87,7 @@ export function ResourceCard({
   const typeInfo   = RESOURCE_TYPES.find((t) => t.value === resource.resource_type);
   const typeColor  = TYPE_COLORS[resource.resource_type] ?? TYPE_COLORS["other"];
   const isOwner    = resource.user_id === currentUserId;
+  const ogImage    = useOgImage(resource.url);
 
   const [savePending, setSavePending]     = useState(false);
   const [menuOpen, setMenuOpen]           = useState(false);
@@ -113,8 +141,22 @@ export function ResourceCard({
   return (
     <>
       <article className="group rounded-2xl border border-border bg-surface transition-colors hover:border-border-strong">
-        <Link href={resourceHref} className="block p-5">
+        <Link href={resourceHref} className="block">
 
+          {/* ── OG image ── */}
+          {ogImage && (
+            <div className="h-40 w-full overflow-hidden rounded-t-2xl bg-surface">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ogImage}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
+              />
+            </div>
+          )}
+
+          <div className="p-5">
           {/* ── Top row: avatar · name · time · type pill · menu ── */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
@@ -251,6 +293,7 @@ export function ResourceCard({
               <Share2 size={14} />
             </button>
           </div>
+          </div>{/* end p-5 */}
         </Link>
       </article>
 
