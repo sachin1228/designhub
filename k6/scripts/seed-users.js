@@ -84,19 +84,93 @@ async function hashPassword(plain) {
   return bcrypt.hash(plain, 10);
 }
 
-// Generated avatar URL — no storage upload or external image request is needed
-// for load-test users. AvatarImg renders the boring:// protocol locally, and
-// the email is used as the seed so each member gets a stable, unique avatar.
-function avatarUrlFor(email) {
-  return `boring://beam/${encodeURIComponent(email)}`;
+// Rotate through the avatar styles already supported by the app. The user's
+// email remains the seed, so each profile gets a stable avatar on every rerun
+// while adjacent load-test users visibly use different avatar families.
+const AVATAR_VARIANTS = [
+  { source: 'boring-avatars', style: 'marble' },
+  { source: 'boring-avatars', style: 'beam' },
+  { source: 'boring-avatars', style: 'pixel' },
+  { source: 'boring-avatars', style: 'sunset' },
+  { source: 'boring-avatars', style: 'ring' },
+  { source: 'boring-avatars', style: 'bauhaus' },
+  { source: 'boring-avatars', style: 'triangles' },
+  { source: 'dicebear', style: 'adventurer' },
+  { source: 'dicebear', style: 'big-ears' },
+  { source: 'dicebear', style: 'big-smile' },
+  { source: 'dicebear', style: 'bottts' },
+  { source: 'dicebear', style: 'croodles' },
+  { source: 'dicebear', style: 'fun-emoji' },
+  { source: 'dicebear', style: 'lorelei' },
+  { source: 'dicebear', style: 'micah' },
+  { source: 'dicebear', style: 'notionists' },
+  { source: 'dicebear', style: 'open-peeps' },
+  { source: 'robohash', style: 'set1' },
+  { source: 'robohash', style: 'set2' },
+  { source: 'robohash', style: 'set3' },
+  { source: 'robohash', style: 'set4' },
+];
+
+function avatarVariantFor(email) {
+  const match = email.match(/_(\d+)@k6test\.invalid$/);
+  const index = match ? Number(match[1]) - 1 : 0;
+  return AVATAR_VARIANTS[index % AVATAR_VARIANTS.length];
 }
 
-// Older versions of the seeder stored URLs from source.boringavatars.com.
-// Those remote URLs can fail to load in the deployed app, while a manually
-// selected boring avatar is stored as boring://... and should be preserved.
-function isLegacyGeneratedAvatar(profile) {
-  return typeof profile?.avatar_url === 'string' &&
-    profile.avatar_url.startsWith('https://source.boringavatars.com/');
+function avatarFor(email) {
+  const { source, style } = avatarVariantFor(email);
+  const seed = encodeURIComponent(email);
+
+  if (source === 'boring-avatars') {
+    return {
+      avatar_url: `boring://${style}/${seed}`,
+      avatar_source: source,
+    };
+  }
+
+  if (source === 'dicebear') {
+    return {
+      avatar_url: `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}`,
+      avatar_source: source,
+    };
+  }
+
+  return {
+    avatar_url: `https://robohash.org/${seed}?set=${style}&size=200x200`,
+    avatar_source: source,
+  };
+}
+
+function isSeederGeneratedAvatar(profile, email) {
+  if (typeof profile?.avatar_url !== 'string') return false;
+
+  // Older versions used a remote Boring Avatars URL or one local beam avatar.
+  if (profile.avatar_url.startsWith('https://source.boringavatars.com/')) return true;
+  if (profile.avatar_url === `boring://beam/${encodeURIComponent(email)}`) return true;
+
+  // Recognize any current generated variant so rerunning the seeder does not
+  // overwrite it again. Manually selected avatars have different seeds/URLs.
+  return AVATAR_VARIANTS.some(({ source, style }) => {
+    const generated = avatarForWithVariant(email, source, style).avatar_url;
+    return profile.avatar_url === generated;
+  });
+}
+
+function avatarForWithVariant(email, source, style) {
+  const seed = encodeURIComponent(email);
+  if (source === 'boring-avatars') {
+    return { avatar_url: `boring://${style}/${seed}`, avatar_source: source };
+  }
+  if (source === 'dicebear') {
+    return {
+      avatar_url: `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}`,
+      avatar_source: source,
+    };
+  }
+  return {
+    avatar_url: `https://robohash.org/${seed}?set=${style}&size=200x200`,
+    avatar_source: source,
+  };
 }
 
 // ── Fetch existing seeded users (skip already-created ones) ────────────────
@@ -207,7 +281,8 @@ async function main() {
     id => {
       const profile = existingProfiles.get(id);
       return existingProfiles.has(id) &&
-        (!profile.avatar_url || isLegacyGeneratedAvatar(profile));
+        (!profile.avatar_url ||
+          isSeederGeneratedAvatar(profile, emailByUserId[id]));
     },
   );
   console.log(`   ${profilesNeeded.length} profiles to create.`);
@@ -218,8 +293,7 @@ async function main() {
     const rows  = batch.map(id => ({
       user_id:          id,
       experience_level: experienceLevel,
-      avatar_url:       avatarUrlFor(emailByUserId[id]),
-      avatar_source:    'boring-avatars',
+      ...avatarFor(emailByUserId[id]),
     }));
 
     const { error } = await db.from('designer_profiles').insert(rows);
@@ -240,8 +314,7 @@ async function main() {
         db
           .from('designer_profiles')
           .update({
-            avatar_url: avatarUrlFor(emailByUserId[userId]),
-            avatar_source: 'boring-avatars',
+            ...avatarFor(emailByUserId[userId]),
           })
           .eq('user_id', userId),
       ),
