@@ -116,9 +116,9 @@ export function ChatHeader({
                <button
                  type="button"
                  aria-label="Notifications"
-                 className="h-12 w-12 flex items-center justify-center rounded-lg border border-border text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+                 className="h-8 w-8 flex items-center justify-center rounded-lg border border-border text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
                >
-                 <Bell size={20} strokeWidth={1.8} />
+                 <Bell size={15} strokeWidth={1.8} />
                </button>
                <div className="relative">
                  <button
@@ -126,9 +126,9 @@ export function ChatHeader({
                    aria-haspopup="menu"
                    aria-expanded={openMenu === "joined"}
                    onClick={() => setOpenMenu(openMenu === "joined" ? null : "joined")}
-                   className="h-12 flex items-center gap-2 rounded-lg border border-border px-5 font-body text-sm text-foreground hover:bg-surface-raised transition-colors"
+                   className="h-8 flex items-center gap-1.5 rounded-lg border border-border px-3 font-body text-xs text-foreground hover:bg-surface-raised transition-colors"
                  >
-                   Joined <ChevronDown size={17} className={`transition-transform ${openMenu === "joined" ? "rotate-180" : ""}`} />
+                   Joined <ChevronDown size={13} className={`transition-transform ${openMenu === "joined" ? "rotate-180" : ""}`} />
                  </button>
                  {openMenu === "joined" && (
                    <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-30 min-w-48 rounded-lg border border-border bg-surface p-1.5 shadow-xl">
@@ -152,9 +152,9 @@ export function ChatHeader({
                    aria-haspopup="menu"
                    aria-expanded={openMenu === "more"}
                    onClick={() => setOpenMenu(openMenu === "more" ? null : "more")}
-                   className="h-12 w-12 flex items-center justify-center rounded-lg border border-border text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+                   className="h-8 w-8 flex items-center justify-center rounded-lg border border-border text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
                  >
-                   <MoreHorizontal size={21} />
+                   <MoreHorizontal size={16} />
                  </button>
                  {openMenu === "more" && (
                    <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-30 min-w-52 rounded-lg border border-border bg-surface p-1.5 shadow-xl">
