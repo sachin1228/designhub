@@ -205,7 +205,7 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
                         type="button"
                         onClick={(e) => { e.preventDefault(); setMenuOpen((p) => !p); }}
                         aria-label="Event options"
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-raised hover:text-foreground focus:opacity-100"
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground-subtle transition-colors hover:bg-surface-raised hover:text-foreground"
                       >
                         <MoreHorizontal size={13} />
                       </button>
