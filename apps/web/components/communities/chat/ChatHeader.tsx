@@ -1,6 +1,9 @@
 "use client";
 
-import { Calendar, MessageCircle, MessagesSquare, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Bell, Calendar, ChevronDown, Loader2, MessageCircle, MessagesSquare, MoreHorizontal, Users } from "lucide-react";
+import { invalidateOnArchive, invalidateOnLeave, msgCache, metaCache } from "@/lib/communities/cache";
 import { TYPE_EMOJI } from "./chatUtils";
 
 interface Community {
@@ -26,6 +29,57 @@ export function ChatHeader({
   onTabChange,
   onlineCount = 0,
 }: ChatHeaderProps) {
+  const router = useRouter();
+  const [openMenu, setOpenMenu] = useState<"joined" | "more" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!openMenu) return;
+    const closeOnOutside = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpenMenu(null);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenMenu(null);
+    };
+    document.addEventListener("mousedown", closeOnOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [openMenu]);
+
+  async function leaveCommunity() {
+    if (!community || busy) return;
+    if (!window.confirm("Leave this community? You will no longer be able to view or send messages here.")) return;
+    setBusy(true);
+    const response = await fetch(`/api/communities/${community.id}/members`, { method: "DELETE" });
+    if (!response.ok) {
+      setBusy(false);
+      return;
+    }
+    invalidateOnLeave(community.id);
+    setOpenMenu(null);
+    router.push("/dashboard");
+  }
+
+  async function archiveCommunity() {
+    if (!community || busy) return;
+    if (!window.confirm("Delete this community from your sidebar? It will stay available to other members and return when a new message arrives.")) return;
+    setBusy(true);
+    const response = await fetch(`/api/communities/${community.id}/archive`, { method: "POST" });
+    if (!response.ok) {
+      setBusy(false);
+      return;
+    }
+    invalidateOnArchive(community.id);
+    msgCache.delete(community.id);
+    metaCache.delete(community.id);
+    setOpenMenu(null);
+    router.push("/dashboard");
+  }
+
   return (
     <div className="px-5 pt-4 border-b border-border shrink-0">
       {community ? (
@@ -58,11 +112,65 @@ export function ChatHeader({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-              <span className="font-body text-xs text-foreground-muted">
-                {onlineCount} online
-              </span>
+             <div ref={menuRef} className="relative flex items-center gap-2">
+               <button
+                 type="button"
+                 aria-label="Notifications"
+                 className="h-12 w-12 flex items-center justify-center rounded-lg border border-border text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+               >
+                 <Bell size={20} strokeWidth={1.8} />
+               </button>
+               <div className="relative">
+                 <button
+                   type="button"
+                   aria-haspopup="menu"
+                   aria-expanded={openMenu === "joined"}
+                   onClick={() => setOpenMenu(openMenu === "joined" ? null : "joined")}
+                   className="h-12 flex items-center gap-2 rounded-lg border border-border px-5 font-body text-sm text-foreground hover:bg-surface-raised transition-colors"
+                 >
+                   Joined <ChevronDown size={17} className={`transition-transform ${openMenu === "joined" ? "rotate-180" : ""}`} />
+                 </button>
+                 {openMenu === "joined" && (
+                   <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-30 min-w-48 rounded-lg border border-border bg-surface p-1.5 shadow-xl">
+                     <button
+                       type="button"
+                       role="menuitem"
+                       disabled={busy}
+                       onClick={leaveCommunity}
+                       className="flex w-full items-center rounded-md px-3 py-2.5 text-left font-body text-sm text-red-400 hover:bg-red-400/10 disabled:opacity-50"
+                     >
+                       {busy ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
+                       Leave community
+                     </button>
+                   </div>
+                 )}
+               </div>
+               <div className="relative">
+                 <button
+                   type="button"
+                   aria-label="Community options"
+                   aria-haspopup="menu"
+                   aria-expanded={openMenu === "more"}
+                   onClick={() => setOpenMenu(openMenu === "more" ? null : "more")}
+                   className="h-12 w-12 flex items-center justify-center rounded-lg border border-border text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+                 >
+                   <MoreHorizontal size={21} />
+                 </button>
+                 {openMenu === "more" && (
+                   <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-30 min-w-52 rounded-lg border border-border bg-surface p-1.5 shadow-xl">
+                     <button
+                       type="button"
+                       role="menuitem"
+                       disabled={busy}
+                       onClick={archiveCommunity}
+                       className="flex w-full items-center rounded-md px-3 py-2.5 text-left font-body text-sm text-red-400 hover:bg-red-400/10 disabled:opacity-50"
+                     >
+                       {busy ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
+                       Delete community
+                     </button>
+                   </div>
+                 )}
+               </div>
             </div>
           </div>
           <nav className="flex items-center gap-5" aria-label="Community views">

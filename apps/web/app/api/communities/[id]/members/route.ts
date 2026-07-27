@@ -88,3 +88,31 @@ export async function GET(
 
   return NextResponse.json({ members });
 }
+
+/**
+ * DELETE /api/communities/[id]/members
+ *
+ * Leave the current user's membership. This intentionally does not delete
+ * shared messages; all other community members retain their history.
+ */
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let session;
+  try { session = await requireSession("user"); } catch (e) { return e as Response; }
+  const userId = session.userId!;
+  const { id: communityId } = await params;
+  const db = createServiceClient();
+
+  const { error } = await db
+    .from("community_members")
+    .delete()
+    .eq("community_id", communityId)
+    .eq("user_id", userId);
+
+  if (error) {
+    return NextResponse.json({ error: "Failed to leave community." }, { status: 500 });
+  }
+  return NextResponse.json({ success: true });
+}
