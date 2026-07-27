@@ -188,12 +188,67 @@ export function CommunityChat({
     messages,
     loading,
     initialMessagesReady,
+    hasMoreAbove,
+    loadingOlder,
     setMessages,
     fetchMessages,
+    fetchOlderMessages,
     communityIdRef,
     membersRef,
     pendingProfileFetchRef,
   } = useChatData({ communityId, initialMeta, initialMessages });
+
+  // ── Top-sentinel ref (load older messages when scrolled to the top) ───────
+  const topSentinelRef   = useRef<HTMLDivElement>(null);
+  /** Captured scroll position just before we prepend older messages. */
+  const prependAnchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null);
+  /** Stable callback ref so the IntersectionObserver closure never goes stale. */
+  const loadOlderCallbackRef = useRef<(() => void) | null>(null);
+
+  // Keep the callback ref current without recreating the observer.
+  useEffect(() => {
+    loadOlderCallbackRef.current = () => {
+      const oldest = messages.find((m) => !m.id.startsWith("temp-"));
+      if (!oldest || !hasMoreAbove || loadingOlder) return;
+      const container = scrollContainerRef.current;
+      if (container) {
+        prependAnchorRef.current = {
+          scrollHeight: container.scrollHeight,
+          scrollTop:    container.scrollTop,
+        };
+      }
+      fetchOlderMessages(oldest.created_at);
+    };
+  });
+
+  // Restore scroll position after older messages are prepended, so the view
+  // doesn't jump to the top. Runs synchronously before the browser paints.
+  useIsomorphicLayoutEffect(() => {
+    const anchor = prependAnchorRef.current;
+    if (!anchor) return;
+    prependAnchorRef.current = null;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const delta = container.scrollHeight - anchor.scrollHeight;
+    if (delta > 0) container.scrollTop = anchor.scrollTop + delta;
+  }, [messages]);
+
+  // Observe the top sentinel with the scroll container as the root.
+  // Re-runs only when hasMoreAbove changes (observer is torn down when false).
+  useEffect(() => {
+    if (!hasMoreAbove) return;
+    const sentinel  = topSentinelRef.current;
+    const container = scrollContainerRef.current;
+    if (!sentinel || !container) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadOlderCallbackRef.current?.(); },
+      { root: container, threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+    // scrollContainerRef is a stable ref object — safe to omit from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMoreAbove]);
 
   const handleDelete = useCallback(async (msgId: string) => {
     // Optimistic update: mark as deleted locally immediately
@@ -457,9 +512,12 @@ export function CommunityChat({
               firstUnreadMsgId={firstUnreadMsgId}
               unreadDisplayCount={unreadDisplayCount}
               unreadDividerRef={unreadDividerRef}
+              topSentinelRef={topSentinelRef}
               bottomRef={bottomRef}
               initialPositionResolved={initialPositionResolved}
               loading={loading}
+              loadingOlder={loadingOlder}
+              hasMoreAbove={hasMoreAbove}
               displayCommunity={displayCommunity}
               communityId={communityId}
               highlightedMsgId={highlightedMsgId}
