@@ -1,16 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Check, ChevronDown, Loader2, X } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Check, ChevronDown, Loader2, Globe, X } from "lucide-react";
 import type { CommunityResource, ResourceType } from "./types";
 import { RESOURCE_TYPES, RESOURCE_TAGS } from "./types";
 import { ResourceTypeIcon } from "./resourceTypeIcons";
+import { LinkPreviewCard } from "./LinkPreviewCard";
+import type { LinkPreviewData } from "@/lib/communities/linkPreview";
 
 interface EditResourceModalProps {
   resource: CommunityResource;
   communityId: string;
   onClose: () => void;
   onUpdated: (resource: CommunityResource) => void;
+}
+
+function isValidHttpUrl(s: string) {
+  try {
+    const u = new URL(s.trim());
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch { return false; }
 }
 
 export function EditResourceModal({ resource, communityId, onClose, onUpdated }: EditResourceModalProps) {
@@ -23,6 +32,63 @@ export function EditResourceModal({ resource, communityId, onClose, onUpdated }:
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Link preview state
+  const [preview, setPreview] = useState<LinkPreviewData | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewDismissed, setPreviewDismissed] = useState(false);
+  const previewAbortRef = useRef<AbortController | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialFetchDoneRef = useRef(false);
+
+  const fetchPreview = useCallback(async (rawUrl: string) => {
+    if (previewAbortRef.current) previewAbortRef.current.abort();
+    const ctrl = new AbortController();
+    previewAbortRef.current = ctrl;
+
+    setPreviewLoading(true);
+    setPreview(null);
+    try {
+      const res = await fetch(`/api/link-preview?url=${encodeURIComponent(rawUrl)}`, {
+        signal: ctrl.signal,
+      });
+      if (!res.ok) throw new Error("fetch failed");
+      const data: LinkPreviewData = await res.json();
+      if (!ctrl.signal.aborted) setPreview(data);
+    } catch {
+      if (!ctrl.signal.aborted) setPreview(null);
+    } finally {
+      if (!ctrl.signal.aborted) setPreviewLoading(false);
+    }
+  }, []);
+
+  // Fetch preview for the initial URL on mount
+  useEffect(() => {
+    if (!initialFetchDoneRef.current && isValidHttpUrl(resource.url)) {
+      initialFetchDoneRef.current = true;
+      fetchPreview(resource.url);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounce URL changes → re-fetch preview
+  useEffect(() => {
+    // Skip the very first render (handled by the mount effect)
+    if (!initialFetchDoneRef.current) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!isValidHttpUrl(url)) {
+      if (previewAbortRef.current) previewAbortRef.current.abort();
+      setPreview(null);
+      setPreviewLoading(false);
+      setPreviewDismissed(false);
+      return;
+    }
+    setPreviewDismissed(false);
+    debounceRef.current = setTimeout(() => fetchPreview(url.trim()), 700);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
@@ -33,8 +99,7 @@ export function EditResourceModal({ resource, communityId, onClose, onUpdated }:
     e.preventDefault();
     if (!title.trim()) { setError("Title is required."); return; }
     if (!url.trim()) { setError("URL is required."); return; }
-    try { const u = new URL(url.trim()); if (!["http:", "https:"].includes(u.protocol)) throw new Error(); }
-    catch { setError("URL must start with http:// or https://"); return; }
+    if (!isValidHttpUrl(url.trim())) { setError("URL must start with http:// or https://"); return; }
 
     setSaving(true);
     setError(null);
@@ -42,7 +107,13 @@ export function EditResourceModal({ resource, communityId, onClose, onUpdated }:
       const res = await fetch(`/api/communities/${communityId}/resources/${resource.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), url: url.trim(), description: description.trim() || null, resource_type: resourceType, tags }),
+        body: JSON.stringify({
+          title: title.trim(),
+          url: url.trim(),
+          description: description.trim() || null,
+          resource_type: resourceType,
+          tags,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to update resource.");
@@ -55,6 +126,8 @@ export function EditResourceModal({ resource, communityId, onClose, onUpdated }:
     }
   }
 
+  const showPreview = !previewDismissed && (previewLoading || preview);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
@@ -65,7 +138,7 @@ export function EditResourceModal({ resource, communityId, onClose, onUpdated }:
     >
       <form
         onSubmit={handleSubmit}
-        className="max-h-[min(720px,calc(100vh-2rem))] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-2xl"
+        className="max-h-[min(820px,calc(100vh-2rem))] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -82,6 +155,45 @@ export function EditResourceModal({ resource, communityId, onClose, onUpdated }:
         </div>
 
         <div className="mt-6 space-y-5">
+          {/* URL */}
+          <label className="block">
+            <span className="mb-1.5 block font-body text-xs font-medium text-foreground-muted">
+              URL <span className="text-accent">*</span>
+            </span>
+            <div className="relative">
+              <input
+                value={url}
+                onChange={(e) => { setUrl(e.target.value); setPreviewDismissed(false); }}
+                type="url"
+                className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2.5 pr-9 font-body text-sm text-foreground outline-none placeholder:text-foreground-subtle focus:border-accent"
+              />
+              {previewLoading && (
+                <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-foreground-subtle" />
+              )}
+              {!previewLoading && isValidHttpUrl(url) && !preview && (
+                <Globe size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-subtle" />
+              )}
+            </div>
+          </label>
+
+          {/* Link preview card */}
+          {showPreview && (
+            <div className="relative">
+              {previewLoading && !preview && (
+                <div className="flex items-center gap-2.5 rounded-xl border border-border bg-surface-raised p-4">
+                  <Loader2 size={14} className="animate-spin text-foreground-subtle" />
+                  <span className="font-body text-sm text-foreground-subtle">Loading preview…</span>
+                </div>
+              )}
+              {preview && !previewLoading && (
+                <LinkPreviewCard
+                  data={preview}
+                  onDismiss={() => setPreviewDismissed(true)}
+                />
+              )}
+            </div>
+          )}
+
           {/* Title */}
           <label className="block">
             <span className="mb-1.5 block font-body text-xs font-medium text-foreground-muted">
@@ -98,19 +210,6 @@ export function EditResourceModal({ resource, communityId, onClose, onUpdated }:
                 {title.length}/120
               </span>
             </div>
-          </label>
-
-          {/* URL */}
-          <label className="block">
-            <span className="mb-1.5 block font-body text-xs font-medium text-foreground-muted">
-              URL <span className="text-accent">*</span>
-            </span>
-            <input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              type="url"
-              className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2.5 font-body text-sm text-foreground outline-none placeholder:text-foreground-subtle focus:border-accent"
-            />
           </label>
 
           {/* Resource type */}
