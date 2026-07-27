@@ -1,0 +1,92 @@
+13:34:04.328 Running build in Washington, D.C., USA (East) – iad1
+13:34:04.329 Build machine configuration: 2 cores, 8 GB
+13:34:04.444 Cloning github.com/sachin1228/drafthub (Branch: feat/k6-stress-tests, Commit: f61e895)
+13:34:05.732 Cloning completed: 1.287s
+13:34:05.971 Restored build cache from previous deployment (5UYxXhbtmsuxkewrWiq7CEnHTvH9)
+13:34:06.175 Running "vercel build"
+13:34:06.196 Vercel CLI 56.5.0
+13:34:06.395 Installing dependencies...
+13:34:07.779 
+13:34:07.779 changed 2 packages in 1s
+13:34:07.780 
+13:34:07.780 173 packages are looking for funding
+13:34:07.781   run `npm fund` for details
+13:34:07.808 Detected Next.js version: 16.2.11
+13:34:07.813 Running "npm run build"
+13:34:07.946 
+13:34:07.946 > web@0.1.0 build
+13:34:07.947 > next build
+13:34:07.947 
+13:34:08.559   Applying modifyConfig from Vercel
+13:34:08.635 ▲ Next.js 16.2.11 (Turbopack)
+13:34:08.636 
+13:34:08.637 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+13:34:08.692   Creating an optimized production build ...
+13:34:28.089 Turbopack build encountered 1 warnings:
+13:34:28.090 ./apps/web/next.config.js
+13:34:28.090 Encountered unexpected file in NFT list
+13:34:28.090 A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
+13:34:28.090 - filesystem operations (like path.join, path.resolve or fs.readFile), or
+13:34:28.090 - very dynamic requires (like require('./' + foo)).
+13:34:28.090 To resolve this, you can
+13:34:28.090 - remove them if possible, or
+13:34:28.090 - only use them in development, or
+13:34:28.090 - make sure they are statically scoped to some subfolder: path.join(process.cwd(), 'data', bar), or
+13:34:28.090 - add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
+13:34:28.090 
+13:34:28.090 Import trace:
+13:34:28.090   App Route:
+13:34:28.094     ./apps/web/next.config.js
+13:34:28.094     ./apps/web/app/api/admin/load-test/route.ts
+13:34:28.094 
+13:34:28.094 
+13:34:28.898 
+13:34:28.898 > Build error occurred
+13:34:28.902 Error: Turbopack build failed with 2 errors:
+13:34:28.903 ./apps/web/app/api/admin/load-test
+13:34:28.903 Module not found: Can't resolve './ROOT/k6/scripts/seed-users.js'
+13:34:28.904 server relative imports are not implemented yet. Please try an import relative to the file you are importing from.
+13:34:28.904 
+13:34:28.904 
+13:34:28.904 https://nextjs.org/docs/messages/module-not-found
+13:34:28.904 
+13:34:28.904 
+13:34:28.904 ./apps/web/app/api/admin/load-test/route.ts:143:21
+13:34:28.904 Module not found: Can't resolve (<dynamic> | '/ROOT/k6/scripts/seed-users.js')
+13:34:28.904   141 |       }
+13:34:28.905   142 |
+13:34:28.905 > 143 |       const child = spawn(cmd, args, {
+13:34:28.905       |                     ^^^^^^^^^^^^^^^^^
+13:34:28.906 > 144 |         cwd: REPO_ROOT,
+13:34:28.906       | ^^^^^^^^^^^^^^^^^^^^^^^
+13:34:28.906 > 145 |         env,
+13:34:28.906       | ^^^^^^^^^^^^
+13:34:28.906 > 146 |         stdio: ["ignore", "pipe", "pipe"],
+13:34:28.906       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13:34:28.906 > 147 |       });
+13:34:28.906       | ^^^^^^^^
+13:34:28.906   148 |
+13:34:28.906   149 |       child.stdout.on("data", (chunk: Buffer) => {
+13:34:28.906   150 |         const lines = chunk.toString().split("\n");
+13:34:28.906 
+13:34:28.907 
+13:34:28.907 
+13:34:28.907 Import trace:
+13:34:28.907   App Route:
+13:34:28.907     ./apps/web/app/api/admin/load-test/route.ts
+13:34:28.907     ./apps/web/app/api/admin/load-test/route.ts
+13:34:28.907 
+13:34:28.907 https://nextjs.org/docs/messages/module-not-found
+13:34:28.907 
+13:34:28.907 
+13:34:28.907     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:34:28.907     at <unknown> (./apps/web/app/api/admin/load-test/route.ts:143:21)
+13:34:28.907     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+13:34:28.968 npm error Lifecycle script `build` failed with error:
+13:34:28.969 npm error code 1
+13:34:28.969 npm error path /vercel/path0/apps/web
+13:34:28.969 npm error workspace web@0.1.0
+13:34:28.970 npm error location /vercel/path0/apps/web
+13:34:28.972 npm error command failed
+13:34:28.972 npm error command sh -c next build
+13:34:28.999 Error: Command "npm run build" exited with 1
