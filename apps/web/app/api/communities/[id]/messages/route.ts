@@ -11,6 +11,18 @@ import { contentHash } from "@/lib/moderation/normalize";
 
 const PAGE_SIZE = 50;
 
+/**
+ * Strip year-range suffixes and singularize experience level names for display.
+ * e.g. "Mid-Level Designers (3-5 years)" → "Mid-Level Designer"
+ *      "Heads of Design"                 → "Head of Design"
+ */
+function cleanDesignation(name: string): string {
+  const clean = name.split("(")[0].trim();
+  if (/^heads\s+of\b/i.test(clean)) return clean.replace(/^heads/i, "Head");
+  if (clean.endsWith("s") && clean.length > 1) return clean.slice(0, -1);
+  return clean;
+}
+
 /** Fetch reply previews for a batch of reply_to_ids. */
 async function fetchReplyPreviews(
   db: ReturnType<typeof createServiceClient>,
@@ -113,7 +125,7 @@ export async function GET(
     const expLevelMap: Record<string, string> = {};
     if (slugs.length) {
       const { data: levels } = await db.from("experience_levels").select("slug, name").in("slug", slugs);
-      for (const l of levels ?? []) expLevelMap[l.slug] = l.name;
+      for (const l of levels ?? []) expLevelMap[l.slug] = cleanDesignation(l.name);
     }
 
     const avatarMap:    Record<string, string | null> = {};

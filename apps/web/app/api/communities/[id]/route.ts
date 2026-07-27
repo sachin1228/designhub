@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
 
+/**
+ * Strip year-range suffixes and singularize experience level names for display.
+ * e.g. "Mid-Level Designers (3-5 years)" → "Mid-Level Designer"
+ *      "Heads of Design"                 → "Head of Design"
+ */
+function cleanDesignation(name: string): string {
+  const clean = name.split("(")[0].trim();
+  if (/^heads\s+of\b/i.test(clean)) return clean.replace(/^heads/i, "Head");
+  if (clean.endsWith("s") && clean.length > 1) return clean.slice(0, -1);
+  return clean;
+}
+
 const TABLE_LOOKUP: Record<string, { table: string; idCol: string }> = {
   city:             { table: "cities",            idCol: "id" },
   sector:           { table: "design_sectors",    idCol: "id" },
@@ -85,7 +97,7 @@ export async function GET(
   const expLevelMap: Record<string, string> = {};
   if (expSlugs.length) {
     const { data: levels } = await db.from("experience_levels").select("slug, name").in("slug", expSlugs);
-    for (const l of levels ?? []) expLevelMap[l.slug] = l.name;
+    for (const l of levels ?? []) expLevelMap[l.slug] = cleanDesignation(l.name);
   }
 
   const userMap     = Object.fromEntries((memberUsers    ?? []).map((u: any) => [u.id, u]));

@@ -3,6 +3,18 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireSession } from "@/lib/auth/session";
 
 /**
+ * Strip year-range suffixes and singularize experience level names for display.
+ * e.g. "Mid-Level Designers (3-5 years)" → "Mid-Level Designer"
+ *      "Heads of Design"                 → "Head of Design"
+ */
+function cleanDesignation(name: string): string {
+  const clean = name.split("(")[0].trim();
+  if (/^heads\s+of\b/i.test(clean)) return clean.replace(/^heads/i, "Head");
+  if (clean.endsWith("s") && clean.length > 1) return clean.slice(0, -1);
+  return clean;
+}
+
+/**
  * GET /api/communities/[id]/members/[userId]
  *
  * Lightweight endpoint used by CommunityChat to lazily resolve the display
@@ -53,7 +65,7 @@ export async function GET(
       .select("name")
       .eq("slug", expSlug)
       .maybeSingle();
-    designation = expLevel?.name ?? null;
+    designation = expLevel?.name ? cleanDesignation(expLevel.name) : null;
   }
 
   return NextResponse.json({
