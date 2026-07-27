@@ -228,20 +228,6 @@ export function ThreadCard({
             );
           })()}
 
-          {/* ── Tags ── */}
-          {thread.tags.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {thread.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-lg border border-border bg-surface-raised px-2.5 py-1 font-body text-xs text-foreground-muted"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
           {/* ── Divider ── */}
           <div className="mt-4 border-t border-border" />
 
