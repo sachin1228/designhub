@@ -314,67 +314,6 @@ export function CommunityInfoPanel({ members, community, communityId, currentUse
           <AvatarStack members={members} total={memberCount} />
         </Section>
 
-        {/* About */}
-        {(() => {
-          const type = community?.type;
-          const refName = community?.reference_name ?? null;
-          const description = community?.description
-            ?? fallbackDescription(type, refName);
-          const tags: string[] = [
-            ...(type ? [TYPE_LABELS[type] ?? type] : []),
-            ...(refName ? [refName] : []),
-          ];
-          return (
-            <Section title="About">
-              <p className="font-body text-[13px] text-foreground-muted leading-relaxed mb-3">
-                {description}
-              </p>
-              <div className="space-y-2 mb-3">
-                {type === "city" && refName && (
-                  <div className="flex items-center gap-2 font-body text-[13px] text-foreground-muted">
-                    <MapPin size={13} className="shrink-0 text-foreground-subtle" />
-                    {refName}
-                  </div>
-                )}
-                <div className="flex items-center gap-2 font-body text-[13px] text-foreground-muted">
-                  <Calendar size={13} className="shrink-0 text-foreground-subtle" />
-                  Created {fmtCreatedAt(community?.created_at)}
-                </div>
-              </div>
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2.5 py-0.5 rounded-full border border-border font-body text-[12px] text-foreground-muted"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </Section>
-          );
-        })()}
-
-        {/* Community Rules — only shown when the community has rules */}
-        {rules.length > 0 && (
-          <Section title="Rules">
-            <ol className="flex flex-col gap-2.5">
-              {rules.map((rule, i) => (
-                <li key={rule.id} className="flex items-start gap-2.5">
-                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-surface-raised font-mono text-[10px] font-semibold text-foreground-muted select-none">
-                    {i + 1}
-                  </span>
-                  <span className="font-body text-[13px] text-foreground-muted leading-relaxed">
-                    {rule.rule_text}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </Section>
-        )}
-
         {/* Upcoming Events — only shown when a real upcoming event exists */}
         {upcomingEvent && (
           <Section
@@ -451,6 +390,67 @@ export function CommunityInfoPanel({ members, community, communityId, currentUse
                 View Event
               </Link>
             </div>
+          </Section>
+        )}
+
+        {/* About */}
+        {(() => {
+          const type = community?.type;
+          const refName = community?.reference_name ?? null;
+          const description = community?.description
+            ?? fallbackDescription(type, refName);
+          const tags: string[] = [
+            ...(type ? [TYPE_LABELS[type] ?? type] : []),
+            ...(refName ? [refName] : []),
+          ];
+          return (
+            <Section title="About">
+              <p className="font-body text-[13px] text-foreground-muted leading-relaxed mb-3">
+                {description}
+              </p>
+              <div className="space-y-2 mb-3">
+                {type === "city" && refName && (
+                  <div className="flex items-center gap-2 font-body text-[13px] text-foreground-muted">
+                    <MapPin size={13} className="shrink-0 text-foreground-subtle" />
+                    {refName}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 font-body text-[13px] text-foreground-muted">
+                  <Calendar size={13} className="shrink-0 text-foreground-subtle" />
+                  Created {fmtCreatedAt(community?.created_at)}
+                </div>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2.5 py-0.5 rounded-full border border-border font-body text-[12px] text-foreground-muted"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Section>
+          );
+        })()}
+
+        {/* Community Rules — only shown when the community has rules */}
+        {rules.length > 0 && (
+          <Section title="Rules">
+            <ol className="flex flex-col gap-2.5">
+              {rules.map((rule, i) => (
+                <li key={rule.id} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-surface-raised font-mono text-[10px] font-semibold text-foreground-muted select-none">
+                    {i + 1}
+                  </span>
+                  <span className="font-body text-[13px] text-foreground-muted leading-relaxed">
+                    {rule.rule_text}
+                  </span>
+                </li>
+              ))}
+            </ol>
           </Section>
         )}
 
