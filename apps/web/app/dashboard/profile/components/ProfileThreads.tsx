@@ -8,7 +8,7 @@ import {
   BookMarked,
 } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/browser";
-import type { ProfileThread } from "@/components/communities/threads/types";
+import type { CommunityThread, ProfileThread } from "@/components/communities/threads/types";
 import { ThreadCard } from "@/components/communities/threads/ThreadCard";
 
 type Tab = "threads" | "showcase" | "events" | "resources";
@@ -89,9 +89,9 @@ export function ProfileThreads({
   }, [currentUserId]);
 
   function handleUpdated(threadId: string, community: ProfileThread["community"]) {
-    return (updated: ProfileThread) => {
+    return (updated: CommunityThread) => {
       setThreads((current) =>
-        current.map((t) => (t.id === updated.id ? { ...t, ...updated, community } : t)),
+        current.map((t) => (t.id === threadId ? { ...t, ...updated, community } : t)),
       );
     };
   }
