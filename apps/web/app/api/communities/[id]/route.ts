@@ -76,23 +76,36 @@ export async function GET(
   const [{ data: memberUsers }, { data: memberProfiles }] = memberUserIds.length
     ? await Promise.all([
         db.from("users").select("id, name").in("id", memberUserIds),
-        db.from("designer_profiles").select("user_id, avatar_url").in("user_id", memberUserIds),
+        db.from("designer_profiles").select("user_id, avatar_url, experience_level, companies(name)").in("user_id", memberUserIds),
       ])
     : [{ data: [] }, { data: [] }];
 
-  const userMap = Object.fromEntries((memberUsers ?? []).map((u) => [u.id, u]));
-  const avatarMap = Object.fromEntries((memberProfiles ?? []).map((p) => [p.user_id, p.avatar_url]));
+  // Resolve experience level display names from slugs in a single batch query.
+  const expSlugs = [...new Set((memberProfiles ?? []).map((p: any) => p.experience_level).filter(Boolean) as string[])];
+  const expLevelMap: Record<string, string> = {};
+  if (expSlugs.length) {
+    const { data: levels } = await db.from("experience_levels").select("slug, name").in("slug", expSlugs);
+    for (const l of levels ?? []) expLevelMap[l.slug] = l.name;
+  }
 
-  const members = (memberRows ?? []).map((m) => ({
-    user_id: m.user_id,
-    joined_at: m.joined_at,
-    users: userMap[m.user_id]
-      ? {
-          name: userMap[m.user_id].name,
-          avatar_url: avatarMap[m.user_id] ?? null,
-        }
-      : null,
-  }));
+  const userMap     = Object.fromEntries((memberUsers    ?? []).map((u: any) => [u.id, u]));
+  const profileMap  = Object.fromEntries((memberProfiles ?? []).map((p: any) => [p.user_id, p]));
+
+  const members = (memberRows ?? []).map((m) => {
+    const p = profileMap[m.user_id];
+    return {
+      user_id: m.user_id,
+      joined_at: m.joined_at,
+      users: userMap[m.user_id]
+        ? {
+            name:        userMap[m.user_id].name,
+            avatar_url:  p?.avatar_url  ?? null,
+            designation: p?.experience_level ? (expLevelMap[p.experience_level] ?? null) : null,
+            company:     (p?.companies as any)?.name ?? null,
+          }
+        : null,
+    };
+  });
 
   return NextResponse.json({
     community: {

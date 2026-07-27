@@ -6,14 +6,17 @@ import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
 
 /** Convert a plural community-style level name to a singular job title.
- *  e.g. "Mid-Level Designers" → "Mid-Level Designer"
- *       "Heads of Design"     → "Head of Design"
- *       "VP of Design"        → "VP of Design"  (unchanged)
+ *  Strips trailing year-range parentheticals, then singularizes.
+ *  e.g. "Mid-Level Designers (3-5 years)" → "Mid-Level Designer"
+ *       "Heads of Design"                 → "Head of Design"
+ *       "VP of Design"                    → "VP of Design"  (unchanged)
  */
 function toJobTitle(name: string): string {
-  if (/^heads\s+of\b/i.test(name)) return name.replace(/^heads/i, "Head");
-  if (name.endsWith("s") && name.length > 1) return name.slice(0, -1);
-  return name;
+  // Strip trailing parenthetical like "(3-5 years)" or "(5+ years)"
+  const clean = name.replace(/\s*\(.*?\)\s*$/, "").trim();
+  if (/^heads\s+of\b/i.test(clean)) return clean.replace(/^heads/i, "Head");
+  if (clean.endsWith("s") && clean.length > 1) return clean.slice(0, -1);
+  return clean;
 }
 import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
 import { LinkPreview } from "./LinkPreview";
