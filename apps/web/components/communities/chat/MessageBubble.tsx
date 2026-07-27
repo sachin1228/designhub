@@ -654,10 +654,10 @@ export function MessageBubble({
         <div className="max-w-[65%]">
           {/* Sender name — hidden for the current user's own messages */}
           {showHeader && sender && !isDeleted && !isMe && (
-            <p className="font-body text-[11px] font-semibold mb-0.5 ml-0.5 text-foreground-muted flex items-baseline gap-1 flex-wrap">
+            <p className="font-body text-[11px] font-semibold mb-1 ml-0.5 text-foreground-muted flex items-center gap-1.5 flex-wrap">
               <span>{sender.name}</span>
               {(sender.designation || sender.company) && (
-                <span className="font-normal text-foreground-muted/60 text-[10px]">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] font-medium leading-none">
                   {sender.designation && sender.company
                     ? `${toJobTitle(sender.designation)} @ ${sender.company}`
                     : sender.designation
