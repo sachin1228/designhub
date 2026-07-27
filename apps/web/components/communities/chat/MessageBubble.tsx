@@ -4,6 +4,17 @@ import { Fragment, useState, useRef, useEffect } from "react";
 import { Clock, CheckCheck, X, RefreshCw, Reply, Copy, Smile, Trash2, Ban, MoreHorizontal } from "lucide-react";
 import { ChatAvatar } from "./ChatAvatar";
 import { fmtTime } from "./chatUtils";
+
+/** Convert a plural community-style level name to a singular job title.
+ *  e.g. "Mid-Level Designers" → "Mid-Level Designer"
+ *       "Heads of Design"     → "Head of Design"
+ *       "VP of Design"        → "VP of Design"  (unchanged)
+ */
+function toJobTitle(name: string): string {
+  if (/^heads\s+of\b/i.test(name)) return name.replace(/^heads/i, "Head");
+  if (name.endsWith("s") && name.length > 1) return name.slice(0, -1);
+  return name;
+}
 import type { CachedMessage, MessageReaction, ReplyPreview } from "@/lib/communities/cache";
 import { LinkPreview } from "./LinkPreview";
 import { extractFirstUrl } from "@/lib/communities/linkPreview";
@@ -645,9 +656,9 @@ export function MessageBubble({
               {(sender.designation || sender.company) && (
                 <span className="font-normal text-foreground-muted/60 text-[10px]">
                   {sender.designation && sender.company
-                    ? `${sender.designation} @ ${sender.company}`
+                    ? `${toJobTitle(sender.designation)} @ ${sender.company}`
                     : sender.designation
-                    ? sender.designation
+                    ? toJobTitle(sender.designation)
                     : `@ ${sender.company}`}
                 </span>
               )}
