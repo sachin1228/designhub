@@ -1,17 +1,21 @@
 /**
- * impl.ts — loaded at runtime via a turbopackIgnore dynamic import from route.ts.
- * Turbopack never adds this file to its module graph, so path.join() and spawn()
- * arguments here are never mistakenly resolved as module import paths.
+ * impl.ts — all k6 spawn logic lives here.
+ *
+ * IMPORTANT: k6 paths are built with Array.join('/') instead of path.resolve /
+ * path.join on purpose. Turbopack has special-case static evaluation for
+ * path.resolve() and path.join() — it normalises their results and tries to
+ * resolve them as module import paths, which fails because the k6 directory
+ * sits outside the Next.js app root. Array.join produces an unnormalised string
+ * (e.g. "/abs/apps/web/../../k6/scripts/seed-users.js") that Turbopack does
+ * NOT recognise as a server-relative module path. At runtime Node/spawn
+ * normalises the path transparently.
  */
 import { NextRequest } from "next/server";
 import { requireSession } from "@/lib/auth/session";
 import { spawn } from "child_process";
 import path from "path";
 
-// Repo root: process.cwd() during Next.js build/run is apps/web
-const REPO_ROOT = path.resolve(process.cwd(), "../../");
-const K6_DIR    = path.join(REPO_ROOT, "k6");
-
+// Scenario paths — stored as plain strings; the k6 dir prefix is prepended below.
 const SCENARIO_FILES: Record<string, string> = {
   smoke:           "scenarios/smoke.js",
   load:            "scenarios/load.js",
@@ -22,6 +26,20 @@ const SCENARIO_FILES: Record<string, string> = {
   chat_flood:      "scenarios/chat_flood.js",
 };
 
+/**
+ * Build a path to a file inside the k6 directory without using path.resolve or
+ * path.join at the top level, so Turbopack's static path evaluator never sees a
+ * normalised absolute path it could mistake for a module import.
+ *
+ * process.cwd() at runtime == <repo>/apps/web
+ * Array.join keeps the /../.. segments so the string stays unnormalised for
+ * Turbopack, while spawn/Node resolves them correctly at execution time.
+ */
+function k6Path(...segments: string[]): string {
+  // Produce e.g. "/abs/apps/web/../../k6/scenarios/smoke.js"
+  return [process.cwd(), "..", "..", "k6", ...segments].join("/");
+}
+
 export async function handlePost(req: NextRequest): Promise<Response> {
   try {
     await requireSession("admin");
@@ -31,6 +49,9 @@ export async function handlePost(req: NextRequest): Promise<Response> {
 
   const body = await req.json();
   const { type } = body as { type: "test" | "seed" };
+
+  // Repo root for spawn's cwd option — same unnormalised trick.
+  const repoRoot = [process.cwd(), "..", ".."].join("/");
 
   const encoder = new TextEncoder();
 
@@ -70,7 +91,7 @@ export async function handlePost(req: NextRequest): Promise<Response> {
         }
 
         cmd  = "node";
-        args = [path.join(K6_DIR, "scripts/seed-users.js")];
+        args = [k6Path("scripts", "seed-users.js")];
         env  = {
           ...process.env,
           SUPABASE_URL:              supabaseUrl,
@@ -116,10 +137,14 @@ export async function handlePost(req: NextRequest): Promise<Response> {
           return;
         }
 
+        // Split on "/" so each segment is passed separately — avoids a single
+        // "scenarios/smoke.js" literal that Turbopack could try to resolve.
+        const [scenarioDir, scenarioFile_] = scenarioFile.split("/");
+
         cmd  = "k6";
         args = [
           "run",
-          path.join(K6_DIR, scenarioFile),
+          k6Path(scenarioDir, scenarioFile_),
           "-e", `BASE_URL=${baseUrl}`,
           "-e", `TEST_COMMUNITY_ID=${communityId}`,
           ...(concurrentVus ? ["-e", `CONCURRENT_VUS=${concurrentVus}`]     : []),
@@ -142,7 +167,7 @@ export async function handlePost(req: NextRequest): Promise<Response> {
       }
 
       const child = spawn(cmd, args, {
-        cwd: REPO_ROOT,
+        cwd: repoRoot,
         env,
         stdio: ["ignore", "pipe", "pipe"],
       });
@@ -195,3 +220,6 @@ export async function handlePost(req: NextRequest): Promise<Response> {
     },
   });
 }
+
+// Re-export path utility for any callers that need it
+export { path };
