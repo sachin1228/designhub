@@ -101,6 +101,12 @@ export function ResourcesView({
     );
   }
 
+  function handleBookmarkChanged(resourceId: string, bookmarked: boolean, newCount: number) {
+    setResources((prev) =>
+      prev.map((r) => r.id === resourceId ? { ...r, user_bookmarked: bookmarked, bookmark_count: newCount } : r),
+    );
+  }
+
   function handleDeleted(resourceId: string) {
     setResources((prev) => prev.filter((r) => r.id !== resourceId));
   }
@@ -218,6 +224,7 @@ export function ResourcesView({
                 communityId={communityId}
                 onUpdated={handleUpdated}
                 onSaveChanged={handleSaveChanged}
+                onBookmarkChanged={handleBookmarkChanged}
                 onDeleted={handleDeleted}
               />
             ))}

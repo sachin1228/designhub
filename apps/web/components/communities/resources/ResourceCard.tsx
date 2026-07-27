@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-  ExternalLink, Heart,
+  Bookmark, BookmarkCheck, ExternalLink, Heart,
   MoreHorizontal, Pencil, Trash2,
 } from "lucide-react";
 import type { CommunityResource } from "./types";
@@ -72,6 +72,7 @@ interface ResourceCardProps {
   communityId: string;
   onUpdated: (resource: CommunityResource) => void;
   onSaveChanged: (resourceId: string, saved: boolean, newCount: number) => void;
+  onBookmarkChanged: (resourceId: string, bookmarked: boolean, newCount: number) => void;
   onDeleted: (resourceId: string) => void;
 }
 
@@ -81,6 +82,7 @@ export function ResourceCard({
   communityId,
   onUpdated,
   onSaveChanged,
+  onBookmarkChanged,
   onDeleted,
 }: ResourceCardProps) {
   const typeInfo   = RESOURCE_TYPES.find((t) => t.value === resource.resource_type);
@@ -88,10 +90,11 @@ export function ResourceCard({
   const isOwner    = resource.user_id === currentUserId;
   const ogImage    = useOgImage(resource.url);
 
-  const [savePending, setSavePending]     = useState(false);
-  const [menuOpen, setMenuOpen]           = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [deleting, setDeleting]           = useState(false);
+  const [savePending, setSavePending]         = useState(false);
+  const [bookmarkPending, setBookmarkPending] = useState(false);
+  const [menuOpen, setMenuOpen]               = useState(false);
+  const [showEditModal, setShowEditModal]     = useState(false);
+  const [deleting, setDeleting]               = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -130,6 +133,23 @@ export function ResourceCard({
       onSaveChanged(resource.id, resource.user_saved, resource.save_count);
     } finally {
       setSavePending(false);
+    }
+  }
+
+  async function handleBookmark(e: React.MouseEvent) {
+    e.preventDefault();
+    if (bookmarkPending) return;
+    const newBookmarked = !resource.user_bookmarked;
+    const newCount = resource.bookmark_count + (newBookmarked ? 1 : -1);
+    onBookmarkChanged(resource.id, newBookmarked, newCount);
+    setBookmarkPending(true);
+    try {
+      const res = await fetch(`/api/communities/${communityId}/resources/${resource.id}/bookmark`, { method: "POST" });
+      if (!res.ok) onBookmarkChanged(resource.id, resource.user_bookmarked, resource.bookmark_count);
+    } catch {
+      onBookmarkChanged(resource.id, resource.user_bookmarked, resource.bookmark_count);
+    } finally {
+      setBookmarkPending(false);
     }
   }
 
@@ -252,7 +272,7 @@ export function ResourceCard({
           {/* ── Divider ── */}
           <div className="mt-4 border-t border-border" />
 
-          {/* ── Footer: like · share ── */}
+          {/* ── Footer: like · bookmark ── */}
           <div className="mt-3 flex items-center gap-4">
             {/* Heart / like */}
             <button
@@ -273,6 +293,23 @@ export function ResourceCard({
               />
               <span className={`font-body text-xs font-semibold tabular-nums ${resource.user_saved ? "text-red-500" : "text-foreground-muted"}`}>
                 {resource.save_count}
+              </span>
+            </button>
+
+            {/* Bookmark / save */}
+            <button
+              type="button"
+              onClick={handleBookmark}
+              disabled={bookmarkPending}
+              aria-label={resource.user_bookmarked ? "Remove bookmark" : "Bookmark"}
+              className="flex items-center gap-1.5 disabled:opacity-60"
+            >
+              {resource.user_bookmarked
+                ? <BookmarkCheck size={16} className="text-accent transition-colors" strokeWidth={2} />
+                : <Bookmark size={16} className="text-foreground-subtle hover:text-accent transition-colors" strokeWidth={1.75} />
+              }
+              <span className={`font-body text-xs font-semibold tabular-nums ${resource.user_bookmarked ? "text-accent" : "text-foreground-muted"}`}>
+                {resource.bookmark_count}
               </span>
             </button>
 
