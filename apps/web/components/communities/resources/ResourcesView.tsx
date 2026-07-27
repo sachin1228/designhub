@@ -209,7 +209,7 @@ export function ResourcesView({
             <p className="mt-1 font-body text-sm text-foreground-muted">Try a different filter or share one yourself.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             {filtered.map((resource) => (
               <ResourceCard
                 key={resource.id}
