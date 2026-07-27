@@ -17,6 +17,7 @@ const SCENARIO_FILES: Record<string, string> = {
   soak:             "scenarios/soak.js",
   chat_load:        "scenarios/chat_load.js",
   chat_concurrent:  "scenarios/chat_concurrent.js",
+  chat_flood:       "scenarios/chat_flood.js",
 };
 
 export async function POST(req: NextRequest) {
@@ -86,12 +87,15 @@ export async function POST(req: NextRequest) {
         // type === "test"
         const {
           scenario, baseUrl, communityId, concurrentVus,
+          floodVus, floodDuration,
           testUserEmail, testUserPass, adminEmail, adminPass,
         } = body as {
           scenario:      string;
           baseUrl:       string;
           communityId:   string;
           concurrentVus: number;
+          floodVus:      number;
+          floodDuration: string;
           testUserEmail: string;
           testUserPass:  string;
           adminEmail:    string;
@@ -117,6 +121,8 @@ export async function POST(req: NextRequest) {
           "-e", `BASE_URL=${baseUrl}`,
           "-e", `TEST_COMMUNITY_ID=${communityId}`,
           ...(concurrentVus  ? ["-e", `CONCURRENT_VUS=${concurrentVus}`]           : []),
+          ...(floodVus       ? ["-e", `FLOOD_VUS=${floodVus}`]                     : []),
+          ...(floodDuration  ? ["-e", `FLOOD_DURATION=${floodDuration}`]           : []),
           ...(testUserEmail  ? ["-e", `TEST_USER_EMAIL=${testUserEmail}`]           : []),
           ...(testUserPass   ? ["-e", `TEST_USER_PASSWORD=${testUserPass}`]         : []),
           ...(adminEmail     ? ["-e", `ADMIN_EMAIL=${adminEmail}`]                  : []),

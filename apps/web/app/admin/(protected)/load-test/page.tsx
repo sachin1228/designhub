@@ -16,6 +16,7 @@ const SCENARIOS = [
   { value: "soak",            label: "Soak",             desc: "20 VUs × 30 min" },
   { value: "chat_load",       label: "Chat Load",        desc: "Steady 20 VUs + spike to 100 VUs" },
   { value: "chat_concurrent", label: "Chat Concurrent",  desc: "Every VU is a unique user chatting live" },
+  { value: "chat_flood",      label: "Chat Flood 🔥",    desc: "Pure message flood — thousands of messages, nothing deleted" },
 ] as const;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -41,6 +42,8 @@ export default function LoadTestPage() {
   const [baseUrl,        setBaseUrl]        = useState("https://drafthub-web.vercel.app");
   const [communityId,    setCommunityId]    = useState("");
   const [concurrentVus,  setConcurrentVus]  = useState(50);
+  const [floodVus,       setFloodVus]       = useState(50);
+  const [floodDuration,  setFloodDuration]  = useState("3m");
   const [testUserEmail,  setTestUserEmail]  = useState("k6user001@k6test.invalid");
   const [testUserPass,   setTestUserPass]   = useState("K6testPass123!");
   const [adminEmail,     setAdminEmail]     = useState("");
@@ -127,6 +130,8 @@ export default function LoadTestPage() {
     baseUrl,
     communityId,
     concurrentVus,
+    floodVus,
+    floodDuration,
     testUserEmail,
     testUserPass,
     adminEmail,
@@ -232,6 +237,40 @@ export default function LoadTestPage() {
                     className="rounded-lg border border-border bg-surface-raised px-3 py-2 font-body text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                   />
                 </div>
+              )}
+
+              {/* Flood params — only shown for chat_flood */}
+              {scenario === "chat_flood" && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-body text-[11px] font-medium text-foreground-muted uppercase tracking-wide">
+                      Flood VUs
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={floodVus}
+                      onChange={(e) => setFloodVus(Number(e.target.value))}
+                      className="rounded-lg border border-border bg-surface-raised px-3 py-2 font-body text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+                    />
+                    <p className="font-body text-[11px] text-foreground-muted">
+                      50 VUs × 2s sleep ≈ 25 msg/s
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-body text-[11px] font-medium text-foreground-muted uppercase tracking-wide">
+                      Duration
+                    </label>
+                    <input
+                      type="text"
+                      value={floodDuration}
+                      onChange={(e) => setFloodDuration(e.target.value)}
+                      placeholder="e.g. 3m, 10m, 1h"
+                      className="rounded-lg border border-border bg-surface-raised px-3 py-2 font-body text-xs text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:ring-1 focus:ring-accent"
+                    />
+                  </div>
+                </>
               )}
 
               {/* Credentials — divider */}
