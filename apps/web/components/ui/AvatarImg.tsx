@@ -17,7 +17,7 @@
 import Avatar from "boring-avatars";
 
 const BORING_STYLES = [
-  "marble", "beam", "pixel", "sunset", "ring", "bauhaus", "triangles",
+  "marble", "beam", "pixel", "sunset", "ring", "bauhaus", "geometric", "abstract",
 ] as const;
 
 /**
