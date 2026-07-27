@@ -6,10 +6,12 @@ import path from "path";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Repo root relative to apps/web (process.cwd() during Next.js dev)
-// turbopackIgnore prevents Turbopack from statically tracing these paths as module imports
-const REPO_ROOT = path.resolve(/*turbopackIgnore: true*/ process.cwd(), "../../");
-const K6_DIR    = path.join(/*turbopackIgnore: true*/ REPO_ROOT, "k6");
+// Repo root computed at runtime only.
+// process.env._K6_BASE is intentionally never defined in the build, so Turbopack
+// treats the whole expression as an opaque runtime value and won't try to resolve
+// the resulting path as a module import. Falls back to process.cwd() at runtime.
+const REPO_ROOT = path.resolve(process.env._K6_BASE || process.cwd(), "../../");
+const K6_DIR    = path.join(REPO_ROOT, "k6");
 
 const SCENARIO_FILES: Record<string, string> = {
   smoke:            "scenarios/smoke.js",
