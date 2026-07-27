@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Calendar, Flag, MapPin, MoreHorizontal, Pencil, Share2, Trash2, Video } from "lucide-react";
+import { Bookmark, BookmarkCheck, Calendar, Flag, MapPin, MoreHorizontal, Pencil, Trash2, Video } from "lucide-react";
 import type { CommunityEvent } from "./types";
 import { EditEventModal } from "./EditEventModal";
 
@@ -60,9 +60,10 @@ interface EventCardProps {
   onUpdated: (event: CommunityEvent) => void;
   onDeleted: (eventId: string) => void;
   onRsvpChanged: (eventId: string, rsvped: boolean, count: number) => void;
+  onSaveChanged: (eventId: string, saved: boolean, count: number) => void;
 }
 
-export function EventCard({ event, currentUserId, communityId, onUpdated, onDeleted, onRsvpChanged }: EventCardProps) {
+export function EventCard({ event, currentUserId, communityId, onUpdated, onDeleted, onRsvpChanged, onSaveChanged }: EventCardProps) {
   const isOwner = event.user_id === currentUserId;
   const past = isPast(event.end_date ?? event.event_date);
 
@@ -72,6 +73,7 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
   const [rsvpPending, setRsvpPending] = useState(false);
   const [shared, setShared] = useState(false);
   const [reported, setReported] = useState(false);
+  const [savePending, setSavePending] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -115,6 +117,28 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
       onRsvpChanged(event.id, event.user_rsvped, event.rsvp_count);
     } finally {
       setRsvpPending(false);
+    }
+  }
+
+  async function handleSave(e: React.MouseEvent) {
+    e.preventDefault();
+    if (savePending) return;
+    const newSaved = !event.user_saved;
+    const newCount = event.save_count + (newSaved ? 1 : -1);
+    onSaveChanged(event.id, newSaved, newCount);
+    setSavePending(true);
+    try {
+      const res = await fetch(`/api/communities/${communityId}/events/${event.id}/save`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        onSaveChanged(event.id, data.saved, data.save_count);
+      } else {
+        onSaveChanged(event.id, event.user_saved, event.save_count);
+      }
+    } catch {
+      onSaveChanged(event.id, event.user_saved, event.save_count);
+    } finally {
+      setSavePending(false);
     }
   }
 
@@ -203,6 +227,23 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
                     className="rounded-lg border border-border px-3.5 py-1.5 font-body text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-raised hover:text-foreground"
                   >
                     {shared ? "Copied!" : "Share"}
+                  </button>
+
+                  {/* Save / bookmark */}
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={savePending}
+                    aria-label={event.user_saved ? "Unsave event" : "Save event"}
+                    className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors disabled:opacity-50 ${
+                      event.user_saved
+                        ? "border-accent/50 bg-accent/10 text-accent hover:bg-accent/20"
+                        : "border-border text-foreground-subtle hover:bg-surface-raised hover:text-foreground"
+                    }`}
+                  >
+                    {event.user_saved
+                      ? <BookmarkCheck size={13} />
+                      : <Bookmark size={13} />}
                   </button>
 
                   {/* Options menu — visible to all users */}
