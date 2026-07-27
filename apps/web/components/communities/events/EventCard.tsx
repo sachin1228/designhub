@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, MoreHorizontal, Pencil, Share2, Trash2, Video } from "lucide-react";
+import { Calendar, Flag, MapPin, MoreHorizontal, Pencil, Share2, Trash2, Video } from "lucide-react";
 import type { CommunityEvent } from "./types";
 import { EditEventModal } from "./EditEventModal";
 
@@ -71,6 +71,7 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
   const [deleting, setDeleting] = useState(false);
   const [rsvpPending, setRsvpPending] = useState(false);
   const [shared, setShared] = useState(false);
+  const [reported, setReported] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -115,6 +116,12 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
     } finally {
       setRsvpPending(false);
     }
+  }
+
+  function handleReport(e: React.MouseEvent) {
+    e.preventDefault();
+    setMenuOpen(false);
+    setReported(true);
   }
 
   async function handleShare(e: React.MouseEvent) {
@@ -198,32 +205,39 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
                     {shared ? "Copied!" : "Share"}
                   </button>
 
-                  {/* Owner menu */}
-                  {isOwner && (
-                    <div ref={menuRef} className="relative">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setMenuOpen((p) => !p); }}
-                        aria-label="Event options"
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground-subtle transition-colors hover:bg-surface-raised hover:text-foreground"
-                      >
-                        <MoreHorizontal size={13} />
-                      </button>
-                      {menuOpen && (
-                        <div className="absolute right-0 top-8 z-20 min-w-[130px] rounded-lg border border-border bg-surface py-1 shadow-lg">
-                          <button type="button"
-                            onClick={(e) => { e.preventDefault(); setMenuOpen(false); setShowEditModal(true); }}
-                            className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-foreground-muted hover:bg-surface-raised hover:text-foreground">
-                            <Pencil size={11} /> Edit event
-                          </button>
-                          <button type="button" onClick={handleDelete} disabled={deleting}
-                            className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-red-400 hover:bg-surface-raised disabled:opacity-50">
-                            <Trash2 size={11} /> {deleting ? "Deleting…" : "Delete event"}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Options menu — visible to all users */}
+                  <div ref={menuRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); setMenuOpen((p) => !p); }}
+                      aria-label="Event options"
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground-subtle transition-colors hover:bg-surface-raised hover:text-foreground"
+                    >
+                      <MoreHorizontal size={13} />
+                    </button>
+                    {menuOpen && (
+                      <div className="absolute right-0 top-8 z-20 min-w-[140px] rounded-lg border border-border bg-surface py-1 shadow-lg">
+                        {isOwner && (
+                          <>
+                            <button type="button"
+                              onClick={(e) => { e.preventDefault(); setMenuOpen(false); setShowEditModal(true); }}
+                              className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-foreground-muted hover:bg-surface-raised hover:text-foreground">
+                              <Pencil size={11} /> Edit event
+                            </button>
+                            <button type="button" onClick={handleDelete} disabled={deleting}
+                              className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-red-400 hover:bg-surface-raised disabled:opacity-50">
+                              <Trash2 size={11} /> {deleting ? "Deleting…" : "Delete event"}
+                            </button>
+                            <div className="my-1 border-t border-border" />
+                          </>
+                        )}
+                        <button type="button" onClick={handleReport} disabled={reported}
+                          className="flex w-full items-center gap-2 px-3 py-1.5 font-body text-xs text-foreground-muted hover:bg-surface-raised hover:text-foreground disabled:opacity-50">
+                          <Flag size={11} /> {reported ? "Reported" : "Report post"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
