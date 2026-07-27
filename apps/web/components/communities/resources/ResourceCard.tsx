@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
 import {
-  Bookmark, BookmarkCheck, ExternalLink, MessageSquare,
-  MoreHorizontal, Pencil, Trash2, Share2,
+  ExternalLink, Heart,
+  MoreHorizontal, Pencil, Trash2,
 } from "lucide-react";
 import type { CommunityResource } from "./types";
 import { RESOURCE_TYPES } from "./types";
@@ -136,12 +135,11 @@ export function ResourceCard({
 
   const authorName    = resource.users?.name ?? "Member";
   const authorInitial = authorName.charAt(0).toUpperCase();
-  const resourceHref  = `/dashboard/communities/${communityId}/resources/${resource.id}`;
 
   return (
     <>
       <article className="group rounded-2xl border border-border bg-surface transition-colors hover:border-border-strong">
-        <Link href={resourceHref} className="block">
+        <div>
 
           {/* ── OG image ── */}
           {ogImage && (
@@ -240,61 +238,48 @@ export function ResourceCard({
           )}
 
           {/* ── URL pill ── */}
-          <div className="mt-2 inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 font-body text-[11px] text-foreground-subtle">
+          <a
+            href={resource.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="mt-2 inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 font-body text-[11px] text-foreground-subtle hover:text-accent hover:border-accent/40 transition-colors"
+          >
             <ExternalLink size={10} />
             <span className="truncate max-w-[220px]">{getDomain(resource.url)}</span>
-          </div>
+          </a>
 
           {/* ── Divider ── */}
           <div className="mt-4 border-t border-border" />
 
-          {/* ── Footer: bookmark · comments · share ── */}
+          {/* ── Footer: like · share ── */}
           <div className="mt-3 flex items-center gap-4">
-            {/* Bookmark / save */}
+            {/* Heart / like */}
             <button
               type="button"
               onClick={handleSave}
               disabled={savePending}
-              aria-label={resource.user_saved ? "Remove bookmark" : "Bookmark"}
-              className="flex items-center gap-2 disabled:opacity-60"
+              aria-label={resource.user_saved ? "Unlike" : "Like"}
+              className="flex items-center gap-1.5 disabled:opacity-60"
             >
-              <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors ${
+              <Heart
+                size={16}
+                className={`transition-colors ${
                   resource.user_saved
-                    ? "border-accent bg-accent/10 text-accent"
-                    : "border-border text-foreground-subtle hover:border-accent/60 hover:text-accent"
+                    ? "fill-red-500 text-red-500"
+                    : "fill-none text-foreground-subtle hover:text-red-400"
                 }`}
-              >
-                {resource.user_saved
-                  ? <BookmarkCheck size={14} strokeWidth={2.5} />
-                  : <Bookmark size={14} strokeWidth={2} />}
-              </span>
-              <span className={`font-body text-xs font-semibold tabular-nums ${resource.user_saved ? "text-accent" : "text-foreground-muted"}`}>
+                strokeWidth={resource.user_saved ? 0 : 1.75}
+              />
+              <span className={`font-body text-xs font-semibold tabular-nums ${resource.user_saved ? "text-red-500" : "text-foreground-muted"}`}>
                 {resource.save_count}
               </span>
             </button>
 
-            {/* Comments */}
-            <span className="inline-flex items-center gap-1.5 font-body text-xs text-foreground-subtle">
-              <MessageSquare size={13} />
-              {resource.comment_count} {resource.comment_count === 1 ? "comment" : "comments"}
-            </span>
-
-            {/* Spacer */}
             <div className="flex-1" />
-
-            {/* Share */}
-            <button
-              type="button"
-              aria-label="Share"
-              onClick={(e) => e.preventDefault()}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
-            >
-              <Share2 size={14} />
-            </button>
           </div>
           </div>{/* end p-5 */}
-        </Link>
+        </div>
       </article>
 
       {showEditModal && (
