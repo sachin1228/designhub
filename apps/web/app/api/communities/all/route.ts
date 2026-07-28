@@ -102,7 +102,7 @@ export async function GET() {
       name:         c.name,
       type:         c.type,
       image_url:    masterImageMap[c.id] ?? c.image_url ?? null,
-      description:  c.description ?? null,
+      description:  (c as unknown as { description?: string | null }).description ?? null,
       is_private:   c.is_private ?? false,
       member_count: countMap[c.id] ?? 0,
       joined:       joinedIds.has(c.id),

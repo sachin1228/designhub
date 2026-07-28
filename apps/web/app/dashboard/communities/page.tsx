@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Lock, Users } from "lucide-react";
+import { Check, Lock, ChevronRight } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import {
   exploreStore,
@@ -13,27 +13,7 @@ import {
 
 type Community = CachedExploreCommunity;
 
-// ── Labels & colours per community type ─────────────────────────────────────
-
-const TYPE_LABELS: Record<string, string> = {
-  city:             "City",
-  sector:           "Industry",
-  interest:         "Interest",
-  company:          "Company",
-  experience_level: "Experience",
-  general:          "General",
-  user:             "Community",
-};
-
-const TYPE_COLORS: Record<string, { border: string; text: string; bg: string }> = {
-  interest:         { border: "#7C3AED", text: "#A78BFA", bg: "rgba(124,58,237,0.10)" },
-  city:             { border: "#0891B2", text: "#67E8F9", bg: "rgba(8,145,178,0.10)"  },
-  sector:           { border: "#0070F3", text: "#60A5FA", bg: "rgba(0,112,243,0.10)"  },
-  company:          { border: "#EA580C", text: "#FB923C", bg: "rgba(234,88,12,0.10)"  },
-  experience_level: { border: "#16A34A", text: "#4ADE80", bg: "rgba(22,163,74,0.10)"  },
-  general:          { border: "#525252", text: "#A3A3A3", bg: "rgba(82,82,82,0.10)"   },
-  user:             { border: "#D97706", text: "#FCD34D", bg: "rgba(217,119,6,0.10)"  },
-};
+// ── Config ───────────────────────────────────────────────────────────────────
 
 const TYPE_EMOJI: Record<string, string> = {
   city:             "📍",
@@ -64,7 +44,7 @@ const TABS = [
 
 type TabValue = typeof TABS[number]["value"];
 
-// ── CommunityCard ────────────────────────────────────────────────────────────
+// ── Compact Reddit-style card ─────────────────────────────────────────────────
 
 function CommunityCard({
   c,
@@ -75,116 +55,96 @@ function CommunityCard({
   onJoin: (id: string) => void;
   joining: boolean;
 }) {
-  const router   = useRouter();
+  const router      = useRouter();
   const [imgErr, setImgErr] = useState(false);
-  const typeColor = TYPE_COLORS[c.type] ?? TYPE_COLORS["general"];
-  const locked    = !c.can_join && !c.joined;
+  const locked      = !c.can_join && !c.joined;
+
+  function handleCardClick() {
+    if (c.joined) router.push(`/dashboard/communities/${c.id}`);
+  }
 
   return (
     <div
-      onClick={() => { if (c.joined) router.push(`/dashboard/communities/${c.id}`); }}
-      className={`flex flex-col rounded-2xl border bg-surface p-4 transition-colors ${
+      onClick={handleCardClick}
+      className={`group flex flex-col gap-2 rounded-xl border bg-surface-raised p-3 transition-colors ${
         c.joined
           ? "border-border hover:border-border-strong cursor-pointer"
           : locked
-          ? "border-border opacity-60"
-          : "border-border hover:border-border-strong"
+          ? "border-border opacity-55"
+          : "border-border hover:border-border-strong cursor-default"
       }`}
     >
-      {/* Avatar + type pill */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-surface-raised flex items-center justify-center text-lg select-none">
+      {/* ── Header row: avatar · name/count · action ── */}
+      <div className="flex items-center gap-2.5">
+        {/* Avatar */}
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-surface flex items-center justify-center text-base select-none">
           {c.image_url && !imgErr ? (
             <img
               src={c.image_url}
               alt={c.name}
-              className="h-11 w-11 object-cover"
+              className="h-9 w-9 object-cover"
               onError={() => setImgErr(true)}
             />
           ) : (
             TYPE_EMOJI[c.type] ?? "💬"
           )}
         </div>
-        <span
-          className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 font-body text-[10px] font-medium"
-          style={{
-            border:     `1px solid ${typeColor.border}`,
-            color:      typeColor.text,
-            background: typeColor.bg,
-          }}
-        >
-          {TYPE_LABELS[c.type] ?? c.type}
-        </span>
+
+        {/* Name + member count */}
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-sm font-semibold text-foreground truncate leading-tight">
+            {c.name}
+          </p>
+          <p className="font-body text-[11px] text-foreground-muted leading-tight mt-0.5">
+            {c.member_count.toLocaleString()} member{c.member_count !== 1 ? "s" : ""}
+          </p>
+        </div>
+
+        {/* Action — prevents card-click propagation */}
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          {c.joined ? (
+            <button
+              onClick={() => router.push(`/dashboard/communities/${c.id}`)}
+              className="flex items-center gap-1 rounded-full border border-accent/40 px-3 py-1 font-body text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
+            >
+              <Check size={10} strokeWidth={2.5} />
+              Joined
+            </button>
+          ) : locked ? (
+            <div className="relative group/lock">
+              <button
+                disabled
+                className="flex items-center gap-1 rounded-full border border-border px-3 py-1 font-body text-xs font-medium text-foreground-subtle cursor-not-allowed"
+              >
+                <Lock size={10} />
+                Join
+              </button>
+              {/* Tooltip */}
+              <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden group-hover/lock:block z-20 w-52 rounded-lg border border-border bg-surface px-3 py-2 shadow-xl">
+                <p className="font-body text-[11px] text-foreground-muted text-center leading-relaxed">
+                  {LOCK_REASON[c.type] ?? "Update your profile to join"}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => onJoin(c.id)}
+              disabled={joining}
+              className="rounded-full border border-border px-3 py-1 font-body text-xs font-semibold text-foreground hover:bg-surface hover:border-border-strong transition-colors disabled:opacity-60"
+            >
+              {joining ? "…" : "Join"}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Name */}
-      <p className="font-display text-sm font-semibold text-foreground leading-snug mb-1">
-        {c.name}
-      </p>
-
-      {/* Member count */}
-      <div className="flex items-center gap-1 mb-2">
-        <Users size={10} className="text-foreground-muted" />
-        <span className="font-body text-[11px] text-foreground-muted">
-          {c.member_count} member{c.member_count !== 1 ? "s" : ""}
-        </span>
-      </div>
-
-      {/* Description */}
+      {/* ── Description ── */}
       {c.description && (
-        <p className="font-body text-[11px] leading-relaxed text-foreground-subtle line-clamp-2 mb-4">
+        <p className="font-body text-[11px] leading-relaxed text-foreground-muted line-clamp-2 pl-[46px]">
           {c.description}
         </p>
       )}
-      {!c.description && <div className="mb-4" />}
-
-      {/* Action — stops card-level click propagation */}
-      <div className="mt-auto" onClick={(e) => e.stopPropagation()}>
-        {c.joined ? (
-          <button
-            onClick={() => router.push(`/dashboard/communities/${c.id}`)}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent/10 px-3 py-1.5 font-body text-xs font-medium text-accent hover:bg-accent/15 transition-colors"
-          >
-            <Check size={11} strokeWidth={2.5} />
-            Joined
-          </button>
-        ) : locked ? (
-          <div className="relative group/lock">
-            <button
-              disabled
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-body text-xs font-medium text-foreground-subtle cursor-not-allowed"
-            >
-              <Lock size={11} />
-              Profile required
-            </button>
-            {/* Tooltip */}
-            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/lock:block z-20 w-52 rounded-lg border border-border bg-surface px-3 py-2 shadow-xl">
-              <p className="font-body text-[11px] text-foreground-muted text-center leading-relaxed">
-                {LOCK_REASON[c.type] ?? "Update your profile to join"}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => onJoin(c.id)}
-            disabled={joining}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 font-body text-xs font-semibold text-white hover:bg-accent/90 transition-colors disabled:opacity-60"
-          >
-            {joining ? "Joining…" : "+ Join"}
-          </button>
-        )}
-      </div>
     </div>
-  );
-}
-
-// ── Section header ───────────────────────────────────────────────────────────
-
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <h2 className="font-display text-sm font-semibold text-foreground mb-3">
-      {title}
-    </h2>
   );
 }
 
@@ -237,18 +197,15 @@ export default function CommunitiesIndexPage() {
     setJoiningId(communityId);
     setErrorMsg(null);
 
-    // Optimistic update
     setCommunities((prev) =>
       prev.map((c) => c.id === communityId ? { ...c, joined: true } : c),
     );
-    // Also update the module-level store so the sidebar refreshes
     invalidateOnJoin(communityId);
 
     try {
-      const res  = await fetch(`/api/communities/${communityId}/join`, { method: "POST" });
+      const res = await fetch(`/api/communities/${communityId}/join`, { method: "POST" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        // Rollback
         setCommunities((prev) =>
           prev.map((c) => c.id === communityId ? { ...c, joined: false } : c),
         );
@@ -282,24 +239,20 @@ export default function CommunitiesIndexPage() {
     return matchesTab && matchesSearch;
   });
 
-  // On "All" tab split into "Recommended" (open, unjoined) and everything else
   const isAllTab    = activeTab === "all";
-  const recommended = isAllTab
-    ? filtered.filter((c) => c.can_join && !c.joined)
-    : [];
-  const rest = isAllTab
-    ? filtered.filter((c) => c.joined || !c.can_join)
-    : filtered;
+  const recommended = isAllTab ? filtered.filter((c) => c.can_join && !c.joined) : [];
+  const rest        = isAllTab ? filtered.filter((c) => c.joined || !c.can_join) : filtered;
 
   return (
     <div className="flex flex-col h-full">
-      {/* ── Top area: title · search · tabs ─────────────────────────────── */}
-      <div className="px-6 pt-6 pb-0 shrink-0">
+
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <div className="px-6 pt-6 pb-4 shrink-0">
         <h1 className="font-display text-xl font-semibold text-foreground mb-4">
           Explore Communities
         </h1>
 
-        {/* Search bar */}
+        {/* Search */}
         <div className="relative mb-4">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted pointer-events-none"
@@ -314,56 +267,44 @@ export default function CommunitiesIndexPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search communities…"
-            className="w-full rounded-lg border border-border bg-surface pl-8 pr-4 py-2 font-body text-sm text-foreground placeholder:text-foreground-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
+            className="w-full rounded-full border border-border bg-surface-raised pl-8 pr-4 py-2 font-body text-sm text-foreground placeholder:text-foreground-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors"
           />
         </div>
 
-        {/* Category tabs */}
-        <div className="flex items-center gap-0 overflow-x-auto border-b border-border">
+        {/* Reddit-style pill filters */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {TABS.map((tab) => {
-            const count =
-              tab.value === "all"
-                ? communities.length
-                : communities.filter((c) => c.type === tab.value).length;
             const isActive = activeTab === tab.value;
             return (
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
-                className={`relative shrink-0 flex items-center gap-2 px-4 py-2.5 font-body text-xs font-normal transition-colors ${
+                className={`shrink-0 rounded-full border px-4 py-1.5 font-body text-sm font-medium transition-colors ${
                   isActive
-                    ? "text-accent"
-                    : "text-foreground-muted hover:text-foreground"
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border bg-transparent text-foreground-muted hover:border-border-strong hover:text-foreground"
                 }`}
               >
                 {tab.label}
-                <span
-                  className={`font-mono text-[11px] font-medium px-1.5 py-0.5 rounded-full ${
-                    isActive
-                      ? "bg-accent/15 text-accent"
-                      : "bg-surface-raised text-foreground-muted"
-                  }`}
-                >
-                  {count}
-                </span>
-                {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t-full" />
-                )}
               </button>
             );
           })}
+          {/* Overflow arrow hint */}
+          <div className="shrink-0 text-foreground-muted">
+            <ChevronRight size={16} />
+          </div>
         </div>
       </div>
 
       {/* ── Error banner ─────────────────────────────────────────────────── */}
       {errorMsg && (
-        <div className="mx-6 mt-3 shrink-0 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 font-body text-xs text-red-400">
+        <div className="mx-6 mb-3 shrink-0 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 font-body text-xs text-red-400">
           {errorMsg}
         </div>
       )}
 
-      {/* ── Community grid ───────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-8">
+      {/* ── Community lists ───────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-6">
         {loading ? (
           <div className="flex justify-center py-16">
             <Spinner className="h-5 w-5 text-foreground-muted" />
@@ -374,11 +315,13 @@ export default function CommunitiesIndexPage() {
           </div>
         ) : (
           <>
-            {/* Recommended for you — only on All tab when there are joinable ones */}
+            {/* Recommended for you */}
             {recommended.length > 0 && (
               <section>
-                <SectionHeader title="Recommended for you" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <h2 className="font-display text-sm font-semibold text-foreground mb-3">
+                  Recommended for you
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {recommended.map((c) => (
                     <CommunityCard
                       key={c.id}
@@ -391,14 +334,15 @@ export default function CommunitiesIndexPage() {
               </section>
             )}
 
-            {/* Everything else (joined + locked on All tab; all filtered on specific tabs) */}
+            {/* Joined / locked / filtered */}
             {rest.length > 0 && (
               <section>
-                {/* Only show "All communities" header on All tab when there's also a Recommended section */}
                 {isAllTab && recommended.length > 0 && (
-                  <SectionHeader title="All communities" />
+                  <h2 className="font-display text-sm font-semibold text-foreground mb-3">
+                    All communities
+                  </h2>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {rest.map((c) => (
                     <CommunityCard
                       key={c.id}
