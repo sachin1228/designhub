@@ -85,6 +85,7 @@ export interface CachedSidebarCommunity {
   reference_name?: string | null;
   is_private?: boolean;
   enabled_tabs?: string[];
+  owner_id?: string | null;
   member_count: number;
   message_count: number;
   /** Hidden by this user until a new message arrives. */

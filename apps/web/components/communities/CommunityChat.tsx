@@ -518,6 +518,7 @@ export function CommunityChat({
         image_url: sidebarEntry.image_url,
         is_private: sidebarEntry.is_private,
         enabled_tabs: sidebarEntry.enabled_tabs,
+        owner_id: sidebarEntry.owner_id,
       }
     : null);
 
