@@ -240,14 +240,15 @@ export default function CommunitiesIndexPage() {
   // ── Filtering ──────────────────────────────────────────────────────────────
 
   const filtered = communities.filter((c) => {
+    if (c.joined) return false;
     const matchesTab    = activeTab === "all" || c.type === activeTab;
     const matchesSearch = c.name.toLowerCase().includes(search.trim().toLowerCase());
     return matchesTab && matchesSearch;
   });
 
   const isAllTab    = activeTab === "all";
-  const recommended = isAllTab ? filtered.filter((c) => c.can_join && !c.joined) : [];
-  const rest        = isAllTab ? filtered.filter((c) => c.joined || !c.can_join) : filtered;
+  const recommended = isAllTab ? filtered.filter((c) => c.can_join) : [];
+  const rest        = isAllTab ? filtered.filter((c) => !c.can_join) : filtered;
 
   return (
     <div className="flex flex-col h-full">
