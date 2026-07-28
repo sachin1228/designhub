@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
+import { invalidateCommunitiesList } from "@/lib/communities/cache";
 
 type Privacy = "public" | "private";
 type CommunityTab = "chat" | "threads" | "events" | "resources";
@@ -158,6 +159,9 @@ export function CreateCommunityModal({ open, onClose, onCreated }: CreateCommuni
         return;
       }
       setCreated(data.community);
+      // Immediately bust the sidebar cache so the new community appears
+      // whether or not the user clicks "Open Community".
+      invalidateCommunitiesList();
     } catch {
       setError("Network error. Please try again.");
     } finally {
