@@ -433,6 +433,15 @@ export function ProfileThreads({
                           ),
                         )
                       }
+                      onSaveChanged={(eventId, saved, count) =>
+                        setSavedItems((current) =>
+                          current.map((i) =>
+                            i.type === "event" && i.data.id === eventId
+                              ? { ...i, data: { ...i.data, user_saved: saved, save_count: count } }
+                              : i,
+                          ),
+                        )
+                      }
                     />
                   );
                 }
