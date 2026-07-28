@@ -27,6 +27,9 @@ export interface Community {
   description?: string | null;
   reference_name?: string | null;
   created_at?: string;
+  is_private?: boolean;
+  enabled_tabs?: string[];
+  owner_id?: string | null;
 }
 
 export interface Member {

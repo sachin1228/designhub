@@ -346,7 +346,7 @@ export async function POST(request: Request) {
     const moderation = await validateAndModerateImage(file);
     await logModerationDecision(db, {
       userId,
-      contentType: "community_image",
+      contentType: "image_upload",
       decision: moderation.decision,
     });
     if (!moderation.decision.allowed || !moderation.buffer) {
