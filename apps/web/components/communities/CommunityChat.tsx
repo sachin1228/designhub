@@ -16,6 +16,7 @@ import { EventsView } from "./events/EventsView";
 import { ResourcesView } from "./resources/ResourcesView";
 import { MembersView } from "./members/MembersView";
 import { CommunitySettingsView } from "./CommunitySettingsView";
+import { Modal } from "@/components/ui/Modal";
 import { useChatData } from "./chat/useChatData";
 import { useScrollAndUnread } from "./chat/useScrollAndUnread";
 import { useRealtimeChat } from "./chat/useRealtimeChat";
@@ -549,22 +550,32 @@ export function CommunityChat({
           onSettingsClick={isOwner ? () => setShowSettings(true) : undefined}
         />
 
-        {showSettings && displayCommunity ? (
-          <CommunitySettingsView
-            communityId={communityId}
-            community={displayCommunity as any}
-            onClose={() => setShowSettings(false)}
-            onSaved={(updated) => {
-              setCommunity((prev) => prev ? { ...prev, ...updated } : prev);
-            }}
-            onDeleted={() => {
-              import("@/lib/communities/cache").then(({ invalidateOnLeave }) => {
-                invalidateOnLeave(communityId);
-              });
-              router.push("/dashboard");
-            }}
-          />
-        ) : renderedTab === "threads" ? (
+        <Modal
+          open={showSettings && !!displayCommunity}
+          onClose={() => setShowSettings(false)}
+          maxWidth="max-w-2xl"
+          panelClassName="p-0 flex flex-col overflow-hidden"
+          hideCloseButton
+        >
+          {displayCommunity && (
+            <CommunitySettingsView
+              communityId={communityId}
+              community={displayCommunity as any}
+              onClose={() => setShowSettings(false)}
+              onSaved={(updated) => {
+                setCommunity((prev) => prev ? { ...prev, ...updated } : prev);
+                setShowSettings(false);
+              }}
+              onDeleted={() => {
+                import("@/lib/communities/cache").then(({ invalidateOnLeave }) => {
+                  invalidateOnLeave(communityId);
+                });
+                router.push("/dashboard");
+              }}
+            />
+          )}
+        </Modal>
+        {renderedTab === "threads" ? (
           <ThreadsView communityId={communityId} currentUserId={currentUserId} />
         ) : renderedTab === "events" ? (
           <EventsView communityId={communityId} currentUserId={currentUserId} />

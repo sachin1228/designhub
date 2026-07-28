@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  ArrowLeft,
   BookOpen,
   Calendar,
   Check,
@@ -197,35 +196,35 @@ export function CommunitySettingsView({
   }, [addingRule]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex flex-col overflow-hidden" style={{ maxHeight: "calc(100vh - 4rem)" }}>
       {/* Header */}
       <div className="px-5 pt-4 pb-3 border-b border-border shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div>
+            <h2 className="font-display text-base font-semibold text-foreground leading-none">
+              Community Settings
+            </h2>
+            <p className="font-body text-[11px] text-foreground-muted mt-0.5">{community.name}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !name.trim()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 font-body text-xs font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+              Save changes
+            </button>
             <button
               type="button"
               onClick={onClose}
               className="h-8 w-8 flex items-center justify-center rounded-lg border border-border text-foreground-muted hover:text-foreground hover:bg-surface-raised transition-colors"
-              aria-label="Back to community"
+              aria-label="Close settings"
             >
-              <ArrowLeft size={15} />
+              <X size={15} />
             </button>
-            <div>
-              <h2 className="font-display text-base font-semibold text-foreground leading-none">
-                Community Settings
-              </h2>
-              <p className="font-body text-[11px] text-foreground-muted mt-0.5">{community.name}</p>
-            </div>
           </div>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || !name.trim()}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 font-body text-xs font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-            Save changes
-          </button>
         </div>
         {saveMsg && (
           <p className={`mt-2 font-body text-xs ${saveMsg === "Settings saved." ? "text-green-400" : "text-red-400"}`}>
