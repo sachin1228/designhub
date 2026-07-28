@@ -53,6 +53,8 @@ export interface CachedMeta {
     enabled_tabs?: string[];
     owner_id?: string | null;
     invite_token?: string | null;
+    description?: string | null;
+    created_at?: string;
   };
   members: {
     user_id: string;
