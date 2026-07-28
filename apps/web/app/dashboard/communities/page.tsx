@@ -70,7 +70,7 @@ function CommunityCard({
         c.joined
           ? "border-white/[0.1] hover:border-white/[0.18] cursor-pointer"
           : locked
-          ? "border-white/[0.06] cursor-not-allowed"
+          ? "border-white/[0.06]"
           : "border-white/[0.08] hover:border-white/[0.15] cursor-default"
       }`}
     >
@@ -117,7 +117,7 @@ function CommunityCard({
             <div className="relative group/lock">
               <button
                 disabled
-                className="flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 font-body text-xs font-medium text-foreground-muted/60 cursor-not-allowed"
+                className="flex items-center cursor-pointer gap-1 rounded-full border border-white/[0.06] px-3 py-1 font-body text-xs font-medium text-foreground-muted/60"
               >
                 <Lock size={10} />
                 Join
