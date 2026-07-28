@@ -43,7 +43,7 @@ export async function GET(
       .maybeSingle(),
     db
       .from("communities")
-      .select("id, name, type, image_url, description, reference_id, created_at")
+      .select("id, name, type, image_url, description, reference_id, created_at, is_private, enabled_tabs, owner_id")
       .eq("id", id)
       .eq("is_active", true)
       .maybeSingle(),

@@ -49,6 +49,8 @@ export interface CachedMeta {
     type: string;
     member_count: number;
     image_url: string | null;
+    is_private?: boolean;
+    enabled_tabs?: string[];
   };
   members: {
     user_id: string;
@@ -75,9 +77,11 @@ export interface SidebarLastReaction {
 export interface CachedSidebarCommunity {
   id: string;
   name: string;
-  type: "city" | "sector" | "interest" | "company" | "experience_level";
+  type: "city" | "sector" | "interest" | "company" | "experience_level" | "general" | "user";
   image_url: string | null;
   reference_name?: string | null;
+  is_private?: boolean;
+  enabled_tabs?: string[];
   member_count: number;
   message_count: number;
   /** Hidden by this user until a new message arrives. */
@@ -115,8 +119,9 @@ export const SIDEBAR_STALE_MS = 60_000;
 export interface CachedExploreCommunity {
   id: string;
   name: string;
-  type: "city" | "sector" | "interest" | "company" | "experience_level";
+  type: "city" | "sector" | "interest" | "company" | "experience_level" | "general" | "user";
   image_url: string | null;
+  is_private?: boolean;
   member_count: number;
   joined: boolean;
 }
@@ -164,6 +169,14 @@ export function invalidateOnJoin(communityId: string): void {
   }
   sidebarStore.data     = null;
   sidebarStore.inflight = null;
+}
+
+export function invalidateCommunitiesList(): void {
+  sidebarStore.data     = null;
+  sidebarStore.inflight = null;
+  exploreStore.data     = null;
+  exploreStore.inflight = null;
+  notifySidebarChanged();
 }
 
 export function invalidateOnLeave(communityId: string): void {

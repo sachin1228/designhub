@@ -507,8 +507,21 @@ export function CommunityChat({
     ? sidebarStore.data?.communities.find((c) => c.id === communityId)
     : undefined;
   const displayCommunity = community ?? (sidebarEntry
-    ? { id: communityId, name: sidebarEntry.name, type: sidebarEntry.type, member_count: sidebarEntry.member_count, image_url: sidebarEntry.image_url }
+    ? {
+        id: communityId,
+        name: sidebarEntry.name,
+        type: sidebarEntry.type,
+        member_count: sidebarEntry.member_count,
+        image_url: sidebarEntry.image_url,
+        is_private: sidebarEntry.is_private,
+        enabled_tabs: sidebarEntry.enabled_tabs,
+      }
     : null);
+
+  const renderedTab: ChatTab = displayCommunity &&
+    !new Set([...(displayCommunity.enabled_tabs ?? ["chat", "threads", "events", "resources"]), "members"]).has(activeTab)
+      ? "chat"
+      : activeTab;
 
   if (!loading && !displayCommunity) {
     return (
@@ -523,18 +536,18 @@ export function CommunityChat({
       <div className="flex-1 flex flex-col overflow-hidden">
         <ChatHeader
           community={displayCommunity}
-          activeTab={activeTab}
+          activeTab={renderedTab}
           onTabChange={handleTabChange}
           onlineCount={onlineCount}
         />
 
-        {activeTab === "threads" ? (
+        {renderedTab === "threads" ? (
           <ThreadsView communityId={communityId} currentUserId={currentUserId} />
-        ) : activeTab === "events" ? (
+        ) : renderedTab === "events" ? (
           <EventsView communityId={communityId} currentUserId={currentUserId} />
-        ) : activeTab === "resources" ? (
+        ) : renderedTab === "resources" ? (
           <ResourcesView communityId={communityId} currentUserId={currentUserId} />
-        ) : activeTab === "members" ? (
+        ) : renderedTab === "members" ? (
           <MembersView communityId={communityId} />
         ) : (
           <div className="flex-1 flex overflow-hidden">
