@@ -68,10 +68,10 @@ function CommunityCard({
       onClick={handleCardClick}
       className={`group flex flex-col gap-2 rounded-xl border bg-surface-raised p-3 transition-colors ${
         c.joined
-          ? "border-border hover:border-border-strong cursor-pointer"
+          ? "border-white/[0.1] hover:border-white/[0.18] cursor-pointer"
           : locked
-          ? "border-border/60 cursor-not-allowed"
-          : "border-border hover:border-border-strong cursor-default"
+          ? "border-white/[0.06] cursor-not-allowed"
+          : "border-white/[0.08] hover:border-white/[0.15] cursor-default"
       }`}
     >
       {/* ── Header row: avatar · name/count · action ── */}
