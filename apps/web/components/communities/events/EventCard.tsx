@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, Calendar, Flag, MapPin, MoreHorizontal, Pencil, Trash2, Video } from "lucide-react";
+import { Bookmark, Calendar, Flag, MapPin, MoreHorizontal, Pencil, Trash2, Video } from "lucide-react";
 import type { CommunityEvent } from "./types";
 import { EditEventModal } from "./EditEventModal";
 
@@ -233,17 +233,14 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
                   <button
                     type="button"
                     onClick={handleSave}
-                    disabled={savePending}
                     aria-label={event.user_saved ? "Unsave event" : "Save event"}
-                    className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors disabled:opacity-50 ${
+                    className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors ${
                       event.user_saved
-                        ? "border-accent/50 bg-accent/10 text-accent hover:bg-accent/20"
+                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
                         : "border-border text-foreground-subtle hover:bg-surface-raised hover:text-foreground"
                     }`}
                   >
-                    {event.user_saved
-                      ? <BookmarkCheck size={13} />
-                      : <Bookmark size={13} />}
+                    <Bookmark size={13} fill={event.user_saved ? "currentColor" : "none"} />
                   </button>
 
                   {/* Options menu — visible to all users */}
