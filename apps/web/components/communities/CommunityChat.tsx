@@ -598,7 +598,7 @@ export function CommunityChat({
             isPrivate={displayCommunity?.is_private ?? false}
           />
         ) : (
-          <div className="flex-1 flex overflow-hidden relative z-10">
+          <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-hidden relative">
           {/* Scrollable message area — full height, padded at bottom so messages
               don't hide behind the floating input bar.                           */}
