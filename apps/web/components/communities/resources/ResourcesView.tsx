@@ -8,6 +8,10 @@ import { RESOURCE_TYPES } from "./types";
 import { CreateResourceModal } from "./CreateResourceModal";
 import { ResourceCard } from "./ResourceCard";
 
+// ── Module-level cache ────────────────────────────────────────────────────────
+const resourcesCache = new Map<string, { data: CommunityResource[]; fetchedAt: number }>();
+const RESOURCES_STALE_MS = 60_000;
+
 type FilterType = "all" | CommunityResource["resource_type"];
 
 export function ResourcesView({
@@ -17,8 +21,9 @@ export function ResourcesView({
   communityId: string;
   currentUserId: string;
 }) {
-  const [resources, setResources] = useState<CommunityResource[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = resourcesCache.get(communityId);
+  const [resources, setResources] = useState<CommunityResource[]>(() => cached?.data ?? []);
+  const [loading, setLoading] = useState(() => !cached);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
@@ -29,7 +34,9 @@ export function ResourcesView({
       const res = await fetch(`/api/communities/${communityId}/resources`, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to load resources.");
-      setResources(data.resources as CommunityResource[]);
+      const fresh = data.resources as CommunityResource[];
+      setResources(fresh);
+      resourcesCache.set(communityId, { data: fresh, fetchedAt: Date.now() });
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load resources.");
@@ -39,7 +46,9 @@ export function ResourcesView({
   }, [communityId]);
 
   useEffect(() => {
-    void fetchResources();
+    const hit = resourcesCache.get(communityId);
+    const isStale = !hit || Date.now() - hit.fetchedAt > RESOURCES_STALE_MS;
+    void fetchResources(!isStale);
     let supabase: ReturnType<typeof createBrowserClient>;
     try { supabase = createBrowserClient(); } catch { return; }
 
@@ -87,28 +96,32 @@ export function ResourcesView({
     };
   }, [communityId, currentUserId, fetchResources]);
 
+  function writeCache(updater: (prev: CommunityResource[]) => CommunityResource[]) {
+    setResources((prev) => {
+      const next = updater(prev);
+      resourcesCache.set(communityId, { data: next, fetchedAt: resourcesCache.get(communityId)?.fetchedAt ?? Date.now() });
+      return next;
+    });
+  }
+
   function handleCreated(resource: CommunityResource) {
-    setResources((prev) => [resource, ...prev.filter((r) => r.id !== resource.id)]);
+    writeCache((prev) => [resource, ...prev.filter((r) => r.id !== resource.id)]);
   }
 
   function handleUpdated(updated: CommunityResource) {
-    setResources((prev) => prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+    writeCache((prev) => prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
   }
 
   function handleSaveChanged(resourceId: string, saved: boolean, newCount: number) {
-    setResources((prev) =>
-      prev.map((r) => r.id === resourceId ? { ...r, user_saved: saved, save_count: newCount } : r),
-    );
+    writeCache((prev) => prev.map((r) => r.id === resourceId ? { ...r, user_saved: saved, save_count: newCount } : r));
   }
 
   function handleBookmarkChanged(resourceId: string, bookmarked: boolean, newCount: number) {
-    setResources((prev) =>
-      prev.map((r) => r.id === resourceId ? { ...r, user_bookmarked: bookmarked, bookmark_count: newCount } : r),
-    );
+    writeCache((prev) => prev.map((r) => r.id === resourceId ? { ...r, user_bookmarked: bookmarked, bookmark_count: newCount } : r));
   }
 
   function handleDeleted(resourceId: string) {
-    setResources((prev) => prev.filter((r) => r.id !== resourceId));
+    writeCache((prev) => prev.filter((r) => r.id !== resourceId));
   }
 
   // Derive which type filters have results
