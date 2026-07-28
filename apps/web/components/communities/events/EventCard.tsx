@@ -236,8 +236,8 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
                     aria-label={event.user_saved ? "Unsave event" : "Save event"}
                     className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors ${
                       event.user_saved
-                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
-                        : "border-border text-foreground-subtle hover:bg-surface-raised hover:text-foreground"
+                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-500"
+                        : "border-border text-foreground-subtle"
                     }`}
                   >
                     <Bookmark size={13} fill={event.user_saved ? "currentColor" : "none"} />

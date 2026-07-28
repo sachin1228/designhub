@@ -321,7 +321,7 @@ export function ResourceCard({
                 size={16}
                 fill={resource.user_bookmarked ? "currentColor" : "none"}
                 strokeWidth={1.75}
-                className={`transition-colors ${resource.user_bookmarked ? "text-emerald-500" : "text-foreground-subtle hover:text-emerald-500"}`}
+                className={`transition-colors ${resource.user_bookmarked ? "text-emerald-500" : "text-foreground-subtle"}`}
               />
               <span className={`font-body text-xs font-semibold tabular-nums ${resource.user_bookmarked ? "text-emerald-500" : "text-foreground-muted"}`}>
                 {resource.bookmark_count}

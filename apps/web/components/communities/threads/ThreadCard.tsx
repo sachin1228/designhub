@@ -394,7 +394,7 @@ export function ThreadCard({
               className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
                 thread.user_saved
                   ? "text-emerald-500"
-                  : "text-foreground-subtle hover:text-foreground"
+                  : "text-foreground-subtle"
               }`}
             >
               <Bookmark size={14} fill={thread.user_saved ? "currentColor" : "none"} />
