@@ -15,7 +15,7 @@ export async function GET() {
     { data: communities, error },
     { data: profile },
   ] = await Promise.all([
-    db.from("communities").select("id, name, type, image_url, reference_id").eq("is_active", true).order("name"),
+    db.from("communities").select("id, name, type, image_url, description, reference_id").eq("is_active", true).order("name"),
     db.from("designer_profiles").select("city_id, sector_id, company_id, experience_level").eq("user_id", userId).maybeSingle(),
   ]);
 
@@ -102,6 +102,7 @@ export async function GET() {
       name:         c.name,
       type:         c.type,
       image_url:    masterImageMap[c.id] ?? c.image_url ?? null,
+      description:  (c as unknown as { description?: string | null }).description ?? null,
       member_count: countMap[c.id] ?? 0,
       joined:       joinedIds.has(c.id),
       can_join:     computeCanJoin(c.type, c.reference_id),

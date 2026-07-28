@@ -122,12 +122,20 @@ function CommunityCard({
       </p>
 
       {/* Member count */}
-      <div className="flex items-center gap-1 mb-4">
+      <div className="flex items-center gap-1 mb-2">
         <Users size={10} className="text-foreground-muted" />
         <span className="font-body text-[11px] text-foreground-muted">
           {c.member_count} member{c.member_count !== 1 ? "s" : ""}
         </span>
       </div>
+
+      {/* Description */}
+      {c.description && (
+        <p className="font-body text-[11px] leading-relaxed text-foreground-subtle line-clamp-2 mb-4">
+          {c.description}
+        </p>
+      )}
+      {!c.description && <div className="mb-4" />}
 
       {/* Action — stops card-level click propagation */}
       <div className="mt-auto" onClick={(e) => e.stopPropagation()}>

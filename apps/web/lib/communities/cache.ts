@@ -117,6 +117,7 @@ export interface CachedExploreCommunity {
   name: string;
   type: "city" | "sector" | "interest" | "company" | "experience_level" | "general" | "user";
   image_url: string | null;
+  description: string | null;
   member_count: number;
   joined: boolean;
   /** Whether the current user is allowed to join this community based on their profile. */
