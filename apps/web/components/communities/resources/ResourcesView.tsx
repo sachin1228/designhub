@@ -141,9 +141,9 @@ export function ResourcesView({
           <button
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 font-body text-sm font-medium text-accent-foreground hover:bg-accent-hover"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 font-body text-xs font-medium text-accent-foreground hover:bg-accent-hover"
           >
-            <Plus size={16} /> Share Resource
+            <Plus size={14} /> Share Resource
           </button>
         </div>
 
