@@ -15,6 +15,7 @@ import { ThreadsView } from "./threads/ThreadsView";
 import { EventsView } from "./events/EventsView";
 import { ResourcesView } from "./resources/ResourcesView";
 import { MembersView } from "./members/MembersView";
+import { CommunitySettingsView } from "./CommunitySettingsView";
 import { useChatData } from "./chat/useChatData";
 import { useScrollAndUnread } from "./chat/useScrollAndUnread";
 import { useRealtimeChat } from "./chat/useRealtimeChat";
@@ -51,6 +52,7 @@ export function CommunityChat({
   const pathname = usePathname();
   const [hasMounted, setHasMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>(initialTab);
+  const [showSettings, setShowSettings] = useState(false);
   const [threadEvents, setThreadEvents] = useState<CachedThreadEvent[]>([]);
   /** True once the initial threads fetch for the current community has settled. */
   const [threadsReady, setThreadsReady] = useState(false);
@@ -208,6 +210,7 @@ export function CommunityChat({
   // ── Data fetching + message state ─────────────────────────────────────────
   const {
     community,
+    setCommunity,
     members,
     messages,
     loading,
@@ -523,6 +526,8 @@ export function CommunityChat({
       ? "chat"
       : activeTab;
 
+  const isOwner = !!(displayCommunity?.owner_id && displayCommunity.owner_id === currentUserId);
+
   if (!loading && !displayCommunity) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -537,18 +542,39 @@ export function CommunityChat({
         <ChatHeader
           community={displayCommunity}
           activeTab={renderedTab}
-          onTabChange={handleTabChange}
+          onTabChange={(tab) => { setShowSettings(false); handleTabChange(tab); }}
           onlineCount={onlineCount}
+          currentUserId={currentUserId}
+          onSettingsClick={isOwner ? () => setShowSettings(true) : undefined}
         />
 
-        {renderedTab === "threads" ? (
+        {showSettings && displayCommunity ? (
+          <CommunitySettingsView
+            communityId={communityId}
+            community={displayCommunity as any}
+            onClose={() => setShowSettings(false)}
+            onSaved={(updated) => {
+              setCommunity((prev) => prev ? { ...prev, ...updated } : prev);
+            }}
+            onDeleted={() => {
+              import("@/lib/communities/cache").then(({ invalidateOnLeave }) => {
+                invalidateOnLeave(communityId);
+              });
+              router.push("/dashboard");
+            }}
+          />
+        ) : renderedTab === "threads" ? (
           <ThreadsView communityId={communityId} currentUserId={currentUserId} />
         ) : renderedTab === "events" ? (
           <EventsView communityId={communityId} currentUserId={currentUserId} />
         ) : renderedTab === "resources" ? (
           <ResourcesView communityId={communityId} currentUserId={currentUserId} />
         ) : renderedTab === "members" ? (
-          <MembersView communityId={communityId} />
+          <MembersView
+            communityId={communityId}
+            isOwner={isOwner}
+            isPrivate={displayCommunity?.is_private ?? false}
+          />
         ) : (
           <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-hidden relative">

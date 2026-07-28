@@ -51,9 +51,12 @@ export interface CachedMeta {
     image_url: string | null;
     is_private?: boolean;
     enabled_tabs?: string[];
+    owner_id?: string | null;
+    invite_token?: string | null;
   };
   members: {
     user_id: string;
+    role?: string;
     users: { name: string; avatar_url: string | null; designation?: string | null; company?: string | null } | null;
   }[];
   fetchedAt: number;

@@ -278,6 +278,7 @@ export function useChatData({
 
   return {
     community,
+    setCommunity,
     members,
     messages,
     loading,
