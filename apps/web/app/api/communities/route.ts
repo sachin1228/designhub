@@ -67,7 +67,7 @@ export async function GET() {
     { data: allMembers },
     { data: recentMessages },
   ] = await Promise.all([
-    db.from("communities").select("id, name, type, image_url, reference_id, is_private, enabled_tabs, owner_id").in("id", ids).eq("is_active", true),
+    db.from("communities").select("id, name, type, image_url, reference_id, is_private, enabled_tabs, owner_id, created_at").in("id", ids).eq("is_active", true),
     // Single query for all member counts (replaces N individual count queries)
     db.from("community_members").select("community_id").in("community_id", ids),
     // Fetch the latest messages across all communities.

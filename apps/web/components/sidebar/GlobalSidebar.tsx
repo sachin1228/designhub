@@ -40,6 +40,11 @@ export function GlobalSidebar({ userId }: Props) {
     const tb = b.last_message?.created_at ?? "";
     if (tb > ta) return 1;
     if (ta > tb) return -1;
+    // No messages on either — newest community first, then alphabetical
+    const ca = a.created_at ?? "";
+    const cb = b.created_at ?? "";
+    if (cb > ca) return 1;
+    if (ca > cb) return -1;
     return a.name.localeCompare(b.name);
   });
 
