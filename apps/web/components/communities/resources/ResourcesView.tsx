@@ -131,7 +131,7 @@ export function ResourcesView({
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="mx-auto w-full max-w-4xl px-6 py-6">
-        <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 className="font-display text-xl font-semibold text-foreground">Resources</h2>
             <p className="mt-1 font-body text-sm text-foreground-muted">
