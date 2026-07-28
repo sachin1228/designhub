@@ -89,18 +89,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       }
     }, [linkPreviewUrl, dismissedUrl]);
 
-    // Close picker when clicking outside both the anchor and the portal
-    useEffect(() => {
-      if (!pickerOpen) return;
-      const handler = (e: MouseEvent) => {
-        const target = e.target as Node;
-        const insideAnchor = anchorRef.current?.contains(target);
-        const insidePortal = portalPickerRef.current?.contains(target);
-        if (!insideAnchor && !insidePortal) closePicker();
-      };
-      document.addEventListener("mousedown", handler);
-      return () => document.removeEventListener("mousedown", handler);
-    }, [pickerOpen, closePicker]);
+    // (click-outside is handled by the backdrop rendered in the portal)
 
     // Close picker on Escape
     useEffect(() => {
@@ -295,22 +284,30 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
         {/* Portal picker — rendered at document.body to escape all stacking contexts */}
         {pickerOpen && pickerPos && typeof document !== "undefined" &&
           createPortal(
-            <div
-              ref={portalPickerRef}
-              className="animate-in fade-in slide-in-from-bottom-2 duration-150"
-              style={{
-                position:  "fixed",
-                bottom:    pickerPos.bottom,
-                left:      pickerPos.left,
-                width:     pickerPos.width,
-                zIndex:    9999,
-              }}
-            >
-              <EmojiGifPicker
-                onEmojiSelect={handleEmojiSelect}
-                onGifSelect={handleGifSelect}
+            <>
+              {/* Invisible backdrop — closes the picker on any outside click.
+                  Sits at z-9998, below the picker (z-9999), above everything else. */}
+              <div
+                style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+                onMouseDown={closePicker}
               />
-            </div>,
+              <div
+                ref={portalPickerRef}
+                className="animate-in fade-in slide-in-from-bottom-2 duration-150"
+                style={{
+                  position:  "fixed",
+                  bottom:    pickerPos.bottom,
+                  left:      pickerPos.left,
+                  width:     pickerPos.width,
+                  zIndex:    9999,
+                }}
+              >
+                <EmojiGifPicker
+                  onEmojiSelect={handleEmojiSelect}
+                  onGifSelect={handleGifSelect}
+                />
+              </div>
+            </>,
             document.body
           )
         }
