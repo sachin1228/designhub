@@ -59,6 +59,7 @@ const TABS = [
   { label: "Interest",   value: "interest"          },
   { label: "Experience", value: "experience_level"  },
   { label: "City",       value: "city"              },
+  { label: "Member-led", value: "user"              },
 ] as const;
 
 type TabValue = typeof TABS[number]["value"];
