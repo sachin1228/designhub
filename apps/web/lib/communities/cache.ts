@@ -115,10 +115,12 @@ export const SIDEBAR_STALE_MS = 60_000;
 export interface CachedExploreCommunity {
   id: string;
   name: string;
-  type: "city" | "sector" | "interest" | "company" | "experience_level";
+  type: "city" | "sector" | "interest" | "company" | "experience_level" | "general" | "user";
   image_url: string | null;
   member_count: number;
   joined: boolean;
+  /** Whether the current user is allowed to join this community based on their profile. */
+  can_join: boolean;
 }
 
 export const exploreStore: {
