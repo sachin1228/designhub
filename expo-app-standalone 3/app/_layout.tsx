@@ -11,7 +11,7 @@ import {
   Inter_700Bold,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { Redirect, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 
@@ -24,17 +24,21 @@ function RootLayoutNav() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    // Keep the splash screen up while we check the session
+    // Keep splash up while checking session
     return null;
   }
 
   return (
-    <Stack screenOptions={{ headerBackTitle: 'Back' }}>
+    <Stack>
       {user ? (
-        // Authenticated — show tabs
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="community/[id]"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+        </>
       ) : (
-        // Not authenticated — show auth screens
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       )}
       <Stack.Screen name="+not-found" />
