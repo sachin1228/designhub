@@ -13,38 +13,11 @@ import {
 } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
-
-function RootLayoutNav() {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    // Keep splash up while checking session
-    return null;
-  }
-
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      {user ? (
-        <>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="community/[id]"
-            options={{ animation: 'slide_from_right' }}
-          />
-        </>
-      ) : (
-        <Stack.Screen name="(auth)" />
-      )}
-      <Stack.Screen name="+not-found" />
-    </Stack>
-  );
-}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -69,7 +42,16 @@ export default function RootLayout() {
           <GestureHandlerRootView>
             <KeyboardProvider>
               <AuthProvider>
-                <RootLayoutNav />
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="(auth)" />
+                  <Stack.Screen
+                    name="community/[id]"
+                    options={{ animation: 'slide_from_right' }}
+                  />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
