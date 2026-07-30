@@ -1,0 +1,119 @@
+Set up a clean Expo React Native application inside this repository using npm workspaces.
+
+The mobile app will live inside:
+
+apps/mobile
+
+This mobile app will eventually become the mobile version of DraftHub while sharing the same backend APIs and database as the existing web application.
+
+Important Requirements
+Use npm, not pnpm.
+Do not add any Replit-specific files or configuration.
+Do not add Replit deployment files.
+Do not add Replit environment files.
+Do not add Cloudflare/Replit/Vercel-specific hacks.
+I will develop and run everything locally.
+I will test the app using Expo Go on my phone.
+Follow the official Expo documentation and best practices.
+Keep the project clean, maintainable, and production-ready.
+Repository Structure
+
+Keep the existing web application unchanged.
+
+Create:
+
+apps/
+    web/
+    mobile/
+
+packages/
+
+Use npm workspaces for both applications.
+
+Mobile App Setup
+
+Create a brand-new Expo project using the latest stable Expo SDK compatible with React Native.
+
+Configure:
+
+Expo Router
+TypeScript
+React Native
+Metro
+Babel
+
+Only use official Expo configuration.
+
+Avoid custom Metro or Babel workarounds unless absolutely required.
+
+Authentication
+
+The mobile app should use the same authentication flow as the web application.
+
+Reuse the existing API and Supabase backend.
+
+Do not create another backend.
+
+Phase 1 Scope (Only)
+
+For now, implement only the following:
+
+Login Screen
+
+Create a clean login screen.
+
+It should contain:
+
+DraftHub logo/title
+Email field
+Password field
+Login button
+
+Use the existing authentication API.
+
+No signup screen.
+
+No forgot password.
+
+No onboarding.
+
+No profile.
+
+No settings.
+
+No sidebar.
+
+No navigation besides authentication.
+
+After Login
+
+If login succeeds,
+
+navigate to a single screen that contains nothing except a blank white screen (or a simple "Home" placeholder).
+
+Do not build anything else.
+
+No feed.
+
+No communities.
+
+No chat.
+
+No notifications.
+
+No profile.
+
+No additional UI.
+
+The goal is only to verify that authentication works correctly.
+
+Deliverables
+
+When finished, provide:
+
+Summary of all changes
+Files created
+Files modified
+Commands required to run locally
+
+The final result should allow me to run the mobile app locally using Expo Go and successfully log in, after which I should see only a blank screen.
