@@ -1,47 +1,87 @@
 /**
- * Semantic design tokens.
- *
- * Replace values below to match your brand. Add a `dark` key with the same
- * token names to enable automatic dark-mode switching via useColors().
+ * Semantic design tokens — mirrored from the web app's design system.
+ * Source: apps/web/app/globals.css + packages/design-system/src/tokens/colors.ts
  */
 
 const colors = {
   light: {
-    // Legacy aliases
-    text: '#0a0a0a',
-    tint: '#2f95dc',
+    // Legacy alias
+    text: '#0A0A0A',
+    tint: '#0070F3',
 
     // Core surfaces
-    background: '#ffffff',
-    foreground: '#0a0a0a',
+    background: '#FAFAFA',
+    foreground: '#0A0A0A',
 
     // Cards / elevated surfaces
-    card: '#f9f9f9',
-    cardForeground: '#0a0a0a',
+    card: '#FFFFFF',
+    cardForeground: '#0A0A0A',
 
-    // Primary action color (buttons, links, active states)
-    primary: '#2f95dc',
-    primaryForeground: '#ffffff',
+    // Primary action color — buttons, links, active states
+    primary: '#0070F3',
+    primaryForeground: '#FFFFFF',
+    primaryHover: '#0060D1',
+    primarySoft: '#f0f8ff',
 
-    // Secondary / less-emphasis interactive surfaces
-    secondary: '#f0f0f0',
-    secondaryForeground: '#1a1a1a',
+    // Secondary / less-emphasis surfaces
+    secondary: '#F5F5F5',
+    secondaryForeground: '#0A0A0A',
 
-    // Muted / subdued elements (dividers, timestamps, placeholders)
-    muted: '#f0f0f0',
+    // Muted / subdued elements
+    muted: '#F5F5F5',
     mutedForeground: '#737373',
 
-    // Accent highlights (badges, selected items, focus rings)
-    accent: '#f0f0f0',
-    accentForeground: '#1a1a1a',
+    // Accent (same as primary in light mode)
+    accent: '#0070F3',
+    accentForeground: '#FFFFFF',
+    accentSoft: '#f0f8ff',
 
-    // Destructive actions (delete, error states)
+    // Destructive / error states
     destructive: '#ef4444',
-    destructiveForeground: '#ffffff',
+    destructiveForeground: '#FFFFFF',
 
     // Borders and input outlines
-    border: '#e5e5e5',
-    input: '#e5e5e5',
+    border: '#EAEAEA',
+    input: '#EAEAEA',
+
+    // Surface variants
+    surface: '#FFFFFF',
+    subtle: '#F5F5F5',
+  },
+
+  dark: {
+    text: '#EDEDED',
+    tint: '#52a8ff',
+
+    background: '#09090B',
+    foreground: '#EDEDED',
+
+    card: '#121214',
+    cardForeground: '#EDEDED',
+
+    primary: '#52a8ff',
+    primaryForeground: '#FFFFFF',
+    primaryHover: '#0070f3',
+    primarySoft: '#18243D',
+
+    secondary: '#1A1A1E',
+    secondaryForeground: '#EDEDED',
+
+    muted: '#1A1A1E',
+    mutedForeground: '#525252',
+
+    accent: '#52a8ff',
+    accentForeground: '#FFFFFF',
+    accentSoft: '#18243D',
+
+    destructive: '#ef4444',
+    destructiveForeground: '#FFFFFF',
+
+    border: '#202024',
+    input: '#151517',
+
+    surface: '#121214',
+    subtle: '#0E0E10',
   },
 
   // Border radius (px) applied to cards, buttons, inputs, and modals.
