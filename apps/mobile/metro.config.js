@@ -1,15 +1,16 @@
 const { getDefaultConfig } = require("expo/metro-config");
 const path = require("path");
 
-// Required for expo-router in a monorepo/workspace setup.
-// Without this, Metro can't resolve EXPO_ROUTER_APP_ROOT and bundling fails
-// with "First argument of `require.context` should be a string".
-process.env.EXPO_ROUTER_APP_ROOT = "app";
-
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
+
+// Expo Router needs this to locate the app directory in a monorepo/workspace.
+// Set it after getDefaultConfig so it isn't overwritten by Expo's own detection.
+if (!process.env.EXPO_ROUTER_APP_ROOT) {
+  process.env.EXPO_ROUTER_APP_ROOT = "app";
+}
 
 // Watch all files in the monorepo so shared packages resolve correctly.
 config.watchFolders = [monorepoRoot];
