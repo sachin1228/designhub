@@ -17,11 +17,13 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CommunitiesScreen() {
   const colors = useColors();
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { communities, isLoading, error, reload, markCommunityRead, getTypingLabel } =
     useCommunities();
@@ -55,7 +57,7 @@ export default function CommunitiesScreen() {
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.background, borderBottomColor: colors.border },
+          { backgroundColor: colors.background, borderBottomColor: colors.border, paddingTop: insets.top + 8 },
         ]}
       >
         <View>
