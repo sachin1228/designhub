@@ -16,7 +16,9 @@
     "ios": {
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "backgroundColor": "#09090B"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
