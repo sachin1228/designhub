@@ -1,0 +1,54 @@
+sachin@sachins-MacBook-Air-2 mobile % npx expo start --clear
+env: load .env
+env: export EXPO_PUBLIC_API_BASE_URL
+Starting project at /Users/sachin/Documents/GitHub/drafthub/apps/mobile
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+The following packages should be updated for best compatibility with the installed expo version:
+  react-native@0.76.5 - expected version: 0.76.9
+Your project may not work correctly until you install the expected versions of the packages.
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █▀▀ ██    █ ▄▄▄▄▄ █
+█ █   █ █▄▀██▀██  █ █   █ █
+█ █▄▄▄█ █ ▄ █ ▄▀ ██ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀▄█▄▀▄█▄▄▄▄▄▄▄█
+█  █ ▀█▄▄▀▀█   ▀██▀  ▄▀▄▄▀█
+█▀▄ ▄▄▄▄▀▄▀▀  ▀▄▀▄▄▀ ▀▀█▄▄█
+██▄█ █ ▄▄▄▀▄ ▄  █▀█ ▄█ ██▀█
+█▄▀█ ▄ ▄   ▀ █▀▀█ ▄▄ ▀▀██▄█
+█▄▄▄█▄▄▄▄  ▀▀██▄  ▄▄▄ █ ▄ █
+█ ▄▄▄▄▄ █▄▀█▀▄▄▄  █▄█  ▀  █
+█ █   █ █▀ ▀██▄▀▀▄ ▄▄ █▀▄██
+█ █▄▄▄█ █▀ ▀█▄  █  █▄  ▄█▄█
+█▄▄▄▄▄▄▄█▄████▄▄█▄███▄▄█▄▄█
+
+› Metro waiting on exp://192.168.142.239:8081
+› Scan the QR code above with Expo Go (Android) or the Camera app (iOS)
+
+› Web is waiting on http://localhost:8081
+
+› Using Expo Go
+› Press s │ switch to development build
+
+› Press a │ open Android
+› Press i │ open iOS simulator
+› Press w │ open web
+
+› Press j │ open debugger
+› Press r │ reload app
+› Press m │ toggle menu
+› shift+m │ more tools
+› Press o │ open project code in your editor
+
+› Press ? │ show all commands
+
+Logs for your project will appear below. Press Ctrl+C to exit.
+Recrawled this watch 9 times, most recently because:
+MustScanSubDirs UserDroppedTo resolve, please review the information on
+https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
+To clear this warning, run:
+`watchman watch-del '/Users/sachin/Documents/GitHub/drafthub' ; watchman watch-project '/Users/sachin/Documents/GitHub/drafthub'`
+
+Android Bundling failed 6644ms apps/mobile/node_modules/expo-router/entry.js (1575 modules)
+ ERROR  node_modules/expo-router/_ctx.android.js: node_modules/expo-router/_ctx.android.js:Invalid call at line 2: process.env.EXPO_ROUTER_APP_ROOT
+First argument of `require.context` should be a string denoting the directory to require.
