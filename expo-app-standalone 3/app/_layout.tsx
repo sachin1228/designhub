@@ -29,17 +29,17 @@ function RootLayoutNav() {
   }
 
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
       {user ? (
         <>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" />
           <Stack.Screen
             name="community/[id]"
-            options={{ headerShown: false, animation: 'slide_from_right' }}
+            options={{ animation: 'slide_from_right' }}
           />
         </>
       ) : (
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" />
       )}
       <Stack.Screen name="+not-found" />
     </Stack>

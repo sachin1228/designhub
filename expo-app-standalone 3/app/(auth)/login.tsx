@@ -41,7 +41,7 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
-      router.replace('/(tabs)');
+      // RootLayoutNav watches auth state — it will switch to (tabs) automatically
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Something went wrong.';
