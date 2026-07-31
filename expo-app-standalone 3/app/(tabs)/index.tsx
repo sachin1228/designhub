@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -26,6 +26,7 @@ export default function CommunitiesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const [avatarError, setAvatarError] = useState(false);
   const { communities, isLoading, error, reload, markCommunityRead, getTypingLabel } =
     useCommunities();
 
@@ -80,11 +81,15 @@ export default function CommunitiesScreen() {
             <Feather name="bell" size={22} color={colors.mutedForeground} />
           </Pressable>
 
-          {/* Profile avatar */}
-          {user?.avatar_url ? (
+          {/* Profile avatar — show real photo when available.
+               boring:// URLs are SVG-only (no network fetch) and can't be
+               loaded by RN's Image; fall back to initials for those and any
+               failed loads. */}
+          {user?.avatar_url && !user.avatar_url.startsWith('boring://') && !avatarError ? (
             <Image
               source={{ uri: user.avatar_url }}
               style={[styles.avatar, styles.avatarImg]}
+              onError={() => setAvatarError(true)}
             />
           ) : (
             <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
