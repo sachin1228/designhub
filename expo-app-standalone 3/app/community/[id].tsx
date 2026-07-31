@@ -39,6 +39,7 @@ export default function CommunityChat() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   // Track this as the active community so useCommunities won't increment
   // unread_count for incoming messages while we're looking at this chat.
@@ -179,8 +180,9 @@ export default function CommunityChat() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
 
-      {/* Header */}
+      {/* Header — measured so KAV can offset correctly */}
       <View
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
         style={[
           styles.header,
           {
@@ -226,8 +228,8 @@ export default function CommunityChat() {
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
+        behavior="padding"
+        keyboardVerticalOffset={headerHeight}
       >
         {isLoading && (
           <View style={styles.center}>
