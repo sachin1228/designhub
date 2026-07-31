@@ -243,8 +243,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist_400Regular',
     maxHeight: 120,
     lineHeight: 20,
-    paddingTop: 4,
-    paddingBottom: 4,
+    // Symmetric padding chosen so a single line (lineHeight: 20) centres inside
+    // the pillBtn height (34 px): (34 - 20) / 2 = 7.
+    // Combined with alignItems:'flex-end' on the pill and textAlignVertical:'top',
+    // the text is vertically centred in single-line state and grows upward naturally
+    // in multiline state — identical to WhatsApp / Telegram behaviour.
+    paddingTop: 7,
+    paddingBottom: 7,
     backgroundColor: 'transparent',
   },
 
