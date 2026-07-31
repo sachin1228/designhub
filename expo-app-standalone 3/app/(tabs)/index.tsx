@@ -33,7 +33,8 @@ export default function CommunitiesScreen() {
   const handleCommunityPress = useCallback(
     (community: Community) => {
       markCommunityRead(community.id);
-      router.push(`/community/${community.id}?name=${encodeURIComponent(community.name)}`);
+      const imageParam = community.image_url ? `&image=${encodeURIComponent(community.image_url)}` : '';
+      router.push(`/community/${community.id}?name=${encodeURIComponent(community.name)}${imageParam}`);
     },
     [router, markCommunityRead]
   );
