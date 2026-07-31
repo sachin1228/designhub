@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { Message, Reaction } from '@/lib/communities';
 
@@ -247,7 +248,7 @@ export function MessageBubble({
                 {formatTime(message.created_at)}
               </Text>
               {isOwn && (
-                <Text style={[styles.checkmark, { color: colors.mutedForeground }]}>✓✓</Text>
+                <Ionicons name="checkmark-done" size={13} color={colors.mutedForeground} />
               )}
             </View>
             <ReactionChips
@@ -304,7 +305,7 @@ export function MessageBubble({
                   {formatTime(message.created_at)}
                 </Text>
                 {isOwn && (
-                  <Text style={[styles.checkmark, { color: timeColor }]}>✓✓</Text>
+                  <Ionicons name="checkmark-done" size={13} color={timeColor} />
                 )}
               </View>
             </Pressable>
@@ -463,10 +464,6 @@ const styles = StyleSheet.create({
     marginLeft: 8, // small left offset to match web spacing
   },
   timeText: {
-    fontSize: 10,
-    fontFamily: 'Geist_400Regular',
-  },
-  checkmark: {
     fontSize: 10,
     fontFamily: 'Geist_400Regular',
   },
