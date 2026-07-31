@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
 import { Message } from '@/lib/communities';
@@ -28,6 +29,7 @@ interface Props {
 
 export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disabled }: Props) {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -65,7 +67,7 @@ export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disa
   const canSend = (!!text.trim() || !!pendingImage) && !disabled;
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {/* Reply banner */}
       {replyTo && (
         <View style={[styles.replyBanner, { backgroundColor: colors.subtle, borderLeftColor: colors.primary }]}>

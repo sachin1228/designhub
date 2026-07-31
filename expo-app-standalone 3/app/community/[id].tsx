@@ -226,7 +226,7 @@ export default function CommunityChat() {
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
         {isLoading && (
@@ -274,15 +274,13 @@ export default function CommunityChat() {
 
         <TypingIndicator label={typingLabel} />
 
-        <View style={{ paddingBottom: insets.bottom }}>
-          <ChatInput
-            replyTo={replyTo}
-            onCancelReply={() => setReplyTo(null)}
-            onSend={handleSend}
-            onTypingChange={onInputChange}
-            disabled={isSending}
-          />
-        </View>
+        <ChatInput
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+          onSend={handleSend}
+          onTypingChange={onInputChange}
+          disabled={isSending}
+        />
       </KeyboardAvoidingView>
 
       {/* Long-press action sheet */}
