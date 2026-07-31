@@ -6,6 +6,10 @@ import React, {
   useState,
 } from 'react';
 import { getMe, login as apiLogin, logout as apiLogout, User } from '@/lib/auth';
+import {
+  registerUnauthorizedHandler,
+  unregisterUnauthorizedHandler,
+} from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,6 +61,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     })();
+  }, []);
+
+  // Register a global handler so apiFetch can force-logout when the server
+  // returns 401 (session expired) or 403 (account blocked/deleted).
+  // This ensures the UI drops to the login screen immediately rather than
+  // staying stuck in a broken "logged in" state.
+  useEffect(() => {
+    registerUnauthorizedHandler(() => {
+      setUser(null);
+    });
+    return () => {
+      unregisterUnauthorizedHandler();
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

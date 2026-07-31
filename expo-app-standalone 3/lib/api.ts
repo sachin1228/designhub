@@ -19,6 +19,25 @@ export const API_BASE_URL =
   (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
 // ---------------------------------------------------------------------------
+// Global unauthorised handler
+// ---------------------------------------------------------------------------
+
+/**
+ * Register a callback that fires whenever apiFetch receives a 401 or 403.
+ * AuthContext uses this to immediately clear user state and redirect to login.
+ * Only one handler is active at a time — the latest registration wins.
+ */
+let _onUnauthorized: (() => void) | null = null;
+
+export function registerUnauthorizedHandler(fn: () => void): void {
+  _onUnauthorized = fn;
+}
+
+export function unregisterUnauthorizedHandler(): void {
+  _onUnauthorized = null;
+}
+
+// ---------------------------------------------------------------------------
 // Cookie helpers
 // ---------------------------------------------------------------------------
 
@@ -98,6 +117,15 @@ export async function apiFetch<T = unknown>(
     };
     error.status = response.status;
     error.data = data;
+
+    // Session is no longer valid — clear it and notify AuthContext so the UI
+    // immediately drops to the login screen rather than staying in a broken
+    // "logged in" state where every subsequent action also fails.
+    if (response.status === 401 || response.status === 403) {
+      await clearSession();
+      _onUnauthorized?.();
+    }
+
     throw error;
   }
 
