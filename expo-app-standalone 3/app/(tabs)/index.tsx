@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -80,17 +81,24 @@ export default function CommunitiesScreen() {
           </Pressable>
 
           {/* Profile avatar */}
-          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.avatarText, { color: colors.primaryForeground }]}>
-              {user?.name
-                ? user.name
-                    .split(' ')
-                    .slice(0, 2)
-                    .map((w: string) => w[0]?.toUpperCase() ?? '')
-                    .join('')
-                : '?'}
-            </Text>
-          </View>
+          {user?.avatar_url ? (
+            <Image
+              source={{ uri: user.avatar_url }}
+              style={[styles.avatar, styles.avatarImg]}
+            />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.avatarText, { color: colors.primaryForeground }]}>
+                {user?.name
+                  ? user.name
+                      .split(' ')
+                      .slice(0, 2)
+                      .map((w: string) => w[0]?.toUpperCase() ?? '')
+                      .join('')
+                  : '?'}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -186,6 +194,9 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarImg: {
+    resizeMode: 'cover',
   },
   avatarText: {
     fontSize: 13,
