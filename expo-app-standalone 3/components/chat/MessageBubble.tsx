@@ -24,6 +24,74 @@ interface Props {
 }
 
 // ---------------------------------------------------------------------------
+// Avatar URL resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Mirrors the web's AvatarImg logic for non-HTTP avatar_url values.
+ *
+ * The database stores avatars in three formats:
+ *   1. boring://{style}/{encodedSeed}  — internal scheme, rendered via the
+ *      boring-avatars npm package on web. Not a valid HTTP URL, so React
+ *      Native's <Image> fails silently and falls back to initials.
+ *   2. https://source.boringavatars.com/...  — legacy CDN URLs that the web
+ *      already converts to DiceBear for visual variety.
+ *   3. https://...  — real CDN/upload URLs that load fine everywhere.
+ *
+ * We convert cases 1 & 2 to a DiceBear PNG URL so React Native can load them.
+ */
+const DICEBEAR_STYLES = [
+  'bottts', 'fun-emoji', 'pixel-art', 'lorelei', 'micah',
+  'croodles', 'adventurer', 'notionists',
+] as const;
+
+function hashName(name: string): number {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function dicebearUrl(seed: string): string {
+  const style = DICEBEAR_STYLES[hashName(seed) % DICEBEAR_STYLES.length];
+  return `https://api.dicebear.com/9.x/${style}/png?seed=${encodeURIComponent(seed)}`;
+}
+
+/**
+ * Returns a loadable HTTPS URL for any stored avatar_url value, or null if
+ * the URL is absent. The name is used as a fallback seed when the URL does
+ * not embed one.
+ */
+function resolveAvatarUrl(url: string | null, name: string): string | null {
+  if (!url) return null;
+
+  // boring:// — internal scheme used by the boring-avatars npm package.
+  // Format: boring://{style}/{encodedSeed}
+  if (url.startsWith('boring://')) {
+    const rest = url.slice('boring://'.length);
+    const slashIdx = rest.indexOf('/');
+    const seed = slashIdx >= 0 ? decodeURIComponent(rest.slice(slashIdx + 1)) : name;
+    return dicebearUrl(seed || name);
+  }
+
+  // Legacy boringavatars.com CDN — all users got the same teal circle.
+  // Convert to DiceBear for visual variety (mirrors web behaviour).
+  if (url.startsWith('https://source.boringavatars.com/')) {
+    try {
+      const parsed = new URL(url);
+      const [, , , encodedSeed] = parsed.pathname.split('/');
+      const seed = encodedSeed ? decodeURIComponent(encodedSeed) : name;
+      return dicebearUrl(seed || name);
+    } catch {
+      // Malformed legacy URL — fall through and try as-is
+    }
+  }
+
+  return url;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -68,7 +136,9 @@ function Avatar({
     .map((w) => w[0]?.toUpperCase() ?? '')
     .join('');
 
-  const showImage = !!avatarUrl && !imageError;
+  // Resolve boring:// and legacy boringavatars.com URLs → loadable HTTPS URL
+  const resolvedUrl = resolveAvatarUrl(avatarUrl, name);
+  const showImage = !!resolvedUrl && !imageError;
 
   return (
     <View
@@ -79,7 +149,7 @@ function Avatar({
     >
       {showImage ? (
         <Image
-          source={{ uri: avatarUrl! }}
+          source={{ uri: resolvedUrl! }}
           style={styles.avatarImage}
           onError={() => setImageError(true)}
         />
