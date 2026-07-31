@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -9,18 +11,27 @@ import {
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
 import { Message } from '@/lib/communities';
+import * as ImagePicker from 'expo-image-picker';
+
+export interface PendingImage {
+  uri: string;
+  mimeType: string;
+}
 
 interface Props {
   replyTo: Message | null;
   onCancelReply: () => void;
-  onSend: (text: string) => void;
+  /** Called when the user taps Send. imageUri is set when an image is pending. */
+  onSend: (text: string, pendingImage?: PendingImage) => void;
   onTypingChange: (text: string) => void;
+  /** True while the parent is uploading / sending — disables the send button. */
   disabled?: boolean;
 }
 
 export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disabled }: Props) {
   const colors = useColors();
   const [text, setText] = useState('');
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   function handleChangeText(val: string) {
@@ -30,11 +41,34 @@ export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disa
 
   function handleSend() {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    onSend(trimmed);
+    if (!trimmed && !pendingImage) return;
+    onSend(trimmed, pendingImage ?? undefined);
     setText('');
+    setPendingImage(null);
     onTypingChange('');
   }
+
+  async function handlePickImage() {
+    // Request media library permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: false,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    const asset = result.assets[0];
+    setPendingImage({
+      uri: asset.uri,
+      mimeType: asset.mimeType ?? 'image/jpeg',
+    });
+  }
+
+  const canSend = (!!text.trim() || !!pendingImage) && !disabled;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
@@ -55,8 +89,42 @@ export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disa
         </View>
       )}
 
+      {/* Pending image preview strip */}
+      {pendingImage && (
+        <View style={[styles.imageBanner, { backgroundColor: colors.subtle, borderColor: colors.border }]}>
+          <Image
+            source={{ uri: pendingImage.uri }}
+            style={styles.imagePreview}
+            resizeMode="cover"
+          />
+          <Text style={[styles.imageReady, { color: colors.mutedForeground }]}>
+            Image ready to send
+          </Text>
+          <Pressable onPress={() => setPendingImage(null)} hitSlop={8}>
+            <Feather name="x" size={16} color={colors.mutedForeground} />
+          </Pressable>
+        </View>
+      )}
+
       {/* Input row */}
       <View style={styles.inputRow}>
+        {/* Image picker button */}
+        <Pressable
+          onPress={handlePickImage}
+          disabled={disabled}
+          hitSlop={4}
+          style={({ pressed }) => [
+            styles.iconBtn,
+            { backgroundColor: pressed ? colors.subtle : 'transparent' },
+          ]}
+        >
+          <Feather
+            name="image"
+            size={20}
+            color={pendingImage ? colors.primary : colors.mutedForeground}
+          />
+        </Pressable>
+
         <TextInput
           ref={inputRef}
           style={[
@@ -77,26 +145,30 @@ export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disa
           editable={!disabled}
         />
 
+        {/* Send / loading button */}
         <Pressable
           onPress={handleSend}
-          disabled={!text.trim() || disabled}
+          disabled={!canSend}
           style={({ pressed }) => [
             styles.sendBtn,
             {
-              backgroundColor:
-                !text.trim() || disabled
-                  ? colors.subtle
-                  : pressed
-                    ? colors.primaryHover
-                    : colors.primary,
+              backgroundColor: !canSend
+                ? colors.subtle
+                : pressed
+                  ? colors.primaryHover
+                  : colors.primary,
             },
           ]}
         >
-          <Feather
-            name="send"
-            size={18}
-            color={!text.trim() || disabled ? colors.mutedForeground : colors.primaryForeground}
-          />
+          {disabled ? (
+            <ActivityIndicator size="small" color={colors.primaryForeground} />
+          ) : (
+            <Feather
+              name="send"
+              size={18}
+              color={!canSend ? colors.mutedForeground : colors.primaryForeground}
+            />
+          )}
         </Pressable>
       </View>
     </View>
@@ -133,10 +205,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Geist_400Regular',
   },
+  imageBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  imagePreview: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    flexShrink: 0,
+  },
+  imageReady: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: 'Geist_400Regular',
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginBottom: 2,
   },
   input: {
     flex: 1,
