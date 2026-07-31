@@ -90,7 +90,7 @@ export default function CommunityChat() {
         appendMessage({
           ...msg,
           users: user
-            ? { name: user.name, avatar_url: null, designation: null, company: null }
+            ? { name: user.name, avatar_url: user.avatar_url ?? null, designation: null, company: null }
             : null,
           reactions: [],
           reply_to: replyTo
@@ -226,7 +226,7 @@ export default function CommunityChat() {
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
         {isLoading && (
