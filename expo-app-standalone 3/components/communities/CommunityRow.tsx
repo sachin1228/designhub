@@ -57,7 +57,7 @@ function TypingDots({ color }: { color: string }) {
 
 function Initials({
   name,
-  size = 46,
+  size = 48,
   colors,
 }: {
   name: string;
