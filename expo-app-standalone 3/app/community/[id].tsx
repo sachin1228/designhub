@@ -18,7 +18,7 @@ import { MessageBubble } from '@/components/chat/MessageBubble';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EmojiPicker } from '@/components/chat/EmojiPicker';
-import { sendMessage, toggleReaction, Message } from '@/lib/communities';
+import { sendMessage, toggleReaction, deleteMessage, Message } from '@/lib/communities';
 import { communityStore } from '@/lib/communityStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -36,7 +36,6 @@ export default function CommunityChat() {
 
   // Track this as the active community so useCommunities won't increment
   // unread_count for incoming messages while we're looking at this chat.
-  // Mirrors web's activeCommunityIdRef guard in useSidebarRealtime.
   useEffect(() => {
     communityStore.activeCommunityId = id;
     return () => {
@@ -53,6 +52,7 @@ export default function CommunityChat() {
     loadMore,
     appendMessage,
     updateReactions,
+    softDeleteMessage,
   } = useChatMessages(id);
 
   const { typingLabel, onInputChange, stopTyping } = useTypingPresence(id);
@@ -85,10 +85,9 @@ export default function CommunityChat() {
             : null,
         });
         setReplyTo(null);
-        // Scroll to bottom
         setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
-      } catch (e) {
-        // Error is visible in UI if needed
+      } catch {
+        // Error visible in UI if needed
       } finally {
         setIsSending(false);
       }
@@ -108,21 +107,44 @@ export default function CommunityChat() {
     [id, updateReactions]
   );
 
+  const handleDelete = useCallback(
+    async (messageId: string) => {
+      // Optimistically soft-delete locally, then call the API
+      softDeleteMessage(messageId);
+      try {
+        await deleteMessage(id, messageId);
+      } catch {
+        // If the API fails, the realtime UPDATE will reconcile state
+      }
+    },
+    [id, softDeleteMessage]
+  );
+
   const handleLongPress = useCallback((msg: Message) => {
     setSelectedMessage(msg);
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: Message }) => (
-      <MessageBubble
-        message={item}
-        isOwn={item.user_id === user?.id}
-        onLongPress={handleLongPress}
-        onReactionPress={handleReaction}
-        currentUserId={user?.id ?? ''}
-      />
-    ),
-    [user?.id, handleLongPress, handleReaction]
+    ({ item, index }: { item: Message; index: number }) => {
+      const prevMessage = index > 0 ? messages[index - 1] : null;
+      const isSameAuthor =
+        !!prevMessage &&
+        prevMessage.user_id === item.user_id &&
+        !prevMessage.deleted_at &&
+        !item.deleted_at;
+
+      return (
+        <MessageBubble
+          message={item}
+          isOwn={item.user_id === user?.id}
+          isSameAuthor={isSameAuthor}
+          onLongPress={handleLongPress}
+          onReactionPress={handleReaction}
+          currentUserId={user?.id ?? ''}
+        />
+      );
+    },
+    [user?.id, handleLongPress, handleReaction, messages]
   );
 
   const keyExtractor = useCallback((item: Message) => item.id, []);
@@ -201,10 +223,7 @@ export default function CommunityChat() {
             data={messages}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            contentContainerStyle={[
-              styles.messagesList,
-              { paddingBottom: 8 },
-            ]}
+            contentContainerStyle={[styles.messagesList, { paddingBottom: 8 }]}
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.2}
             ListHeaderComponent={
@@ -240,15 +259,17 @@ export default function CommunityChat() {
         </View>
       </KeyboardAvoidingView>
 
-      {/* Emoji / action picker */}
+      {/* Long-press action sheet */}
       <EmojiPicker
         message={selectedMessage}
+        isOwn={selectedMessage?.user_id === user?.id ?? false}
         onClose={() => setSelectedMessage(null)}
         onReact={handleReaction}
         onReply={(msg) => {
           setReplyTo(msg);
           setSelectedMessage(null);
         }}
+        onDelete={handleDelete}
       />
     </View>
   );

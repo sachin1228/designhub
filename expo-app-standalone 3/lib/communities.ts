@@ -124,3 +124,13 @@ export async function toggleReaction(
 export async function markRead(communityId: string): Promise<void> {
   await apiFetch(`/api/communities/${communityId}/read`, { method: 'PATCH' });
 }
+
+export async function deleteMessage(
+  communityId: string,
+  messageId: string
+): Promise<void> {
+  await apiFetch(
+    `/api/communities/${communityId}/messages/${messageId}`,
+    { method: 'DELETE' }
+  );
+}
