@@ -30,6 +30,7 @@ const colors = {
     // Muted / subdued elements
     muted: '#F5F5F5',
     mutedForeground: '#737373',
+    foregroundSoft: '#8a8a8a',
 
     // Accent (same as primary in light mode)
     accent: '#0070F3',
@@ -69,6 +70,7 @@ const colors = {
 
     muted: '#1A1A1E',
     mutedForeground: '#525252',
+    foregroundSoft: '#888888',
 
     accent: '#0070F3',
     accentForeground: '#FFFFFF',
