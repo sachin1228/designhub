@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
+  KeyboardEvent,
   Platform,
   Pressable,
   StyleSheet,
@@ -40,6 +42,22 @@ export default function CommunityChat() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [headerHeight, setHeaderHeight] = useState(0);
+  // Android: track keyboard height via Keyboard API instead of relying on KAV
+  const [kbHeight, setKbHeight] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const show = Keyboard.addListener('keyboardDidShow', (e: KeyboardEvent) => {
+      setKbHeight(e.endCoordinates.height);
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      setKbHeight(0);
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   // Track this as the active community so useCommunities won't increment
   // unread_count for incoming messages while we're looking at this chat.
@@ -226,63 +244,63 @@ export default function CommunityChat() {
         <View style={{ width: 36 }} />
       </View>
 
+      {/* iOS: KAV with padding; Android: plain View + Keyboard API paddingBottom */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={headerHeight}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
       >
-        {isLoading && (
-          <View style={styles.center}>
-            <ActivityIndicator color={colors.primary} />
-          </View>
-        )}
+        <View style={[styles.flex, Platform.OS === 'android' && { paddingBottom: kbHeight }]}>
+          {isLoading && (
+            <View style={styles.center}>
+              <ActivityIndicator color={colors.primary} />
+            </View>
+          )}
 
-        {!isLoading && error && (
-          <View style={styles.center}>
-            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
-          </View>
-        )}
+          {!isLoading && error && (
+            <View style={styles.center}>
+              <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+            </View>
+          )}
 
-        {!isLoading && (
-          <FlatList
-            ref={listRef}
-            data={messages}
-            renderItem={renderItem}
-            keyExtractor={keyExtractor}
-            contentContainerStyle={[styles.messagesList, { paddingBottom: 8 }]}
-            // Keeps the visible scroll position stable when older messages are
-            // prepended at the top (via loadMore). Without this, the list jumps
-            // to the top of the newly inserted items on every pagination load.
-            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.2}
-            ListHeaderComponent={
-              isLoadingMore ? (
-                <View style={styles.loadMoreSpinner}>
-                  <ActivityIndicator size="small" color={colors.primary} />
+          {!isLoading && (
+            <FlatList
+              ref={listRef}
+              data={messages}
+              renderItem={renderItem}
+              keyExtractor={keyExtractor}
+              contentContainerStyle={[styles.messagesList, { paddingBottom: 8 }]}
+              maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.2}
+              ListHeaderComponent={
+                isLoadingMore ? (
+                  <View style={styles.loadMoreSpinner}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                ) : null
+              }
+              ListEmptyComponent={
+                <View style={styles.center}>
+                  <Feather name="message-circle" size={36} color={colors.mutedForeground} />
+                  <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                    No messages yet. Say hello!
+                  </Text>
                 </View>
-              ) : null
-            }
-            ListEmptyComponent={
-              <View style={styles.center}>
-                <Feather name="message-circle" size={36} color={colors.mutedForeground} />
-                <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                  No messages yet. Say hello!
-                </Text>
-              </View>
-            }
+              }
+            />
+          )}
+
+          <TypingIndicator label={typingLabel} />
+
+          <ChatInput
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
+            onSend={handleSend}
+            onTypingChange={onInputChange}
+            disabled={isSending}
           />
-        )}
-
-        <TypingIndicator label={typingLabel} />
-
-        <ChatInput
-          replyTo={replyTo}
-          onCancelReply={() => setReplyTo(null)}
-          onSend={handleSend}
-          onTypingChange={onInputChange}
-          disabled={isSending}
-        />
+        </View>
       </KeyboardAvoidingView>
 
       {/* Long-press action sheet */}
