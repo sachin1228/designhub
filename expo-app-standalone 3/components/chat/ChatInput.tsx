@@ -65,7 +65,6 @@ export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disa
   const canSend = (!!text.trim() || !!pendingImage) && !disabled;
 
   return (
-    // Fix #4: transparent root — no border-top, no background, floating look
     <View style={styles.root}>
       {/* Reply banner */}
       {replyTo && (
@@ -97,35 +96,20 @@ export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disa
         </View>
       )}
 
-      {/* Fix #4: input row — image button outside, floating pill contains text + send */}
+      {/* Input row: [ pill: 😊 text 📎 ] [ ▶ send ] */}
       <View style={styles.inputRow}>
-        {/* Image picker — sits outside the pill, to the left */}
-        <Pressable
-          onPress={handlePickImage}
-          disabled={disabled}
-          hitSlop={6}
-          style={({ pressed }) => [
-            styles.mediaBtn,
-            { opacity: pressed ? 0.6 : 1 },
-          ]}
-        >
-          <Feather
-            name="image"
-            size={22}
-            color={pendingImage ? colors.primary : colors.mutedForeground}
-          />
-        </Pressable>
 
-        {/* Fix #4: floating rounded pill — text input + send button inside */}
-        <View
-          style={[
-            styles.pill,
-            {
-              backgroundColor: colors.card,
-              shadowColor: '#000',
-            },
-          ]}
-        >
+        {/* Floating pill: emoji left | text | image right */}
+        <View style={[styles.pill, { backgroundColor: colors.card }]}>
+          {/* Emoji button — left inside pill */}
+          <Pressable
+            hitSlop={6}
+            style={({ pressed }) => [styles.pillBtn, { opacity: pressed ? 0.5 : 1 }]}
+          >
+            <Feather name="smile" size={20} color={colors.mutedForeground} />
+          </Pressable>
+
+          {/* Text input */}
           <TextInput
             ref={inputRef}
             style={[styles.textInput, { color: colors.foreground }]}
@@ -139,40 +123,50 @@ export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disa
             editable={!disabled}
           />
 
-          {/* Send button inside the pill */}
+          {/* Image picker button — right inside pill */}
           <Pressable
-            onPress={handleSend}
-            disabled={!canSend}
-            style={({ pressed }) => [
-              styles.sendBtn,
-              {
-                backgroundColor: !canSend
-                  ? 'transparent'
-                  : pressed
-                    ? colors.primaryHover
-                    : colors.primary,
-                opacity: !canSend ? 0.4 : 1,
-              },
-            ]}
+            onPress={handlePickImage}
+            disabled={disabled}
+            hitSlop={6}
+            style={({ pressed }) => [styles.pillBtn, { opacity: pressed ? 0.5 : 1 }]}
           >
-            {disabled ? (
-              <ActivityIndicator size="small" color={canSend ? colors.primaryForeground : colors.mutedForeground} />
-            ) : (
-              <Feather
-                name="send"
-                size={16}
-                color={!canSend ? colors.mutedForeground : colors.primaryForeground}
-              />
-            )}
+            <Feather
+              name="paperclip"
+              size={20}
+              color={pendingImage ? colors.primary : colors.mutedForeground}
+            />
           </Pressable>
         </View>
+
+        {/* Send button — outside the pill, to the right */}
+        <Pressable
+          onPress={handleSend}
+          disabled={!canSend}
+          style={({ pressed }) => [
+            styles.sendBtn,
+            {
+              backgroundColor: canSend
+                ? pressed ? colors.primaryHover : colors.primary
+                : colors.subtle,
+            },
+          ]}
+        >
+          {disabled ? (
+            <ActivityIndicator size="small" color={colors.primaryForeground} />
+          ) : (
+            <Feather
+              name="send"
+              size={18}
+              color={canSend ? colors.primaryForeground : colors.mutedForeground}
+            />
+          )}
+        </Pressable>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // Fix #4: no border-top, no background — floating appearance
   root: {
     paddingHorizontal: 12,
     paddingTop: 6,
@@ -209,33 +203,32 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 10,
+    gap: 8,
   },
 
-  mediaBtn: {
-    width: 32,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    marginBottom: 4,
-  },
-
-  // Fix #4: floating pill — card background + shadow, send button inside
+  // Floating pill — emoji | text | image
   pill: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    borderRadius: 22,
-    paddingLeft: 14,
-    paddingRight: 6,
+    borderRadius: 24,
+    paddingHorizontal: 4,
     paddingVertical: 6,
-    gap: 6,
-    // Shadow matches web's shadow-md
+    gap: 2,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+
+  // Icon buttons inside the pill
+  pillBtn: {
+    width: 36,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
 
   textInput: {
@@ -246,18 +239,16 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingTop: 4,
     paddingBottom: 4,
-    // Transparent — pill provides the background
     backgroundColor: 'transparent',
   },
 
-  // Send button sits inside the pill on the right
+  // Send button — outside the pill
   sendBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    marginBottom: 1,
   },
 });
