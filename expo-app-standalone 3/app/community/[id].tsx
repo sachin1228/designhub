@@ -10,10 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import {
-  KeyboardAvoidingView as KeyboardControllerAvoidingView,
-  KeyboardEvents,
-} from 'react-native-keyboard-controller';
+import { KeyboardEvents } from 'react-native-keyboard-controller';
 import { useColors } from '@/hooks/useColors';
 import { useChatMessages } from '@/hooks/useChatMessages';
 import { useTypingPresence } from '@/hooks/useTypingPresence';
@@ -301,9 +298,11 @@ export default function CommunityChat() {
       </View>
 
       {Platform.OS === 'android' ? (
-        <KeyboardControllerAvoidingView style={styles.flex} behavior="height">
-          {chatContent}
-        </KeyboardControllerAvoidingView>
+        // softwareKeyboardLayoutMode="resize" in app.json means Android already
+        // resizes the window natively — no extra avoiding view needed. Adding one
+        // causes a double-lift that makes the message list jump when the keyboard
+        // opens. Let the OS handle it; only iOS needs the explicit offset.
+        chatContent
       ) : (
         <RNKeyboardAvoidingView
           style={styles.flex}
