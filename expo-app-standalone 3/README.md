@@ -171,3 +171,7 @@ expo-app-standalone 3/
 
 ## build locally
 - cd "/Users/sachin/Documents/GitHub/drafthub/expo-app-standalone 3/android" ./gradlew assembleRelease
+
+
+## build preview
+eas build --profile preview --platform android
