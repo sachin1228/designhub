@@ -362,6 +362,9 @@ export function MessageBubble({
                 {
                   backgroundColor: isOwn ? colors.primary : colors.card,
                   borderColor: isOwn ? 'transparent' : colors.border,
+                  // Remove all padding when there's an image so the 3px border
+                  // on imageContainer is the only gap — no blue/card bleed.
+                  ...(message.image_url ? { padding: 0 } : {}),
                 },
               ]}
             >
@@ -402,21 +405,35 @@ export function MessageBubble({
                 </View>
               )}
 
-              {/* Fix #1/#2: text content without inline time (no flex-wrap hack) */}
+              {/* Text content — wrapped in padding when following an image */}
               {message.content && (
-                <Text
-                  style={[
-                    styles.content,
-                    { color: isOwn ? colors.primaryForeground : colors.foreground },
-                  ]}
-                >
-                  {message.content}
-                </Text>
+                <View style={message.image_url ? styles.captionPadding : undefined}>
+                  <Text
+                    style={[
+                      styles.content,
+                      { color: isOwn ? colors.primaryForeground : colors.foreground },
+                    ]}
+                  >
+                    {message.content}
+                  </Text>
+                </View>
               )}
 
-              {/* Time row — only shown when there is no image (image has its own overlay) */}
-              {!message.image_url && (
+              {/* Time row — hidden for image-only messages (overlay handles it).
+                  Shown below caption when message has image + text. */}
+              {(!message.image_url || message.content) && !message.image_url && (
                 <View style={styles.timeRow}>
+                  <Text style={[styles.timeText, { color: timeColor }]}>
+                    {formatTime(message.created_at)}
+                  </Text>
+                  {isOwn && (
+                    <Ionicons name="checkmark-done-sharp" size={15} color={timeColor} />
+                  )}
+                </View>
+              )}
+              {/* Caption + time row when message has both image and text */}
+              {message.image_url && message.content && (
+                <View style={styles.captionTimeRow}>
                   <Text style={[styles.timeText, { color: timeColor }]}>
                     {formatTime(message.created_at)}
                   </Text>
@@ -587,6 +604,23 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.95)',
     fontSize: 10,
     fontFamily: 'Geist_400Regular',
+  },
+
+  // Padding wrapper for caption text that follows an image
+  // (bubble padding is zeroed for images, so we re-add it here)
+  captionPadding: {
+    paddingHorizontal: 12,
+    paddingTop: 6,
+  },
+  // Time row shown below caption on image+text messages
+  captionTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 3,
+    paddingHorizontal: 12,
+    paddingBottom: 6,
+    marginTop: 2,
   },
 
   content: {
