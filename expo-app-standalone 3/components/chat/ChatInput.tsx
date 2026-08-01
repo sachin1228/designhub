@@ -235,10 +235,10 @@ const styles = StyleSheet.create({
 
   textInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Geist_400Regular',
     maxHeight: 120,
-    lineHeight: 20,
+    lineHeight: 24,
     paddingTop: 4,
     paddingBottom: 4,
     backgroundColor: 'transparent',
