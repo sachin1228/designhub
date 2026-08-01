@@ -372,19 +372,34 @@ export function MessageBubble({
 
               {/* Image — tap opens full-screen viewer */}
               {message.image_url && (
-                <Pressable
-                  onPress={() => onImagePress?.(message.image_url!)}
-                  onLongPress={() => onLongPress(message)}
-                  delayLongPress={350}
-                  accessibilityLabel="View full image"
-                  accessibilityRole="button"
-                >
-                  <Image
-                    source={{ uri: message.image_url }}
-                    style={styles.messageImage}
-                    resizeMode="cover"
-                  />
-                </Pressable>
+                <View style={[styles.imageContainer, { borderColor: colors.primary }]}>
+                  <Pressable
+                    onPress={() => onImagePress?.(message.image_url!)}
+                    onLongPress={() => onLongPress(message)}
+                    delayLongPress={350}
+                    accessibilityLabel="View full image"
+                    accessibilityRole="button"
+                  >
+                    <Image
+                      source={{ uri: message.image_url }}
+                      style={styles.messageImage}
+                      resizeMode="cover"
+                    />
+                  </Pressable>
+                  {/* Time + checkmark overlaid on bottom-right of image */}
+                  <View style={styles.imageTimeOverlay}>
+                    <Text style={styles.imageTimeText}>
+                      {formatTime(message.created_at)}
+                    </Text>
+                    {isOwn && (
+                      <Ionicons
+                        name="checkmark-done-sharp"
+                        size={13}
+                        color="rgba(255,255,255,0.95)"
+                      />
+                    )}
+                  </View>
+                </View>
               )}
 
               {/* Fix #1/#2: text content without inline time (no flex-wrap hack) */}
@@ -399,15 +414,17 @@ export function MessageBubble({
                 </Text>
               )}
 
-              {/* Fix #1: time always on its own line, right-aligned — mirrors web */}
-              <View style={styles.timeRow}>
-                <Text style={[styles.timeText, { color: timeColor }]}>
-                  {formatTime(message.created_at)}
-                </Text>
-                {isOwn && (
-                  <Ionicons name="checkmark-done-sharp" size={15} color={timeColor} />
-                )}
-              </View>
+              {/* Time row — only shown when there is no image (image has its own overlay) */}
+              {!message.image_url && (
+                <View style={styles.timeRow}>
+                  <Text style={[styles.timeText, { color: timeColor }]}>
+                    {formatTime(message.created_at)}
+                  </Text>
+                  {isOwn && (
+                    <Ionicons name="checkmark-done-sharp" size={15} color={timeColor} />
+                  )}
+                </View>
+              )}
             </Pressable>
 
             {/* Reactions below bubble */}
@@ -541,11 +558,35 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist_400Regular',
   },
 
+  imageContainer: {
+    position: 'relative',
+    borderRadius: 10,
+    borderWidth: 3,
+    overflow: 'hidden',
+    marginBottom: 4,
+    alignSelf: 'flex-start',
+  },
   messageImage: {
     width: 220,
     height: 160,
-    borderRadius: 10,
-    marginBottom: 4,
+    borderRadius: 7, // inner radius = container radius - border width
+  },
+  imageTimeOverlay: {
+    position: 'absolute',
+    bottom: 6,
+    right: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  imageTimeText: {
+    color: 'rgba(255,255,255,0.95)',
+    fontSize: 10,
+    fontFamily: 'Geist_400Regular',
   },
 
   content: {
