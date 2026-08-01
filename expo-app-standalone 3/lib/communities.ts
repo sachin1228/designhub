@@ -136,26 +136,53 @@ export async function deleteMessage(
 }
 
 /**
+ * Normalise MIME types to the subset the upload API accepts.
+ * Android devices sometimes report non-standard variants (e.g. "image/jpg")
+ * that would be rejected by the server's ALLOWED_TYPES check.
+ */
+function normaliseMimeType(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (lower === 'image/jpg') return 'image/jpeg';
+  if (lower === 'image/jfif') return 'image/jpeg';
+  if (lower === 'image/pjpeg') return 'image/jpeg';
+  if (lower === 'image/x-png') return 'image/png';
+  return lower;
+}
+
+/**
  * Upload a local image URI to the chat image endpoint.
  * Uses React Native's multipart FormData object format { uri, type, name }.
  * Returns the permanent CDN URL to embed in the message payload.
+ *
+ * Throws a human-readable Error if the server rejects the image or if the
+ * moderation service does not return a URL (e.g. content flagged for review).
  */
 export async function uploadChatImage(
   communityId: string,
   imageUri: string,
   mimeType: string = 'image/jpeg'
 ): Promise<string> {
+  const normalised = normaliseMimeType(mimeType);
+  const ext = normalised.split('/')[1] ?? 'jpg';
+
   const formData = new FormData();
   // React Native multipart upload — append as a file descriptor object
   formData.append('file', {
     uri: imageUri,
-    type: mimeType,
-    name: `chat-image.${mimeType.split('/')[1] ?? 'jpg'}`,
+    type: normalised,
+    name: `chat-image.${ext}`,
   } as unknown as Blob);
 
-  const { data } = await apiFormUpload<{ url: string }>(
+  const { data } = await apiFormUpload<{ url?: string; error?: string }>(
     `/api/communities/${communityId}/messages/upload`,
     formData
   );
+
+  if (!data.url) {
+    // Server returned 2xx but without a URL — happens when moderation flags the
+    // image for review (HTTP 202) or in other partial-success scenarios.
+    throw new Error(data.error ?? 'Image could not be uploaded. Please try a different image.');
+  }
+
   return data.url;
 }

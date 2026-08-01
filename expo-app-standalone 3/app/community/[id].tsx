@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView as RNKeyboardAvoidingView,
@@ -155,8 +156,10 @@ export default function CommunityChat() {
 
         setReplyTo(null);
         scrollToLatest(true);
-      } catch {
-        // Error visible in UI if needed
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+        Alert.alert('Failed to send', message);
       } finally {
         setIsSending(false);
       }
