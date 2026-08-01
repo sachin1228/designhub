@@ -69,6 +69,8 @@ export interface Message {
   users: MessageUser | null;
   reactions: Reaction[];
   reply_to: ReplyPreview | null;
+  /** Client-only — not stored on the server. */
+  status?: 'sending' | 'sent' | 'failed';
 }
 
 // ---------------------------------------------------------------------------
@@ -100,11 +102,12 @@ export async function getMessages(
 
 export async function sendMessage(
   communityId: string,
-  payload: { content?: string; reply_to_id?: string; image_url?: string }
+  payload: { content?: string; reply_to_id?: string; image_url?: string },
+  signal?: AbortSignal
 ): Promise<Message> {
   const { data } = await apiFetch<{ message: Message }>(
     `/api/communities/${communityId}/messages`,
-    { method: 'POST', body: payload }
+    { method: 'POST', body: payload as Record<string, unknown>, signal }
   );
   return data.message;
 }
@@ -160,7 +163,8 @@ function normaliseMimeType(raw: string): string {
 export async function uploadChatImage(
   communityId: string,
   imageUri: string,
-  mimeType: string = 'image/jpeg'
+  mimeType: string = 'image/jpeg',
+  signal?: AbortSignal
 ): Promise<string> {
   const normalised = normaliseMimeType(mimeType);
   const ext = normalised.split('/')[1] ?? 'jpg';
@@ -175,7 +179,8 @@ export async function uploadChatImage(
 
   const { data } = await apiFormUpload<{ url?: string; error?: string }>(
     `/api/communities/${communityId}/messages/upload`,
-    formData
+    formData,
+    signal
   );
 
   if (!data.url) {

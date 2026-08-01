@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView as RNKeyboardAvoidingView,
@@ -25,12 +24,11 @@ import { ChatInput, PendingImage } from '@/components/chat/ChatInput';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EmojiPicker } from '@/components/chat/EmojiPicker';
 import {
-  sendMessage,
   toggleReaction,
   deleteMessage,
-  uploadChatImage,
   Message,
 } from '@/lib/communities';
+import { useSendMessage } from '@/hooks/useSendMessage';
 import { communityStore } from '@/lib/communityStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -58,12 +56,12 @@ export default function CommunityChat() {
 
   const {
     messages,
+    setMessages,
     isLoading,
     isLoadingMore,
     hasMore,
     error,
     loadMore,
-    appendMessage,
     updateReactions,
     softDeleteMessage,
   } = useChatMessages(id);
@@ -77,8 +75,7 @@ export default function CommunityChat() {
   const handleImagePress = useCallback((uri: string) => {
     setViewingImageUri(uri);
   }, []);
-  // True while uploading an image or waiting for the send API response
-  const [isSending, setIsSending] = useState(false);
+
   const listRef = useRef<FlatList>(null);
 
   /**
@@ -121,50 +118,24 @@ export default function CommunityChat() {
     return () => subscription.remove();
   }, [scrollToLatest]);
 
-  const handleSend = useCallback(
-    async (text: string, pendingImage?: PendingImage) => {
-      if (!text.trim() && !pendingImage) return;
-      setIsSending(true);
-      stopTyping();
-      try {
-        // Upload image first if one is attached
-        let imageUrl: string | undefined;
-        if (pendingImage) {
-          imageUrl = await uploadChatImage(id, pendingImage.uri, pendingImage.mimeType);
-        }
-
-        const msg = await sendMessage(id, {
-          content: text || undefined,
-          reply_to_id: replyTo?.id,
-          image_url: imageUrl,
-        });
-
-        appendMessage({
-          ...msg,
-          users: user
-            ? { name: user.name, avatar_url: user.avatar_url ?? null, designation: null, company: null }
-            : null,
-          reactions: [],
-          reply_to: replyTo
-            ? {
-                id: replyTo.id,
-                content: replyTo.content,
-                user_name: replyTo.users?.name ?? 'Unknown',
-              }
-            : null,
-        });
-
-        setReplyTo(null);
-        scrollToLatest(true);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Something went wrong. Please try again.';
-        Alert.alert('Failed to send', message);
-      } finally {
-        setIsSending(false);
-      }
+  const { handleSend: _handleSend, handleCancel, handleRetry } = useSendMessage({
+    communityId: id,
+    currentUser: {
+      id: user?.id ?? '',
+      name: user?.name ?? 'You',
+      avatar_url: user?.avatar_url ?? null,
     },
-    [id, replyTo, appendMessage, scrollToLatest, stopTyping, user]
+    setMessages,
+    scrollToLatest,
+    stopTyping,
+  });
+
+  const handleSend = useCallback(
+    (text: string, pendingImage?: PendingImage) => {
+      _handleSend(text, pendingImage, replyTo);
+      setReplyTo(null);
+    },
+    [_handleSend, replyTo]
   );
 
   const handleReaction = useCallback(
@@ -215,10 +186,12 @@ export default function CommunityChat() {
           onReactionPress={handleReaction}
           onImagePress={handleImagePress}
           currentUserId={user?.id ?? ''}
+          onCancel={handleCancel}
+          onRetry={handleRetry}
         />
       );
     },
-    [user?.id, handleLongPress, handleReaction, handleImagePress, messages]
+    [user?.id, handleLongPress, handleReaction, handleImagePress, handleCancel, handleRetry, messages]
   );
 
   const keyExtractor = useCallback((item: Message) => item.id, []);
@@ -282,7 +255,6 @@ export default function CommunityChat() {
           onCancelReply={() => setReplyTo(null)}
           onSend={handleSend}
           onTypingChange={onInputChange}
-          disabled={isSending}
         />
       </View>
     </View>
