@@ -362,9 +362,14 @@ export function MessageBubble({
                 {
                   backgroundColor: isOwn ? colors.primary : colors.card,
                   borderColor: isOwn ? 'transparent' : colors.border,
-                  // Remove all padding when there's an image so the 3px border
-                  // on imageContainer is the only gap — no blue/card bleed.
-                  ...(message.image_url ? { padding: 0 } : {}),
+                  // Image-only: strip all padding AND make bubble transparent so
+                  // only the 2px border on imageContainer is visible — no blue bleed.
+                  // Image+caption: keep zero padding but keep the coloured bubble.
+                  ...(message.image_url && !message.content
+                    ? { padding: 0, backgroundColor: 'transparent', borderColor: 'transparent' }
+                    : message.image_url
+                    ? { padding: 0 }
+                    : {}),
                 },
               ]}
             >
