@@ -3,12 +3,13 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useColors } from '@/hooks/useColors';
 import { useChatMessages } from '@/hooks/useChatMessages';
 import { useTypingPresence } from '@/hooks/useTypingPresence';
@@ -38,7 +39,6 @@ export default function CommunityChat() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [headerHeight, setHeaderHeight] = useState(0);
 
   // Track this as the active community so useCommunities won't increment
   // unread_count for incoming messages while we're looking at this chat.
@@ -175,13 +175,68 @@ export default function CommunityChat() {
   const communityName = name ? decodeURIComponent(name) : 'Chat';
   const communityImage = image ? decodeURIComponent(image) : null;
 
+  // The message list + typing indicator + input is identical on both platforms;
+  // only the outer keyboard-handling wrapper differs.
+  const body = (
+    <>
+      {isLoading && (
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      )}
+
+      {!isLoading && error && (
+        <View style={styles.center}>
+          <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+        </View>
+      )}
+
+      {!isLoading && (
+        <FlatList
+          ref={listRef}
+          data={messages}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          contentContainerStyle={[styles.messagesList, { paddingBottom: 8 }]}
+          maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.2}
+          ListHeaderComponent={
+            isLoadingMore ? (
+              <View style={styles.loadMoreSpinner}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.center}>
+              <Feather name="message-circle" size={36} color={colors.mutedForeground} />
+              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                No messages yet. Say hello!
+              </Text>
+            </View>
+          }
+        />
+      )}
+
+      <TypingIndicator label={typingLabel} />
+
+      <ChatInput
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
+        onSend={handleSend}
+        onTypingChange={onInputChange}
+        disabled={isSending}
+      />
+    </>
+  );
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
 
-      {/* Header — measured so KAV can offset correctly */}
+      {/* Header — sits above the keyboard-handling area, not inside it */}
       <View
-        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
         style={[
           styles.header,
           {
@@ -226,73 +281,31 @@ export default function CommunityChat() {
       </View>
 
       {/*
-       * KeyboardAvoidingView from react-native-keyboard-controller tracks the
-       * exact keyboard frame via native hooks on both iOS and Android — no
-       * reported-height lag, no platform split, no manual kbHeight state.
+       * ── Keyboard architecture ──────────────────────────────────────────────
        *
-       * behavior="padding" grows paddingBottom as the keyboard rises, which
-       * compresses the FlatList and keeps ChatInput pinned just above the
-       * keyboard at all times — the same mechanism WhatsApp/Telegram use.
+       * Android  (softwareKeyboardLayoutMode: "resize" in app.json):
+       *   The OS shrinks the application window when the soft keyboard opens.
+       *   The flex column distributes the reduced height automatically:
+       *   FlatList (flex:1) gets shorter, ChatInput stays anchored at the
+       *   bottom of the window. Zero JS keyboard involvement — identical to
+       *   how WhatsApp/Telegram work natively on Android.
        *
-       * keyboardVerticalOffset = the header height so the KAV knows how much
-       * non-KAV space sits above it and can calculate the remaining room
-       * correctly on both platforms.
+       * iOS:
+       *   The OS never resizes the window; the keyboard overlays it. A plain
+       *   RN KeyboardAvoidingView with behavior="padding" adds paddingBottom
+       *   equal to the keyboard height, compressing the flex column the same
+       *   way the OS resize does on Android. Because the KAV sits BELOW the
+       *   header in the flex tree (not full-screen), it measures its own
+       *   position correctly — keyboardVerticalOffset stays at 0.
+       * ──────────────────────────────────────────────────────────────────────
        */}
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior="padding"
-        keyboardVerticalOffset={headerHeight}
-      >
-        {isLoading && (
-          <View style={styles.center}>
-            <ActivityIndicator color={colors.primary} />
-          </View>
-        )}
-
-        {!isLoading && error && (
-          <View style={styles.center}>
-            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
-          </View>
-        )}
-
-        {!isLoading && (
-          <FlatList
-            ref={listRef}
-            data={messages}
-            renderItem={renderItem}
-            keyExtractor={keyExtractor}
-            contentContainerStyle={[styles.messagesList, { paddingBottom: 8 }]}
-            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.2}
-            ListHeaderComponent={
-              isLoadingMore ? (
-                <View style={styles.loadMoreSpinner}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                </View>
-              ) : null
-            }
-            ListEmptyComponent={
-              <View style={styles.center}>
-                <Feather name="message-circle" size={36} color={colors.mutedForeground} />
-                <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                  No messages yet. Say hello!
-                </Text>
-              </View>
-            }
-          />
-        )}
-
-        <TypingIndicator label={typingLabel} />
-
-        <ChatInput
-          replyTo={replyTo}
-          onCancelReply={() => setReplyTo(null)}
-          onSend={handleSend}
-          onTypingChange={onInputChange}
-          disabled={isSending}
-        />
-      </KeyboardAvoidingView>
+      {Platform.OS === 'ios' ? (
+        <KeyboardAvoidingView style={styles.flex} behavior="padding">
+          {body}
+        </KeyboardAvoidingView>
+      ) : (
+        <View style={styles.flex}>{body}</View>
+      )}
 
       {/* Long-press action sheet */}
       <EmojiPicker
