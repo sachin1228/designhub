@@ -577,16 +577,15 @@ const styles = StyleSheet.create({
 
   imageContainer: {
     position: 'relative',
-    borderRadius: 10,
-    borderWidth: 3,
+    borderRadius: 16,  // match bubble — no blue bleed in corners
+    borderWidth: 2,    // thin 2px border only
     overflow: 'hidden',
-    marginBottom: 4,
     alignSelf: 'flex-start',
   },
   messageImage: {
     width: 220,
     height: 160,
-    borderRadius: 7, // inner radius = container radius - border width
+    borderRadius: 14, // inner radius = 16 - 2
   },
   imageTimeOverlay: {
     position: 'absolute',
