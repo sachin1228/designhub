@@ -49,7 +49,7 @@ export default function CommunityChat() {
   // Test: red window background shows through transparent edge-to-edge nav bar
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-    SystemUI.setBackgroundColorAsync('#FF0000');
+    SystemUI.setBackgroundColorAsync('#000000');
     return () => {
       SystemUI.setBackgroundColorAsync('#09090B');
     };
