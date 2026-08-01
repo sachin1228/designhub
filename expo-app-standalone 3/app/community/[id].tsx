@@ -4,6 +4,8 @@ import {
   FlatList,
   Image,
   KeyboardAvoidingView as RNKeyboardAvoidingView,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   Pressable,
   StyleSheet,
@@ -73,16 +75,35 @@ export default function CommunityChat() {
   // True while uploading an image or waiting for the send API response
   const [isSending, setIsSending] = useState(false);
   const listRef = useRef<FlatList>(null);
+  // True when the list is scrolled to (or very near) the bottom.
+  // Starts true because the chat opens at the latest message.
+  const isAtBottom = useRef(true);
 
   const scrollToLatest = useCallback((animated = true) => {
     listRef.current?.scrollToEnd({ animated });
   }, []);
 
+  /**
+   * Keep isAtBottom in sync as the user scrolls.
+   * Threshold of 80 px — close enough to "bottom" that auto-scroll is expected.
+   */
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - layoutMeasurement.height - contentOffset.y;
+      isAtBottom.current = distanceFromBottom < 80;
+    },
+    []
+  );
+
   useEffect(() => {
     if (Platform.OS !== 'android') return;
 
     const subscription = KeyboardEvents.addListener('keyboardDidShow', () => {
-      scrollToLatest(true);
+      // Only jump to the bottom if the user was already there.
+      // If they've scrolled up to read old messages, leave them in place.
+      if (isAtBottom.current) scrollToLatest(true);
     });
 
     return () => subscription.remove();
@@ -216,6 +237,8 @@ export default function CommunityChat() {
           keyExtractor={keyExtractor}
           contentContainerStyle={[styles.messagesList, { paddingBottom: 8 }]}
           maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+          onScroll={handleScroll}
+          scrollEventThrottle={100}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.2}
           ListHeaderComponent={
@@ -236,7 +259,7 @@ export default function CommunityChat() {
         />
       )}
 
-      <View onLayout={() => scrollToLatest(false)}>
+      <View onLayout={() => { if (isAtBottom.current) scrollToLatest(false); }}>
         <TypingIndicator label={typingLabel} />
 
         <ChatInput
