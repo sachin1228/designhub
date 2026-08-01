@@ -56,19 +56,23 @@ function dicebearUrl(seed: string): string {
 
 /**
  * Converts any avatar_url stored in the DB into a plain HTTPS URL that
- * React Native's <Image> can load. Mirrors the web AvatarImg logic so
- * avatars look the same across platforms.
+ * React Native's <Image> can load. React Native cannot render SVGs natively,
+ * so all SVG-serving domains are converted to PNG equivalents.
  *
- *   null / ''                       → DiceBear generated from name
- *   boring://{style}/{encodedSeed}  → DiceBear from decoded seed
- *   https://source.boringavatars.com/... → DiceBear from URL seed segment
- *   any other https URL             → returned as-is
+ *   null / ''                            → DiceBear PNG from name
+ *   boring://{style}/{encodedSeed}       → DiceBear PNG from decoded seed
+ *   https://source.boringavatars.com/…  → DiceBear PNG from URL seed segment
+ *   https://api.dicebear.com/…/svg?…    → rewritten to /png?… (same seed)
+ *   https://api.multiavatar.com/…       → appended ?format=png
+ *   https://avataaars.io/…              → appended &fmt=png (query toggle)
+ *   any other https URL (R2 uploads…)   → returned as-is
  */
 function resolveAvatarUri(avatarUrl: string | null, name: string): string {
   if (!avatarUrl) {
     return dicebearUrl(name);
   }
 
+  // boring:// protocol — inline SVG on web, convert to DiceBear PNG on mobile
   if (avatarUrl.startsWith('boring://')) {
     const rest = avatarUrl.slice('boring://'.length);
     const slashIdx = rest.indexOf('/');
@@ -78,6 +82,7 @@ function resolveAvatarUri(avatarUrl: string | null, name: string): string {
     return dicebearUrl(seed || name);
   }
 
+  // Legacy boringavatars CDN — web rewrites to DiceBear, we do the same
   if (avatarUrl.startsWith('https://source.boringavatars.com/')) {
     try {
       const parsed = new URL(avatarUrl);
@@ -85,10 +90,27 @@ function resolveAvatarUri(avatarUrl: string | null, name: string): string {
       const seed = encodedSeed ? decodeURIComponent(encodedSeed) : name;
       return dicebearUrl(seed || name);
     } catch {
-      // malformed legacy URL — fall through to load as-is
+      return dicebearUrl(name);
     }
   }
 
+  // DiceBear — stored URLs use /svg by default; rewrite path segment to /png
+  if (avatarUrl.startsWith('https://api.dicebear.com/')) {
+    return avatarUrl.replace(/\/svg(\?|$)/, '/png$1');
+  }
+
+  // Multiavatar — returns SVG by default; ?format=png gives a raster image
+  if (avatarUrl.startsWith('https://api.multiavatar.com/')) {
+    const sep = avatarUrl.includes('?') ? '&' : '?';
+    return `${avatarUrl}${sep}format=png`;
+  }
+
+  // Avataaars — returns SVG; no official PNG endpoint, use DiceBear fallback
+  if (avatarUrl.startsWith('https://avataaars.io/')) {
+    return dicebearUrl(name);
+  }
+
+  // Robohash and all other HTTPS URLs (R2 uploads, etc.) — load as-is
   return avatarUrl;
 }
 
