@@ -20,6 +20,7 @@ interface Props {
   isSameAuthor: boolean;
   onLongPress: (message: Message) => void;
   onReactionPress: (messageId: string, emoji: string) => void;
+  onImagePress?: (uri: string) => void;
   currentUserId: string;
 }
 
@@ -262,6 +263,7 @@ export function MessageBubble({
   isSameAuthor,
   onLongPress,
   onReactionPress,
+  onImagePress,
   currentUserId,
 }: Props) {
   const colors = useColors();
@@ -368,13 +370,21 @@ export function MessageBubble({
                 <ReplyPreview replyTo={message.reply_to} colors={colors} />
               )}
 
-              {/* Image */}
+              {/* Image — tap opens full-screen viewer */}
               {message.image_url && (
-                <Image
-                  source={{ uri: message.image_url }}
-                  style={styles.messageImage}
-                  resizeMode="cover"
-                />
+                <Pressable
+                  onPress={() => onImagePress?.(message.image_url!)}
+                  onLongPress={() => onLongPress(message)}
+                  delayLongPress={350}
+                  accessibilityLabel="View full image"
+                  accessibilityRole="button"
+                >
+                  <Image
+                    source={{ uri: message.image_url }}
+                    style={styles.messageImage}
+                    resizeMode="cover"
+                  />
+                </Pressable>
               )}
 
               {/* Fix #1/#2: text content without inline time (no flex-wrap hack) */}
