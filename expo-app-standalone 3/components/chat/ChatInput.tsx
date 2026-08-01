@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useKeyboardState } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
@@ -31,6 +32,7 @@ interface Props {
 export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disabled }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const isKeyboardVisible = useKeyboardState((state) => state.isVisible);
   const [text, setText] = useState('');
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -67,7 +69,8 @@ export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disa
 
   const canSend = (!!text.trim() || !!pendingImage) && !disabled;
 
-  const bottomPadding = Platform.OS === 'ios' ? Math.max(insets.bottom, 8) : 8;
+  const bottomPadding =
+    Platform.OS === 'android' && isKeyboardVisible ? 8 : Math.max(insets.bottom, 8);
 
   return (
     <View style={[styles.root, { paddingBottom: bottomPadding }]}>
