@@ -35,6 +35,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as SystemUI from 'expo-system-ui';
 
 export default function CommunityChat() {
   const { id, name, image } = useLocalSearchParams<{ id: string; name: string; image?: string }>();
@@ -44,6 +45,15 @@ export default function CommunityChat() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [headerHeight, setHeaderHeight] = useState(0);
+
+  // Test: red window background shows through transparent edge-to-edge nav bar
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    SystemUI.setBackgroundColorAsync('#FF0000');
+    return () => {
+      SystemUI.setBackgroundColorAsync('#09090B');
+    };
+  }, []);
 
   // Track this as the active community so useCommunities won't increment
   // unread_count for incoming messages while we're looking at this chat.
