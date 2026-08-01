@@ -28,7 +28,6 @@ interface Props {
 
 export function ChatInput({ replyTo, onCancelReply, onSend, onTypingChange, disabled }: Props) {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const inputRef = useRef<TextInput>(null);
