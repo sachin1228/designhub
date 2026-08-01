@@ -35,6 +35,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as NavigationBar from 'expo-navigation-bar';
 
 export default function CommunityChat() {
   const { id, name, image } = useLocalSearchParams<{ id: string; name: string; image?: string }>();
@@ -53,6 +54,19 @@ export default function CommunityChat() {
       communityStore.activeCommunityId = null;
     };
   }, [id]);
+
+  // WhatsApp-style gesture navigation bar: match the app background so the
+  // system nav zone is a seamless dark strip — only on this screen, restored on leave.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    NavigationBar.setBackgroundColorAsync(colors.background);
+    NavigationBar.setButtonStyleAsync(colorScheme === 'dark' ? 'light' : 'dark');
+    return () => {
+      // Restore transparent when leaving chat so other screens are unaffected
+      NavigationBar.setBackgroundColorAsync('transparent');
+      NavigationBar.setButtonStyleAsync(colorScheme === 'dark' ? 'light' : 'dark');
+    };
+  }, [colors.background, colorScheme]);
 
   const {
     messages,
