@@ -50,7 +50,8 @@ const DICEBEAR_STYLES = [
 
 function dicebearUrl(seed: string): string {
   const style = DICEBEAR_STYLES[hashName(seed) % DICEBEAR_STYLES.length];
-  return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
+  // Use PNG — React Native's <Image> cannot render SVGs natively.
+  return `https://api.dicebear.com/9.x/${style}/png?seed=${encodeURIComponent(seed)}`;
 }
 
 /**
