@@ -20,6 +20,7 @@ interface Props {
   message: Message;
   isOwn: boolean;
   isSameAuthor: boolean;
+  isSelected?: boolean;
   onLongPress: (message: Message) => void;
   onReactionPress: (messageId: string, emoji: string) => void;
   onImagePress?: (uri: string) => void;
@@ -265,6 +266,7 @@ export function MessageBubble({
   message,
   isOwn,
   isSameAuthor,
+  isSelected = false,
   onLongPress,
   onReactionPress,
   onImagePress,
@@ -306,6 +308,7 @@ export function MessageBubble({
       style={[
         styles.row,
         isSameAuthor ? styles.rowCompact : styles.rowFirst,
+        isSelected && styles.rowSelected,
       ]}
     >
       {/* ── Left avatar column (always present, Slack-style) ── */}
@@ -613,6 +616,10 @@ const styles = StyleSheet.create({
   },
   rowCompact: {
     marginTop: 2,
+  },
+  // WhatsApp-style selection highlight — a subtle tinted overlay on the row
+  rowSelected: {
+    backgroundColor: 'rgba(0, 112, 243, 0.13)',
   },
 
   avatarCol: {

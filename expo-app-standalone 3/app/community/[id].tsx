@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Animated,
   FlatList,
   Image,
   KeyboardAvoidingView as RNKeyboardAvoidingView,
@@ -14,6 +16,7 @@ import {
   KeyboardAvoidingView as KeyboardControllerAvoidingView,
   KeyboardEvents,
 } from 'react-native-keyboard-controller';
+import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useChatMessages } from '@/hooks/useChatMessages';
 import { useTypingPresence } from '@/hooks/useTypingPresence';
@@ -22,7 +25,7 @@ import { MessageBubble } from '@/components/chat/MessageBubble';
 import { ImageViewer } from '@/components/chat/ImageViewer';
 import { ChatInput, PendingImage } from '@/components/chat/ChatInput';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
-import { EmojiPicker } from '@/components/chat/EmojiPicker';
+import { MessageContextBar } from '@/components/chat/MessageContextBar';
 import {
   toggleReaction,
   deleteMessage,
@@ -72,23 +75,37 @@ export default function CommunityChat() {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [viewingImageUri, setViewingImageUri] = useState<string | null>(null);
 
+  // ── Action-header animation ────────────────────────────────────────────────
+  // Fades in the action bar and fades out the normal header title when a
+  // message is selected. Uses Animated.Value driven by selectedMessage.
+  const actionBarOpacity = useRef(new Animated.Value(0)).current;
+  const normalHeaderOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const toAction = selectedMessage !== null;
+    Animated.parallel([
+      Animated.timing(actionBarOpacity, {
+        toValue: toAction ? 1 : 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.timing(normalHeaderOpacity, {
+        toValue: toAction ? 0 : 1,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [selectedMessage]);
+
   const handleImagePress = useCallback((uri: string) => {
     setViewingImageUri(uri);
   }, []);
 
   const listRef = useRef<FlatList>(null);
 
-  /**
-   * isAtBottom — true when the last message in the list is currently visible
-   * on screen. Updated by onViewableItemsChanged which is far more reliable
-   * than scroll-offset arithmetic (no timing race, no threshold guessing).
-   * Starts true because the chat always opens scrolled to the latest message.
-   */
   const isAtBottom = useRef(true);
   const lastMessageIdRef = useRef<string | null>(null);
 
-  // Keep lastMessageIdRef in sync so the viewability callback can reference it
-  // without being recreated (FlatList requires a stable onViewableItemsChanged).
   useEffect(() => {
     lastMessageIdRef.current = messages[messages.length - 1]?.id ?? null;
   }, [messages]);
@@ -108,13 +125,9 @@ export default function CommunityChat() {
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-
     const subscription = KeyboardEvents.addListener('keyboardDidShow', () => {
-      // Only jump to the bottom when the last message is already visible.
-      // If the user has scrolled up to read old messages, leave them there.
       if (isAtBottom.current) scrollToLatest(true);
     });
-
     return () => subscription.remove();
   }, [scrollToLatest]);
 
@@ -152,25 +165,47 @@ export default function CommunityChat() {
 
   const handleDelete = useCallback(
     async (messageId: string) => {
-      // Optimistic soft-delete locally first
-      softDeleteMessage(messageId);
-      try {
-        await deleteMessage(id, messageId);
-      } catch {
-        // Realtime UPDATE will reconcile if this fails
-      }
+      // Close context bar first
+      setSelectedMessage(null);
+      // Show delete confirmation
+      setTimeout(() => {
+        Alert.alert(
+          'Delete message?',
+          'This will delete the message for everyone in this chat.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete for everyone',
+              style: 'destructive',
+              onPress: async () => {
+                softDeleteMessage(messageId);
+                try {
+                  await deleteMessage(id, messageId);
+                } catch {
+                  // Realtime UPDATE will reconcile if this fails
+                }
+              },
+            },
+          ]
+        );
+      }, 200);
     },
     [id, softDeleteMessage]
   );
 
+  // Long-press: store the selected message + fire haptic
   const handleLongPress = useCallback((msg: Message) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSelectedMessage(msg);
+  }, []);
+
+  const dismissSelection = useCallback(() => {
+    setSelectedMessage(null);
   }, []);
 
   const renderItem = useCallback(
     ({ item, index }: { item: Message; index: number }) => {
       const prevMessage = index > 0 ? messages[index - 1] : null;
-      // Group consecutive messages from the same sender (only for non-deleted)
       const isSameAuthor =
         !!prevMessage &&
         prevMessage.user_id === item.user_id &&
@@ -182,6 +217,7 @@ export default function CommunityChat() {
           message={item}
           isOwn={item.user_id === user?.id}
           isSameAuthor={isSameAuthor}
+          isSelected={selectedMessage?.id === item.id}
           onLongPress={handleLongPress}
           onReactionPress={handleReaction}
           onImagePress={handleImagePress}
@@ -191,7 +227,16 @@ export default function CommunityChat() {
         />
       );
     },
-    [user?.id, handleLongPress, handleReaction, handleImagePress, handleCancel, handleRetry, messages]
+    [
+      user?.id,
+      selectedMessage?.id,
+      handleLongPress,
+      handleReaction,
+      handleImagePress,
+      handleCancel,
+      handleRetry,
+      messages,
+    ]
   );
 
   const keyExtractor = useCallback((item: Message) => item.id, []);
@@ -202,6 +247,31 @@ export default function CommunityChat() {
 
   const communityName = name ? decodeURIComponent(name) : 'Chat';
   const communityImage = image ? decodeURIComponent(image) : null;
+
+  // ── Bottom content: context bar (selection) OR normal input ───────────────
+  const bottomContent = selectedMessage ? (
+    <MessageContextBar
+      message={selectedMessage}
+      isOwn={selectedMessage.user_id === user?.id}
+      onReact={handleReaction}
+      onReply={() => {
+        setReplyTo(selectedMessage);
+        setSelectedMessage(null);
+      }}
+      onDelete={() => handleDelete(selectedMessage.id)}
+      onDismiss={dismissSelection}
+    />
+  ) : (
+    <View onLayout={() => { if (isAtBottom.current) scrollToLatest(false); }}>
+      <TypingIndicator label={typingLabel} />
+      <ChatInput
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
+        onSend={handleSend}
+        onTypingChange={onInputChange}
+      />
+    </View>
+  );
 
   const chatContent = (
     <View style={styles.flex}>
@@ -218,45 +288,43 @@ export default function CommunityChat() {
       )}
 
       {!isLoading && (
-        <FlatList
-          ref={listRef}
-          data={messages}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          contentContainerStyle={[styles.messagesList, { paddingBottom: 8 }]}
-          maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-          onViewableItemsChanged={handleViewableItemsChanged.current}
-          viewabilityConfig={viewabilityConfig.current}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.2}
-          ListHeaderComponent={
-            isLoadingMore ? (
-              <View style={styles.loadMoreSpinner}>
-                <ActivityIndicator size="small" color={colors.primary} />
+        <Pressable style={styles.flex} onPress={selectedMessage ? dismissSelection : undefined}>
+          <FlatList
+            ref={listRef}
+            data={messages}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            contentContainerStyle={[styles.messagesList, { paddingBottom: 8 }]}
+            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+            onViewableItemsChanged={handleViewableItemsChanged.current}
+            viewabilityConfig={viewabilityConfig.current}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.2}
+            // Disable scroll-to-end when in selection mode so the user can
+            // read context around the highlighted message.
+            onContentSizeChange={() => {
+              if (!selectedMessage && isAtBottom.current) scrollToLatest(false);
+            }}
+            ListHeaderComponent={
+              isLoadingMore ? (
+                <View style={styles.loadMoreSpinner}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : null
+            }
+            ListEmptyComponent={
+              <View style={styles.center}>
+                <Feather name="message-circle" size={36} color={colors.mutedForeground} />
+                <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                  No messages yet. Say hello!
+                </Text>
               </View>
-            ) : null
-          }
-          ListEmptyComponent={
-            <View style={styles.center}>
-              <Feather name="message-circle" size={36} color={colors.mutedForeground} />
-              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                No messages yet. Say hello!
-              </Text>
-            </View>
-          }
-        />
+            }
+          />
+        </Pressable>
       )}
 
-      <View onLayout={() => { if (isAtBottom.current) scrollToLatest(false); }}>
-        <TypingIndicator label={typingLabel} />
-
-        <ChatInput
-          replyTo={replyTo}
-          onCancelReply={() => setReplyTo(null)}
-          onSend={handleSend}
-          onTypingChange={onInputChange}
-        />
-      </View>
+      {bottomContent}
     </View>
   );
 
@@ -264,50 +332,114 @@ export default function CommunityChat() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
 
-      {/* Header measured for iOS keyboard offset. Android uses keyboard-controller height resize. */}
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View
         onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
         style={[
           styles.header,
           {
-            backgroundColor: colors.background,
+            backgroundColor: selectedMessage
+              ? colors.card          // slightly lifted when in selection mode
+              : colors.background,
             borderBottomColor: colors.border,
             paddingTop: insets.top + 8,
           },
         ]}
       >
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Feather name="arrow-left" size={26} color={colors.foreground} />
-        </Pressable>
+        {/* ── Normal header (community name + back) ── */}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, styles.headerInner, { opacity: normalHeaderOpacity }]}
+          pointerEvents={selectedMessage ? 'none' : 'auto'}
+        >
+          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+            <Feather name="arrow-left" size={26} color={colors.foreground} />
+          </Pressable>
 
-        <View style={styles.headerCenter}>
-          {communityImage ? (
-            <Image
-              source={{ uri: communityImage }}
-              style={[styles.headerAvatar, { borderColor: colors.border }]}
-            />
-          ) : (
-            <View
-              style={[
-                styles.headerAvatar,
-                styles.headerAvatarFallback,
-                { backgroundColor: colors.primarySoft },
-              ]}
+          <View style={styles.headerCenter}>
+            {communityImage ? (
+              <Image
+                source={{ uri: communityImage }}
+                style={[styles.headerAvatar, { borderColor: colors.border }]}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.headerAvatar,
+                  styles.headerAvatarFallback,
+                  { backgroundColor: colors.primarySoft },
+                ]}
+              >
+                <Text style={[styles.headerAvatarText, { color: colors.primary }]}>
+                  {communityName.slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <Text
+              style={[styles.headerTitle, { color: colors.foreground }]}
+              numberOfLines={1}
             >
-              <Text style={[styles.headerAvatarText, { color: colors.primary }]}>
-                {communityName.slice(0, 1).toUpperCase()}
-              </Text>
-            </View>
-          )}
-          <Text
-            style={[styles.headerTitle, { color: colors.foreground }]}
-            numberOfLines={1}
-          >
-            {communityName}
-          </Text>
-        </View>
+              {communityName}
+            </Text>
+          </View>
 
-        <View style={{ width: 36 }} />
+          <View style={{ width: 36 }} />
+        </Animated.View>
+
+        {/* ── Action header (shown when message selected) ── */}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, styles.headerInner, { opacity: actionBarOpacity }]}
+          pointerEvents={selectedMessage ? 'auto' : 'none'}
+        >
+          {/* Close / deselect */}
+          <Pressable onPress={dismissSelection} hitSlop={8} style={styles.backBtn}>
+            <Feather name="x" size={24} color={colors.foreground} />
+          </Pressable>
+
+          {/* "1 selected" label */}
+          <View style={styles.headerCenter}>
+            <Text style={[styles.headerTitle, { color: colors.foreground }]}>
+              1 selected
+            </Text>
+          </View>
+
+          {/* Context actions — right side */}
+          <View style={styles.actionIcons}>
+            {/* Reply */}
+            {!selectedMessage?.deleted_at && (
+              <Pressable
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.actionIcon,
+                  pressed && { backgroundColor: colors.subtle },
+                ]}
+                onPress={() => {
+                  if (!selectedMessage) return;
+                  setReplyTo(selectedMessage);
+                  setSelectedMessage(null);
+                }}
+              >
+                <Feather name="corner-up-left" size={20} color={colors.foreground} />
+              </Pressable>
+            )}
+
+            {/* Delete — own messages only */}
+            {selectedMessage && selectedMessage.user_id === user?.id && !selectedMessage.deleted_at && (
+              <Pressable
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.actionIcon,
+                  pressed && { backgroundColor: `${colors.destructive}18` },
+                ]}
+                onPress={() => selectedMessage && handleDelete(selectedMessage.id)}
+              >
+                <Feather name="trash-2" size={20} color={colors.destructive} />
+              </Pressable>
+            )}
+          </View>
+        </Animated.View>
+
+        {/* Spacer so the header has the right height whether normal or action */}
+        <View style={styles.headerSpacer} />
       </View>
 
       {Platform.OS === 'android' ? (
@@ -324,29 +456,13 @@ export default function CommunityChat() {
         </RNKeyboardAvoidingView>
       )}
 
-      {/* Bottom safe-area strip — rendered outside the keyboard container so it
-          never moves with the keyboard. Fills the gesture-navigation area with
-          the app background color, exactly like WhatsApp. On iOS this covers
-          the home-indicator inset; on Android it covers the gesture nav bar. */}
+      {/* Bottom safe-area strip */}
       <View style={{ height: insets.bottom, backgroundColor: colors.background }} />
 
       {/* Full-screen image viewer */}
       <ImageViewer
         uri={viewingImageUri}
         onClose={() => setViewingImageUri(null)}
-      />
-
-      {/* Long-press action sheet */}
-      <EmojiPicker
-        message={selectedMessage}
-        isOwn={Boolean(selectedMessage && selectedMessage.user_id === user?.id)}
-        onClose={() => setSelectedMessage(null)}
-        onReact={handleReaction}
-        onReply={(msg) => {
-          setReplyTo(msg);
-          setSelectedMessage(null);
-        }}
-        onDelete={handleDelete}
       />
     </View>
   );
@@ -356,12 +472,28 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 12,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  // Invisible row that gives the header its height — the two Animated.Views
+  // are absolutely positioned on top of each other inside it.
+  headerSpacer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,            // matches back button + avatar height
     gap: 8,
+  },
+  // Both the normal header and the action header share this base layout
+  headerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    gap: 8,
+    // vertically align contents to the bottom of the padded header area
+    justifyContent: 'space-between',
+    // Extend down to cover the headerSpacer + paddingBottom
+    bottom: 12,
   },
   backBtn: {
     width: 36,
@@ -397,6 +529,20 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Geist_600SemiBold',
     flexShrink: 1,
+  },
+  // Right-side icons in the action header
+  actionIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
+  },
+  actionIcon: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
   },
   center: {
     flex: 1,
