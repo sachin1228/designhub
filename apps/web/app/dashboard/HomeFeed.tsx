@@ -49,7 +49,7 @@ function timeAgo(iso: string) {
 
 function itemHref(item: FeedItem) {
   const seg = item._type === "thread" ? "threads" : item._type === "event" ? "events" : "resources";
-  return `/dashboard/communities/${item.community_id}/${seg}/${item.id}`;
+  return `/dashboard/${seg}/${item.id}`;
 }
 
 function HostnameLink({ url }: { url: string }) {
