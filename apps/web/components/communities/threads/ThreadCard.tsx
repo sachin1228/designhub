@@ -520,7 +520,7 @@ export function ThreadCard({
         </div>
       ) : (
         <article className={`group ${isLast ? "" : "border-b border-border"}`}>
-          <Link href={threadHref} className="block py-8 px-8">
+          <Link href={threadHref} className="block">
             {innerContent}
           </Link>
         </article>
