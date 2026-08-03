@@ -143,6 +143,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
                 currentUserId={currentUserId}
                 communityId={item.community_id}
                 communityName={item.community_name ?? undefined}
+                detailHref={`/dashboard/threads/${item.id}`}
                 onUpdated={handleThreadUpdated}
                 onVoteChanged={handleThreadVoteChanged}
                 onSaveChanged={handleThreadSaveChanged}
@@ -164,6 +165,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
                 event={item}
                 currentUserId={currentUserId}
                 communityId={item.community_id}
+                detailHref={`/dashboard/events/${item.id}`}
                 onUpdated={handleEventUpdated}
                 onDeleted={handleEventDeleted}
                 onRsvpChanged={handleEventRsvpChanged}
