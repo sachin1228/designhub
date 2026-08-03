@@ -500,11 +500,11 @@ export function ThreadCard({
   return (
     <>
       {isDetail ? (
-        <div className="py-4">
+        <div className="rounded-2xl bg-surface p-5">
           {innerContent}
         </div>
       ) : (
-        <article className="group border-b border-border transition-colors">
+        <article className="group border border-border bg-surface transition-colors hover:border-border-strong">
           <Link href={threadHref} className="block py-4">
             {innerContent}
           </Link>

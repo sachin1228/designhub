@@ -159,13 +159,13 @@ export function ResourceCard({
 
   return (
     <>
-      <article className="group border-b border-border transition-colors cursor-pointer">
+      <article className="group rounded-2xl border border-border bg-surface transition-colors hover:border-border-strong cursor-pointer">
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a href={resource.url} target="_blank" rel="noopener noreferrer">
 
           {/* ── OG image ── */}
           {ogImage && (
-            <div className="h-40 w-full overflow-hidden">
+            <div className="h-40 w-full overflow-hidden rounded-t-2xl bg-surface">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={ogImage}
@@ -176,7 +176,7 @@ export function ResourceCard({
             </div>
           )}
 
-          <div className="py-4">
+          <div className="p-5">
           {/* ── Top row: avatar · name · time · type pill · menu ── */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">

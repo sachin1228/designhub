@@ -133,7 +133,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
   }
 
   return (
-    <ul className="border-t border-border">
+    <ul className="space-y-3">
       {items.map((item) => {
         if (item._type === "thread") {
           return (

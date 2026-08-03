@@ -177,7 +177,7 @@ export function EventCard({ event, currentUserId, communityId, onUpdated, onDele
 
   return (
     <>
-      <article className="group border-b border-border overflow-hidden transition-colors">
+      <article className="group rounded-xl border border-border bg-surface overflow-hidden transition-colors hover:border-border-hover">
         <Link href={eventHref} className="block">
           <div className="flex">
             {/* Cover image / gradient — left panel */}
