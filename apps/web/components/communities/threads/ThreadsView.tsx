@@ -202,8 +202,6 @@ export function ThreadsView({
                   <div className="h-6 w-16 rounded-lg bg-surface-raised" />
                   <div className="h-6 w-20 rounded-lg bg-surface-raised" />
                 </div>
-                {/* Divider */}
-                <div className="mt-4 border-t border-border" />
                 {/* Footer */}
                 <div className="mt-3 flex items-center gap-4">
                   <div className="flex items-center gap-2">
