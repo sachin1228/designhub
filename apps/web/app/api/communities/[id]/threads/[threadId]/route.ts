@@ -130,6 +130,7 @@ export async function PATCH(
   const links = normalizeLinks(body.links);
   const attachments = normalizeAttachments(body.attachments);
   const allowReplies = body.allow_replies !== false;
+  const isPublic = body.is_public === true;
 
   if (!title || title.length > 120) return NextResponse.json({ error: "Title is required and must be 120 characters or fewer." }, { status: 422 });
   if (!description || description.length > 10000) return NextResponse.json({ error: "Description is required and must be 10,000 characters or fewer." }, { status: 422 });
@@ -144,9 +145,9 @@ export async function PATCH(
 
   const { data: updated, error } = await db
     .from("community_threads")
-    .update({ title, description, category, tags, attachments, links, allow_replies: allowReplies })
+    .update({ title, description, category, tags, attachments, links, allow_replies: allowReplies, is_public: isPublic })
     .eq("id", threadId)
-    .select("id, community_id, user_id, title, description, category, tags, attachments, links, allow_replies, created_at, updated_at")
+    .select("id, community_id, user_id, title, description, category, tags, attachments, links, allow_replies, is_public, created_at, updated_at")
     .single();
 
   if (error || !updated) { console.error("[PATCH thread]", error); return NextResponse.json({ error: "Failed to update thread." }, { status: 500 }); }
