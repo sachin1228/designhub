@@ -7,6 +7,8 @@ export const metadata = { title: `Home — drafthub` };
 
 export default async function DashboardPage() {
   const session = await getSession();
+  const userId = session?.userId ?? "";
+
   const name = await (async () => {
     if (!session?.userId) return null;
     const db = createServiceClient();
@@ -30,7 +32,7 @@ export default async function DashboardPage() {
         <h2 className="font-body text-sm font-semibold text-foreground">Public Feed</h2>
       </div>
 
-      <HomeFeed />
+      <HomeFeed currentUserId={userId} />
     </div>
   );
 }
