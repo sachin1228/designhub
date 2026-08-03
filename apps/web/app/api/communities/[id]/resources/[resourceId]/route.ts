@@ -63,18 +63,21 @@ export async function GET(
   const userId = session.userId!;
   const db = createServiceClient();
 
-  const { data: membership } = await db.from("community_members").select("joined_at").eq("community_id", communityId).eq("user_id", userId).maybeSingle();
-  if (!membership) return NextResponse.json({ error: "Not a member of this community." }, { status: 403 });
-
   const { data, error } = await db
     .from("community_resources")
-    .select("id, community_id, user_id, title, description, resource_type, url, tags, created_at, updated_at")
+    .select("id, community_id, user_id, title, description, resource_type, url, tags, is_public, created_at, updated_at")
     .eq("id", resourceId)
     .eq("community_id", communityId)
     .maybeSingle();
 
   if (error) { console.error("[GET resource]", error); return NextResponse.json({ error: "Failed to fetch resource." }, { status: 500 }); }
   if (!data) return NextResponse.json({ error: "Resource not found." }, { status: 404 });
+
+  // Non-members may view public resources; private resources require membership
+  if (!data.is_public) {
+    const { data: membership } = await db.from("community_members").select("joined_at").eq("community_id", communityId).eq("user_id", userId).maybeSingle();
+    if (!membership) return NextResponse.json({ error: "Not a member of this community." }, { status: 403 });
+  }
 
   return NextResponse.json({ resource: await enrichResource(db, data as Record<string, unknown>, userId) });
 }
