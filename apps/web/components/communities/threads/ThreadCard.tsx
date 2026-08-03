@@ -518,7 +518,7 @@ export function ThreadCard({
           {innerContent}
         </div>
       ) : (
-        <article className="group border border-border bg-surface transition-colors hover:border-border-strong">
+        <article className="group p-6 border-b border-white/60">
           <Link href={threadHref} className="block py-4">
             {innerContent}
           </Link>
