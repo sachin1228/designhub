@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex gap-8 items-start">
       {/* ── Main feed ── */}
-      <div className="w-full max-w-[600px] shrink-0 border-r border-white/60">
+      <div className="w-full max-w-[600px] shrink-0 border-r border-border">
         <div className="mb-6 p-6">
           <h1 className="font-display text-2xl font-semibold text-foreground mb-1">
             Welcome back{name ? `, ${name.split(" ")[0]}` : ""}

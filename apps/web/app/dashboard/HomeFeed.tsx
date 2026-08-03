@@ -133,8 +133,10 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
   }
 
   return (
-    <ul className="border-t border-white/60">
-      {items.map((item) => {
+    <ul className="border-t border-border">
+      {items.map((item, idx) => {
+        const isLast = idx === items.length - 1;
+
         if (item._type === "thread") {
           return (
             <li key={`thread-${item.id}`}>
@@ -148,6 +150,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
                 onVoteChanged={handleThreadVoteChanged}
                 onSaveChanged={handleThreadSaveChanged}
                 onDeleted={handleThreadDeleted}
+                isLast={isLast}
               />
             </li>
           );
@@ -155,7 +158,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
 
         if (item._type === "event") {
           return (
-            <li key={`event-${item.id}`} className="border-b border-white/60">
+            <li key={`event-${item.id}`} className={isLast ? "" : "border-b border-border"}>
               <div className="py-8 px-8">
                 {item.community_name && (
                   <p className="mb-2 font-body text-[11px] text-foreground-subtle">
@@ -179,7 +182,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
 
         // resource
         return (
-          <li key={`resource-${item.id}`} className="border-b border-white/60">
+          <li key={`resource-${item.id}`} className={isLast ? "" : "border-b border-border"}>
             <div className="py-8 px-8">
               {item.community_name && (
                 <p className="mb-2 font-body text-[11px] text-foreground-subtle">

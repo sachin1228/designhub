@@ -75,6 +75,8 @@ interface ThreadCardProps {
   variant?: "list" | "detail";
   /** Override the link destination (e.g. public standalone detail page). */
   detailHref?: string;
+  /** When true, suppresses the bottom border (e.g. last item in a feed list). */
+  isLast?: boolean;
 }
 
 export function ThreadCard({
@@ -88,6 +90,7 @@ export function ThreadCard({
   communityName,
   variant = "list",
   detailHref,
+  isLast = false,
 }: ThreadCardProps) {
   const isDetail = variant === "detail";
   const category = THREAD_CATEGORIES.find((item) => item.value === thread.category);
@@ -516,7 +519,7 @@ export function ThreadCard({
           {innerContent}
         </div>
       ) : (
-        <article className="group border-b border-white/60">
+        <article className={`group ${isLast ? "" : "border-b border-border"}`}>
           <Link href={threadHref} className="block py-8 px-8">
             {innerContent}
           </Link>
