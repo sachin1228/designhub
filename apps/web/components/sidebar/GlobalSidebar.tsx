@@ -103,9 +103,6 @@ export function GlobalSidebar({ userId }: Props) {
         </ul>
       </div>
 
-      {/* Separator */}
-      <div className="mx-4 h-px bg-border" />
-
       {/* ALL — community list */}
       <div>
         {loading ? (
