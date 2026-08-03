@@ -64,7 +64,7 @@ export function GlobalSidebar({ userId }: Props) {
       )}
       {/* WORKSPACE nav */}
       <div className="px-4 pt-5 pb-3">
-        <p className="px-1 mb-3 font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
+        <p className="px-1 mb-3 font-body text-[9px] font-semibold uppercase tracking-widest text-foreground-muted">
           Workspace
         </p>
         <ul className="space-y-1">
@@ -112,7 +112,7 @@ export function GlobalSidebar({ userId }: Props) {
         ) : communities.length === 0 ? (
           <div>
             <div className="flex items-center justify-between px-5 pt-3 pb-1">
-              <span className="font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
+              <span className="font-body text-[8px] font-semibold uppercase tracking-widest text-foreground-muted">
                 Your Community
               </span>
               <button
@@ -136,7 +136,7 @@ export function GlobalSidebar({ userId }: Props) {
         ) : (
           <div>
             <div className="flex items-center justify-between px-5 pt-3 pb-2">
-              <span className="font-body text-[10px] font-semibold uppercase tracking-widest text-foreground-muted">
+              <span className="font-body text-[9px] font-semibold uppercase tracking-widest text-foreground-muted">
                 Your Community
               </span>
               <button
