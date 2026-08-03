@@ -12,7 +12,9 @@ import { THREAD_CATEGORIES } from "./types";
 
 const URL_REGEX = /https?:\/\/[^\s<>"]+/g;
 
-function renderWithLinks(text: string) {
+/** Render text with URLs highlighted blue.
+ *  isNested=true → uses <span onClick> to avoid <a> inside <a> (list card wrapper). */
+function renderWithLinks(text: string, isNested = false) {
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -20,18 +22,33 @@ function renderWithLinks(text: string) {
   while ((match = URL_REGEX.exec(text)) !== null) {
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
     const url = match[0];
-    parts.push(
-      <a
-        key={match.index}
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-400 hover:underline break-all"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {url}
-      </a>
-    );
+    if (isNested) {
+      parts.push(
+        <span
+          key={match.index}
+          role="link"
+          tabIndex={0}
+          className="text-blue-400 hover:underline break-all cursor-pointer"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(url, "_blank", "noopener,noreferrer"); }}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); window.open(url, "_blank", "noopener,noreferrer"); } }}
+        >
+          {url}
+        </span>
+      );
+    } else {
+      parts.push(
+        <a
+          key={match.index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:underline break-all"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {url}
+        </a>
+      );
+    }
     lastIndex = match.index + url.length;
   }
   if (lastIndex < text.length) parts.push(text.slice(lastIndex));
@@ -271,7 +288,7 @@ export function ThreadCard({
         if (newFormat) {
           return (
             <p className={`mt-3 font-body text-sm leading-relaxed text-foreground ${isDetail ? "whitespace-pre-wrap" : "line-clamp-4"}`}>
-              {renderWithLinks(thread.description)}
+              {renderWithLinks(thread.description, !isDetail)}
             </p>
           );
         }
@@ -287,7 +304,7 @@ export function ThreadCard({
               </h3>
             )}
             <p className={`mt-1.5 font-body text-xs leading-relaxed text-foreground-muted ${isDetail ? "whitespace-pre-wrap" : "line-clamp-3"}`}>
-              {renderWithLinks(thread.description)}
+              {renderWithLinks(thread.description, !isDetail)}
             </p>
           </>
         );
