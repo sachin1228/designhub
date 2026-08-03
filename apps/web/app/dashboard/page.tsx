@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   })();
 
   return (
-    <div className="flex gap-8 px-6 py-6 items-start">
+    <div className="flex gap-8 items-start">
       {/* ── Main feed ── */}
       <div className="w-full max-w-[600px] shrink-0">
         <div className="mb-6">
