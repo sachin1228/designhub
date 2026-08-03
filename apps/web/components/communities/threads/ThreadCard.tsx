@@ -519,7 +519,7 @@ export function ThreadCard({
         </div>
       ) : (
         <article className="group border-b border-white/60">
-          <Link href={threadHref} className="block py-4">
+          <Link href={threadHref} className="block py-4 px-4">
             {innerContent}
           </Link>
         </article>
