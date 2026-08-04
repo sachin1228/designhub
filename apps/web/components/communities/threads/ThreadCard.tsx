@@ -526,7 +526,7 @@ export function ThreadCard({
         </div>
       ) : cardStyle === "card" ? (
         <article className="group mx-auto w-full max-w-4xl">
-          <Link href={threadHref} className="block rounded-xl bg-surface px-6 py-5 hover:bg-surface-raised transition-colors">
+          <Link href={threadHref} className="block rounded-xl bg-surface px-6 py-5">
             {innerContent}
           </Link>
         </article>
