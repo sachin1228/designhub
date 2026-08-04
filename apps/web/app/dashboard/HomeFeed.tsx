@@ -11,9 +11,9 @@ import type { CommunityEvent } from "@/components/communities/events/types";
 import type { CommunityResource } from "@/components/communities/resources/types";
 
 // Feed item as returned by /api/home/feed — typed union
-type FeedThread   = CommunityThread & { _type: "thread";   community_name: string | null };
-type FeedEvent    = CommunityEvent  & { _type: "event";    community_name: string | null };
-type FeedResource = CommunityResource & { _type: "resource"; community_name: string | null };
+type FeedThread   = CommunityThread   & { _type: "thread";   community_name: string | null; community_image: string | null };
+type FeedEvent    = CommunityEvent    & { _type: "event";    community_name: string | null; community_image: string | null };
+type FeedResource = CommunityResource & { _type: "resource"; community_name: string | null; community_image: string | null };
 type FeedItem = FeedThread | FeedEvent | FeedResource;
 
 interface HomeFeedProps {
@@ -248,11 +248,21 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
           <li key={`resources-${gi}`} className={isLastGroup ? "" : "border-b border-border"}>
             <div className="grid grid-cols-2 gap-4 p-4">
               {resources.map((res) => (
-                <div key={`resource-${res.id}`} className="rounded-2xl border border-border overflow-hidden p-5">
+                <div key={`resource-${res.id}`} className="overflow-hidden">
                   {res.community_name && (
-                    <p className="mb-3 font-body text-[11px] text-foreground-subtle">
-                      in <span className="text-foreground-muted">{res.community_name}</span>
-                    </p>
+                    <div className="mb-2 flex items-center gap-1.5 font-body text-[11px] text-foreground-subtle">
+                      <span>posted in</span>
+                      {res.community_image ? (
+                        <img
+                          src={res.community_image}
+                          alt={res.community_name}
+                          className="h-4 w-4 rounded-full object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full bg-accent/20 shrink-0" />
+                      )}
+                      <span className="text-foreground-muted">{res.community_name}</span>
+                    </div>
                   )}
                   <ResourceCard
                     resource={res}
