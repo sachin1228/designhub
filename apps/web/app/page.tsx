@@ -16,74 +16,63 @@ import {
 import { APP_NAME } from "@draft/shared";
 import type { LucideIcon } from "lucide-react";
 
-/* ─── Reusable corner brackets ─────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   Palette constants — drawn directly from the design system blue scale
+   blue[100]=#000b1f  blue[200]=#00254d  blue[300]=#003c85
+   blue[400]=#0057b7  blue[500]=#006bdb  blue[600]=#0070F3  (PRIMARY)
+   blue[700]=#52a8ff  blue[800]=#adcfff  blue[900]=#d9ecff
+   blue[1000]=#f0f8ff (accent-soft)
+───────────────────────────────────────────────────────────────────── */
+
+/* ─── Three-tone icon style system ─────────────────────────────── */
+// soft  = light blue tint (accent-soft)
+// slate = cool neutral gray
+// navy  = deep navy with light blue icon
+type IconTone = "soft" | "slate" | "navy";
+
+function iconStyle(tone: IconTone): { wrapper: string; icon: string } {
+  switch (tone) {
+    case "soft":  return { wrapper: "bg-[#f0f8ff]",  icon: "text-[#0057b7]" };
+    case "slate": return { wrapper: "bg-[#EAEAEA]",  icon: "text-[#404040]" };
+    case "navy":  return { wrapper: "bg-[#000b1f]",  icon: "text-[#52a8ff]" };
+  }
+}
+
+const ICON_TONES: IconTone[] = ["soft", "slate", "navy"];
+
+/* ─── Corner brackets ───────────────────────────────────────────── */
 function CornerBrackets({
   variant = "accent",
   size = "sm",
 }: {
-  variant?: "accent" | "signal" | "muted";
+  variant?: "accent" | "signal" | "muted" | "light";
   size?: "sm" | "md";
 }) {
   const color =
-    variant === "signal"
-      ? "border-signal"
-      : variant === "muted"
-      ? "border-border"
-      : "border-accent";
-  const inset = size === "md" ? "-left-3 -top-3 h-5 w-5" : "-left-2 -top-2 h-4 w-4";
-  const insetR = size === "md" ? "-right-3 -top-3 h-5 w-5" : "-right-2 -top-2 h-4 w-4";
-  const insetBL = size === "md" ? "-bottom-3 -left-3 h-5 w-5" : "-bottom-2 -left-2 h-4 w-4";
-  const insetBR = size === "md" ? "-bottom-3 -right-3 h-5 w-5" : "-bottom-2 -right-2 h-4 w-4";
+    variant === "signal" ? "border-signal"
+    : variant === "muted" ? "border-border"
+    : variant === "light" ? "border-[#52a8ff]"
+    : "border-accent";
+  const tl = size === "md" ? "-left-3 -top-3 h-5 w-5" : "-left-2 -top-2 h-4 w-4";
+  const tr = size === "md" ? "-right-3 -top-3 h-5 w-5" : "-right-2 -top-2 h-4 w-4";
+  const bl = size === "md" ? "-bottom-3 -left-3 h-5 w-5" : "-bottom-2 -left-2 h-4 w-4";
+  const br = size === "md" ? "-bottom-3 -right-3 h-5 w-5" : "-bottom-2 -right-2 h-4 w-4";
   return (
     <>
-      <span className={`pointer-events-none absolute ${inset} border-l-2 border-t-2 ${color}`} aria-hidden="true" />
-      <span className={`pointer-events-none absolute ${insetR} border-r-2 border-t-2 ${color}`} aria-hidden="true" />
-      <span className={`pointer-events-none absolute ${insetBL} border-b-2 border-l-2 ${color}`} aria-hidden="true" />
-      <span className={`pointer-events-none absolute ${insetBR} border-b-2 border-r-2 ${color}`} aria-hidden="true" />
+      <span className={`pointer-events-none absolute ${tl} border-l-2 border-t-2 ${color}`} aria-hidden="true" />
+      <span className={`pointer-events-none absolute ${tr} border-r-2 border-t-2 ${color}`} aria-hidden="true" />
+      <span className={`pointer-events-none absolute ${bl} border-b-2 border-l-2 ${color}`} aria-hidden="true" />
+      <span className={`pointer-events-none absolute ${br} border-b-2 border-r-2 ${color}`} aria-hidden="true" />
     </>
   );
 }
 
-/* ─── Floating avatar cluster (static) ─────────────────────────── */
-const AVATAR_SEEDS = [
-  { seed: "Sunny",  size: "h-16 w-16", offset: "bottom-0 left-[5%]" },
-  { seed: "Mila",   size: "h-20 w-20", offset: "bottom-0 left-[18%]" },
-  { seed: "Theo",   size: "h-24 w-24", offset: "bottom-0 left-[35%]" },
-  { seed: "Priya",  size: "h-20 w-20", offset: "bottom-0 left-[55%]" },
-  { seed: "Juno",   size: "h-16 w-16", offset: "bottom-0 left-[70%]" },
-  { seed: "Kai",    size: "h-14 w-14", offset: "bottom-0 left-[83%]" },
-];
+/* ─── Avatar seeds ───────────────────────────────────────────────── */
+const AVATAR_SEEDS = ["Sunny", "Mila", "Theo", "Priya", "Juno", "Kai"];
 const HAPPY_PARAMS =
   "mouth[]=smile&mouth[]=twinkle&eyes[]=happy&eyes[]=wink&backgroundColor=transparent";
 
-/* ─── Sample community data ─────────────────────────────────────── */
-const COMMUNITIES: { name: string; Icon: LucideIcon; members: number; city: string; tags: string[] }[] = [
-  { name: "Design Systems",        Icon: Layers,         members: 24, city: "Global",    tags: ["Figma", "Tokens"]         },
-  { name: "Product Designers",     Icon: Target,         members: 41, city: "Bangalore", tags: ["UX", "Strategy"]          },
-  { name: "AI & ML Community",     Icon: Bot,            members: 18, city: "Global",    tags: ["Generative", "Tools"]     },
-  { name: "Visual Design",         Icon: Palette,        members: 33, city: "Mumbai",    tags: ["Brand", "Illustration"]   },
-  { name: "Hyderabad Designers",   Icon: MapPin,         members: 15, city: "Hyderabad", tags: ["Local", "Networking"]     },
-  { name: "Motion & Interaction",  Icon: Sparkles,       members: 22, city: "Global",    tags: ["Animation", "Prototyping"] },
-];
-
-const STEPS = [
-  {
-    n: "01",
-    title: "Apply",
-    body: "Fill in a short form — your name, portfolio, and what kind of design work you do. We review every application by hand.",
-  },
-  {
-    n: "02",
-    title: "Get invited",
-    body: "If you're a good fit, you'll receive an invite link by email. No algorithm, no waiting list numbers — just a real review.",
-  },
-  {
-    n: "03",
-    title: "Join & connect",
-    body: "Complete your profile, choose your communities, and start connecting with designers who care about the craft.",
-  },
-];
-
+/* ─── Data ───────────────────────────────────────────────────────── */
 const FEATURES: { Icon: LucideIcon; title: string; body: string }[] = [
   {
     Icon: MessageSquare,
@@ -117,17 +106,45 @@ const FEATURES: { Icon: LucideIcon; title: string; body: string }[] = [
   },
 ];
 
+const COMMUNITIES: { name: string; Icon: LucideIcon; members: number; city: string; tags: string[] }[] = [
+  { name: "Design Systems",       Icon: Layers,   members: 24, city: "Global",    tags: ["Figma", "Tokens"]          },
+  { name: "Product Designers",    Icon: Target,   members: 41, city: "Bangalore", tags: ["UX", "Strategy"]           },
+  { name: "AI & ML Community",    Icon: Bot,      members: 18, city: "Global",    tags: ["Generative", "Tools"]      },
+  { name: "Visual Design",        Icon: Palette,  members: 33, city: "Mumbai",    tags: ["Brand", "Illustration"]    },
+  { name: "Hyderabad Designers",  Icon: MapPin,   members: 15, city: "Hyderabad", tags: ["Local", "Networking"]      },
+  { name: "Motion & Interaction", Icon: Sparkles, members: 22, city: "Global",    tags: ["Animation", "Prototyping"] },
+];
+
+// Tag tone: alternate between blue-soft and neutral-gray
+const TAG_TONES = [
+  { bg: "bg-[#f0f8ff]", text: "text-[#0057b7]" },
+  { bg: "bg-[#EAEAEA]", text: "text-[#525252]" },
+];
+
+// Step number palette — each step a different blue-scale depth
+const STEP_STYLES = [
+  { bg: "bg-[#f0f8ff]",  text: "text-[#0057b7]", border: "border-[#d9ecff]" },  // light blue
+  { bg: "bg-[#003c85]",  text: "text-[#adcfff]", border: "border-[#0057b7]" },  // mid navy
+  { bg: "bg-[#EAEAEA]",  text: "text-[#262626]", border: "border-[#E0E0E0]" },  // neutral
+];
+
+const STEPS = [
+  { n: "01", title: "Apply",         body: "Fill in a short form — your name, portfolio, and what kind of design work you do. We review every application by hand." },
+  { n: "02", title: "Get invited",   body: "If you're a good fit, you'll receive an invite link by email. No algorithm, no waiting list numbers — just a real review." },
+  { n: "03", title: "Join & connect", body: "Complete your profile, choose your communities, and start connecting with designers who care about the craft." },
+];
+
+/* ─── Page ───────────────────────────────────────────────────────── */
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
 
-      {/* ── Nav ───────────────────────────────────────────────────── */}
+      {/* ── Nav ─────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-sm md:px-10">
-        <Link href="/" className="flex items-center gap-0.5 font-display text-base font-semibold text-foreground">
+        <Link href="/" className="flex items-center font-display text-base font-semibold text-foreground">
           {APP_NAME}
           <span className="text-accent mx-0.5">/</span>
         </Link>
-
         <nav className="flex items-center gap-2">
           <Link
             href="/login"
@@ -137,34 +154,36 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/apply"
-            className="rounded-md bg-accent px-3.5 py-1.5 font-body text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+            className="rounded-md bg-accent px-3.5 py-1.5 font-body text-sm font-medium text-white transition-colors hover:bg-accent-hover"
           >
             Apply to join
           </Link>
         </nav>
       </header>
 
-      {/* ── Hero ──────────────────────────────────────────────────── */}
+      {/* ── Hero ────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden px-6 pb-24 pt-20 md:px-10 md:pt-28">
         <div className="pointer-events-none absolute inset-0 grid-dots opacity-60" aria-hidden="true" />
-
-        {/* Glow blob */}
+        {/* Soft blue glow */}
         <div
-          className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[500px] w-[900px] rounded-full opacity-10"
-          style={{ background: "radial-gradient(ellipse at 50% 0%, #0070F3 0%, transparent 70%)" }}
+          className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[500px] w-[900px]"
+          style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(0,112,243,0.10) 0%, transparent 70%)" }}
           aria-hidden="true"
         />
 
         <div className="relative z-10 mx-auto max-w-4xl text-center">
-          {/* Eyebrow pill */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-accent-soft px-3.5 py-1.5 shadow-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <span className="font-mono text-[11px] uppercase tracking-widest text-accent">
+          {/* Eyebrow — neutral pill, not blue */}
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1.5 shadow-xs">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#0070F3]" />
+            <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-muted">
               Designer community · Invite only
             </span>
           </div>
 
-          <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight text-foreground md:text-6xl" style={{ letterSpacing: "-0.03em" }}>
+          <h1
+            className="font-display text-4xl font-semibold leading-tight text-foreground md:text-6xl"
+            style={{ letterSpacing: "-0.03em" }}
+          >
             Where designers{" "}
             <span className="text-accent">connect</span>,{" "}
             share<span className="text-foreground-muted">,</span>{" "}
@@ -179,7 +198,7 @@ export default function LandingPage() {
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/apply"
-              className="relative inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 font-body text-sm font-medium text-accent-foreground shadow-sm transition-colors hover:bg-accent-hover"
+              className="relative inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 font-body text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover"
             >
               <CornerBrackets variant="signal" />
               Apply to join
@@ -200,23 +219,24 @@ export default function LandingPage() {
         <div className="relative z-10 mx-auto mt-16 max-w-lg">
           <div className="relative rounded-xl border border-border bg-surface p-4 shadow-md">
             <CornerBrackets variant="accent" size="md" />
-
-            {/* Avatar strip */}
-            <div className="relative h-36 overflow-hidden rounded-lg" style={{ background: "linear-gradient(135deg, #0057b7 0%, #000b1f 100%)" }}>
+            {/* Avatar strip — deep navy gradient from blue scale */}
+            <div
+              className="relative h-36 overflow-hidden rounded-lg"
+              style={{ background: "linear-gradient(135deg, #003c85 0%, #000b1f 100%)" }}
+            >
               <div className="pointer-events-none absolute inset-0 grid-dots opacity-20" aria-hidden="true" />
               <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center gap-0.5 px-4">
-                {AVATAR_SEEDS.map(({ seed, size, offset: _o }) => (
+                {AVATAR_SEEDS.map((seed) => (
                   <img
                     key={seed}
                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&${HAPPY_PARAMS}`}
-                    className={`${size} flex-shrink-0`}
+                    className="h-16 w-16 flex-shrink-0 last:h-14 last:w-14 [&:nth-child(3)]:h-24 [&:nth-child(3)]:w-24 [&:nth-child(2)]:h-20 [&:nth-child(2)]:w-20 [&:nth-child(4)]:h-20 [&:nth-child(4)]:w-20"
                     alt=""
                     aria-hidden="true"
                   />
                 ))}
               </div>
             </div>
-
             {/* Card footer */}
             <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -230,9 +250,7 @@ export default function LandingPage() {
                     />
                   ))}
                 </div>
-                <span className="font-body text-xs text-foreground-muted">
-                  +120 designers
-                </span>
+                <span className="font-body text-xs text-foreground-muted">+120 designers</span>
               </div>
               <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-foreground-subtle">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -243,25 +261,34 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stats bar ─────────────────────────────────────────────── */}
-      <section className="border-y border-border bg-surface-raised">
-        <div className="mx-auto grid max-w-4xl grid-cols-3 divide-x divide-border">
+      {/* ── Stats — deep navy band ───────────────────────────────── */}
+      <section style={{ background: "linear-gradient(90deg, #000b1f 0%, #003c85 50%, #000b1f 100%)" }}>
+        <div className="mx-auto grid max-w-4xl grid-cols-3">
           {[
-            { value: "150+",  label: "Designers" },
-            { value: "20+",   label: "Communities" },
-            { value: "12+",   label: "Cities" },
-          ].map(({ value, label }) => (
-            <div key={label} className="flex flex-col items-center py-8">
-              <span className="font-display text-3xl font-semibold text-foreground" style={{ letterSpacing: "-0.03em" }}>
+            { value: "150+", label: "Designers" },
+            { value: "20+",  label: "Communities" },
+            { value: "12+",  label: "Cities" },
+          ].map(({ value, label }, i) => (
+            <div
+              key={label}
+              className="flex flex-col items-center py-10"
+              style={{ borderRight: i < 2 ? "1px solid rgba(82,168,255,0.15)" : undefined }}
+            >
+              <span
+                className="font-display text-3xl font-semibold"
+                style={{ color: "#adcfff", letterSpacing: "-0.03em" }}
+              >
                 {value}
               </span>
-              <span className="mt-1 font-body text-xs text-foreground-muted">{label}</span>
+              <span className="mt-1 font-body text-xs" style={{ color: "#52a8ff" }}>
+                {label}
+              </span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Features grid ─────────────────────────────────────────── */}
+      {/* ── Features grid ───────────────────────────────────────── */}
       <section className="relative px-6 py-24 md:px-10">
         <div className="pointer-events-none absolute inset-0 grid-dots opacity-30" aria-hidden="true" />
 
@@ -270,31 +297,38 @@ export default function LandingPage() {
             <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
               What you get
             </span>
-            <h2 className="mt-3 font-display text-3xl font-semibold text-foreground" style={{ letterSpacing: "-0.025em" }}>
+            <h2
+              className="mt-3 font-display text-3xl font-semibold text-foreground"
+              style={{ letterSpacing: "-0.025em" }}
+            >
               Built around how designers{" "}
               <span className="text-accent">actually work</span>
             </h2>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ Icon, title, body }) => (
-              <div
-                key={title}
-                className="relative rounded-xl bg-surface p-6 shadow-sm"
-                style={{ boxShadow: "var(--shadow-card)" }}
-              >
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft shadow-xs">
-                  <Icon size={18} className="text-accent" />
+            {FEATURES.map(({ Icon, title, body }, i) => {
+              const tone = ICON_TONES[i % 3];
+              const { wrapper, icon } = iconStyle(tone);
+              return (
+                <div
+                  key={title}
+                  className="relative rounded-xl bg-surface p-6"
+                  style={{ boxShadow: "var(--shadow-card)" }}
+                >
+                  <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${wrapper} shadow-xs`}>
+                    <Icon size={18} className={icon} />
+                  </div>
+                  <h3 className="font-display text-sm font-semibold text-foreground">{title}</h3>
+                  <p className="mt-2 font-body text-sm leading-relaxed text-foreground-muted">{body}</p>
                 </div>
-                <h3 className="font-display text-sm font-semibold text-foreground">{title}</h3>
-                <p className="mt-2 font-body text-sm leading-relaxed text-foreground-muted">{body}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ── Community preview ─────────────────────────────────────── */}
+      {/* ── Community preview ───────────────────────────────────── */}
       <section className="bg-background-subtle px-6 py-24 md:px-10">
         <div className="mx-auto max-w-4xl">
           <div className="mb-10 flex items-end justify-between">
@@ -302,7 +336,10 @@ export default function LandingPage() {
               <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
                 Inside drafthub
               </span>
-              <h2 className="mt-3 font-display text-2xl font-semibold text-foreground" style={{ letterSpacing: "-0.025em" }}>
+              <h2
+                className="mt-3 font-display text-2xl font-semibold text-foreground"
+                style={{ letterSpacing: "-0.025em" }}
+              >
                 Find your community
               </h2>
             </div>
@@ -312,41 +349,45 @@ export default function LandingPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {COMMUNITIES.map(({ name, Icon, members, city, tags }) => (
-              <div
-                key={name}
-                className="group relative flex flex-col gap-3 rounded-xl bg-surface p-4 transition-shadow hover:shadow-md"
-                style={{ boxShadow: "var(--shadow-card)" }}
-              >
-                {/* Community icon */}
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-accent-soft shadow-xs">
-                    <Icon size={18} className="text-accent" />
+            {COMMUNITIES.map(({ name, Icon, members, city, tags }, i) => {
+              const tone = ICON_TONES[i % 3];
+              const { wrapper, icon } = iconStyle(tone);
+              return (
+                <div
+                  key={name}
+                  className="group relative flex flex-col gap-3 rounded-xl bg-surface p-4 transition-shadow hover:shadow-md"
+                  style={{ boxShadow: "var(--shadow-card)" }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${wrapper} shadow-xs`}>
+                      <Icon size={18} className={icon} />
+                    </div>
+                    <div>
+                      <p className="font-body text-sm font-medium text-foreground">{name}</p>
+                      <p className="font-mono text-[10px] text-foreground-subtle">{members} members · {city}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-body text-sm font-medium text-foreground">{name}</p>
-                    <p className="font-mono text-[10px] text-foreground-subtle">{members} members · {city}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tags.map((tag, ti) => {
+                      const tt = TAG_TONES[(i + ti) % 2];
+                      return (
+                        <span
+                          key={tag}
+                          className={`rounded-full ${tt.bg} ${tt.text} px-2.5 py-0.5 font-mono text-[10px] font-medium shadow-xs`}
+                        >
+                          {tag}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1.5">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-accent-soft px-2.5 py-0.5 font-mono text-[10px] font-medium text-accent shadow-xs"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ── How it works ──────────────────────────────────────────── */}
+      {/* ── How it works ────────────────────────────────────────── */}
       <section className="relative px-6 py-24 md:px-10">
         <div className="pointer-events-none absolute inset-0 grid-dots opacity-30" aria-hidden="true" />
 
@@ -355,35 +396,36 @@ export default function LandingPage() {
             <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
               The process
             </span>
-            <h2 className="mt-3 font-display text-2xl font-semibold text-foreground" style={{ letterSpacing: "-0.025em" }}>
+            <h2
+              className="mt-3 font-display text-2xl font-semibold text-foreground"
+              style={{ letterSpacing: "-0.025em" }}
+            >
               How to get in
             </h2>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-3">
-            {STEPS.map(({ n, title, body }) => (
-              <div key={n} className="relative flex flex-col gap-4">
-                {/* Step number */}
-                <div className="relative inline-block w-fit">
-                  <span
-                    className="relative z-10 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface font-mono text-sm font-semibold text-accent"
-                    style={{ boxShadow: "var(--shadow-card)" }}
+          <div className="grid gap-8 sm:grid-cols-3">
+            {STEPS.map(({ n, title, body }, i) => {
+              const s = STEP_STYLES[i];
+              return (
+                <div key={n} className="flex flex-col gap-4">
+                  <div
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border ${s.border} ${s.bg} font-mono text-sm font-semibold ${s.text}`}
                   >
                     {n}
-                  </span>
+                  </div>
+                  <div>
+                    <h3 className="font-display text-base font-semibold text-foreground">{title}</h3>
+                    <p className="mt-2 font-body text-sm leading-relaxed text-foreground-muted">{body}</p>
+                  </div>
                 </div>
-
-                <div>
-                  <h3 className="font-display text-base font-semibold text-foreground">{title}</h3>
-                  <p className="mt-2 font-body text-sm leading-relaxed text-foreground-muted">{body}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ── Testimonial / quote ───────────────────────────────────── */}
+      {/* ── Testimonial ─────────────────────────────────────────── */}
       <section className="px-6 pb-24 md:px-10">
         <div className="mx-auto max-w-2xl">
           <div
@@ -391,7 +433,10 @@ export default function LandingPage() {
             style={{ boxShadow: "var(--shadow-card)" }}
           >
             <CornerBrackets variant="accent" size="md" />
-            <p className="font-display text-lg font-medium leading-relaxed text-foreground" style={{ letterSpacing: "-0.01em" }}>
+            <p
+              className="font-display text-lg font-medium leading-relaxed text-foreground"
+              style={{ letterSpacing: "-0.01em" }}
+            >
               "I've been working on a landing page for a productivity app. Users say it looks
               clean, but conversions are lower than expected. Brutal honesty is welcome."
             </p>
@@ -410,16 +455,35 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── CTA ───────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 py-24 md:px-10">
-        <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse at 50% 100%, rgba(0,112,243,0.12) 0%, transparent 70%)" }} aria-hidden="true" />
-        <div className="pointer-events-none absolute inset-0 grid-dots opacity-40" aria-hidden="true" />
+      {/* ── CTA — full deep navy block ───────────────────────────── */}
+      <section
+        className="relative overflow-hidden px-6 py-28 md:px-10"
+        style={{ background: "linear-gradient(160deg, #000b1f 0%, #003c85 60%, #000b1f 100%)" }}
+      >
+        {/* Grid dots in navy */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: `radial-gradient(circle, rgba(82,168,255,0.18) 1px, transparent 1px)`,
+            backgroundSize: "28px 28px",
+          }}
+          aria-hidden="true"
+        />
+        {/* Subtle radial highlight */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(0,112,243,0.25) 0%, transparent 60%)" }}
+          aria-hidden="true"
+        />
 
         <div className="relative z-10 mx-auto max-w-xl text-center">
-          <h2 className="font-display text-3xl font-semibold text-foreground md:text-4xl" style={{ letterSpacing: "-0.03em" }}>
+          <h2
+            className="font-display text-3xl font-semibold md:text-4xl"
+            style={{ color: "#EDEDED", letterSpacing: "-0.03em" }}
+          >
             Ready to join?
           </h2>
-          <p className="mx-auto mt-4 max-w-sm font-body text-sm leading-relaxed text-foreground-muted">
+          <p className="mx-auto mt-4 max-w-sm font-body text-sm leading-relaxed" style={{ color: "#52a8ff" }}>
             We review every application by hand. If you're a designer who cares about the
             craft, we'd love to have you.
           </p>
@@ -427,9 +491,9 @@ export default function LandingPage() {
           <div className="mt-8">
             <Link
               href="/apply"
-              className="relative inline-flex items-center gap-2 rounded-md bg-accent px-8 py-3.5 font-body text-sm font-medium text-accent-foreground shadow-sm transition-colors hover:bg-accent-hover"
+              className="relative inline-flex items-center gap-2 rounded-md bg-accent px-8 py-3.5 font-body text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-hover"
             >
-              <CornerBrackets variant="signal" />
+              <CornerBrackets variant="light" />
               Apply for access
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="opacity-80">
                 <path d="M2.5 7h9M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -437,16 +501,16 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          <p className="mt-5 font-mono text-[11px] uppercase tracking-wider text-foreground-subtle">
+          <p className="mt-5 font-mono text-[11px] uppercase tracking-wider" style={{ color: "#adcfff", opacity: 0.6 }}>
             Free · Curated · No algorithm
           </p>
         </div>
       </section>
 
-      {/* ── Footer ────────────────────────────────────────────────── */}
+      {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className="border-t border-border px-6 py-8 md:px-10">
         <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <Link href="/" className="flex items-center gap-0.5 font-display text-sm font-semibold text-foreground-muted">
+          <Link href="/" className="flex items-center font-display text-sm font-semibold text-foreground-muted">
             {APP_NAME}
             <span className="text-accent mx-0.5">/</span>
           </Link>
