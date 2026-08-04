@@ -302,7 +302,7 @@ export default function LandingPage() {
 
       {/* ── Spotlight 1: Threads & discussions ──────────────────── */}
       <section className="border-t border-border px-6 py-20 md:px-10">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl text-center">
           <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
             Discussions
           </span>
@@ -310,7 +310,7 @@ export default function LandingPage() {
             Ask questions, share ideas,{" "}
             <span className="text-accent">get real answers</span>
           </h2>
-          <p className="mt-4 font-body text-sm leading-relaxed text-foreground-muted">
+          <p className="mx-auto mt-4 max-w-xl font-body text-sm leading-relaxed text-foreground-muted">
             Post a question, drop an article, share a case study. Every thread lives inside
             a community so feedback comes from designers who actually do that kind of work.
           </p>
@@ -326,7 +326,7 @@ export default function LandingPage() {
 
       {/* ── Spotlight 2: Real-time chat ──────────────────────────── */}
       <section className="border-t border-border bg-background-subtle px-6 py-20 md:px-10">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl text-center">
           <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
             Real-time chat
           </span>
@@ -334,7 +334,7 @@ export default function LandingPage() {
             Communities that actually{" "}
             <span className="text-accent">talk to each other</span>
           </h2>
-          <p className="mt-4 font-body text-sm leading-relaxed text-foreground-muted">
+          <p className="mx-auto mt-4 max-w-xl font-body text-sm leading-relaxed text-foreground-muted">
             Each community has a live chat room. Ask questions, share what you're working on,
             or just say hi. Conversations happen in real time, across cities and timezones.
           </p>
@@ -350,7 +350,7 @@ export default function LandingPage() {
 
       {/* ── Spotlight 3: Events ──────────────────────────────────── */}
       <section className="border-t border-border px-6 py-20 md:px-10">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl text-center">
           <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
             Events
           </span>
@@ -358,7 +358,7 @@ export default function LandingPage() {
             IRL meetups, workshops,{" "}
             <span className="text-accent">and get-togethers</span>
           </h2>
-          <p className="mt-4 font-body text-sm leading-relaxed text-foreground-muted">
+          <p className="mx-auto mt-4 max-w-xl font-body text-sm leading-relaxed text-foreground-muted">
             Each community has its own events calendar. Members can create, RSVP, and share
             design meetups — from Hyderabad UX nights to online Figma critique sessions.
           </p>
