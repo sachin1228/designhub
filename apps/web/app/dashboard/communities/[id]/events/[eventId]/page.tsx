@@ -105,7 +105,7 @@ export default async function EventDetailPage({ params }: Props) {
       communityId={communityId}
       communityName={communityData.data?.name ?? "Community"}
       backHref={`/dashboard/communities/${communityId}?tab=events`}
-      backLabel="← Events"
+      backLabel="Events"
     />
   );
 }

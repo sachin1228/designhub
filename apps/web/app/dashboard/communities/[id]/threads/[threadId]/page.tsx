@@ -125,7 +125,7 @@ export default async function ThreadDetailPage({ params }: Props) {
       communityId={communityId}
       communityName={communityName}
       backHref={`/dashboard/communities/${communityId}?tab=threads`}
-      backLabel="← Threads"
+      backLabel="Threads"
     />
   );
 }
