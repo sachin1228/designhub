@@ -571,7 +571,7 @@ export function EventDetailClient({
                 {tab.icon}
                 {tab.label}
                 {tab.count > 0 && (
-                  <span className="rounded-full bg-surface-raised px-1.5 py-0.5 font-body text-[10px] text-foreground-subtle">
+                  <span className="inline-flex items-center justify-center rounded-full bg-surface-raised min-w-[1.25rem] h-5 px-1.5 font-body text-[10px] leading-none text-foreground-subtle">
                     {tab.count}
                   </span>
                 )}
