@@ -1,5 +1,20 @@
 import Link from "next/link";
+import {
+  MessageSquare,
+  BookOpen,
+  Calendar,
+  Globe,
+  UserCheck,
+  Lock,
+  Layers,
+  Target,
+  Bot,
+  Palette,
+  MapPin,
+  Sparkles,
+} from "lucide-react";
 import { APP_NAME } from "@draft/shared";
+import type { LucideIcon } from "lucide-react";
 
 /* ─── Reusable corner brackets ─────────────────────────────────── */
 function CornerBrackets({
@@ -42,13 +57,13 @@ const HAPPY_PARAMS =
   "mouth[]=smile&mouth[]=twinkle&eyes[]=happy&eyes[]=wink&backgroundColor=transparent";
 
 /* ─── Sample community data ─────────────────────────────────────── */
-const COMMUNITIES = [
-  { name: "Design Systems",        emoji: "🧱", members: 24, city: "Global",    tags: ["Figma", "Tokens"]         },
-  { name: "Product Designers",     emoji: "🎯", members: 41, city: "Bangalore", tags: ["UX", "Strategy"]          },
-  { name: "AI & ML Community",     emoji: "🤖", members: 18, city: "Global",    tags: ["Generative", "Tools"]     },
-  { name: "Visual Design",         emoji: "🎨", members: 33, city: "Mumbai",    tags: ["Brand", "Illustration"]   },
-  { name: "Hyderabad Designers",   emoji: "🏙️", members: 15, city: "Hyderabad", tags: ["Local", "Networking"]     },
-  { name: "Motion & Interaction",  emoji: "✨", members: 22, city: "Global",    tags: ["Animation", "Prototyping"] },
+const COMMUNITIES: { name: string; Icon: LucideIcon; members: number; city: string; tags: string[] }[] = [
+  { name: "Design Systems",        Icon: Layers,         members: 24, city: "Global",    tags: ["Figma", "Tokens"]         },
+  { name: "Product Designers",     Icon: Target,         members: 41, city: "Bangalore", tags: ["UX", "Strategy"]          },
+  { name: "AI & ML Community",     Icon: Bot,            members: 18, city: "Global",    tags: ["Generative", "Tools"]     },
+  { name: "Visual Design",         Icon: Palette,        members: 33, city: "Mumbai",    tags: ["Brand", "Illustration"]   },
+  { name: "Hyderabad Designers",   Icon: MapPin,         members: 15, city: "Hyderabad", tags: ["Local", "Networking"]     },
+  { name: "Motion & Interaction",  Icon: Sparkles,       members: 22, city: "Global",    tags: ["Animation", "Prototyping"] },
 ];
 
 const STEPS = [
@@ -69,34 +84,34 @@ const STEPS = [
   },
 ];
 
-const FEATURES = [
+const FEATURES: { Icon: LucideIcon; title: string; body: string }[] = [
   {
-    icon: "💬",
+    Icon: MessageSquare,
     title: "Real-time communities",
     body: "Jump into focused design communities — Design Systems, Motion, AI Tools, local city groups, and more. Real conversations, not broadcast feeds.",
   },
   {
-    icon: "📌",
+    Icon: BookOpen,
     title: "Threads & resources",
     body: "Share articles, Figma files, case studies. Ask for feedback. Get actual answers from people who've shipped the same kind of work.",
   },
   {
-    icon: "📅",
+    Icon: Calendar,
     title: "Events & meetups",
     body: "Stay plugged into design events around you — IRL meetups, online workshops, critique sessions — all surfaced inside your communities.",
   },
   {
-    icon: "🌐",
+    Icon: Globe,
     title: "Global & local",
     body: "City-based rooms alongside global ones. Find your Bangalore product design crew or the worldwide Figma nerds — your call.",
   },
   {
-    icon: "✅",
+    Icon: UserCheck,
     title: "Curated membership",
     body: "Applications are reviewed manually. That keeps the signal high and the noise low. Everyone in drafthub is actually a designer.",
   },
   {
-    icon: "🔒",
+    Icon: Lock,
     title: "No algorithm",
     body: "No engagement bait. No ranking. Just the communities you join and the people in them — in reverse-chronological order, like it should be.",
   },
@@ -262,14 +277,14 @@ export default function LandingPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ icon, title, body }) => (
+            {FEATURES.map(({ Icon, title, body }) => (
               <div
                 key={title}
                 className="relative rounded-xl bg-surface p-6 shadow-sm"
                 style={{ boxShadow: "var(--shadow-card)" }}
               >
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-xl shadow-xs">
-                  {icon}
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft shadow-xs">
+                  <Icon size={18} className="text-accent" />
                 </div>
                 <h3 className="font-display text-sm font-semibold text-foreground">{title}</h3>
                 <p className="mt-2 font-body text-sm leading-relaxed text-foreground-muted">{body}</p>
@@ -297,7 +312,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {COMMUNITIES.map(({ name, emoji, members, city, tags }) => (
+            {COMMUNITIES.map(({ name, Icon, members, city, tags }) => (
               <div
                 key={name}
                 className="group relative flex flex-col gap-3 rounded-xl bg-surface p-4 transition-shadow hover:shadow-md"
@@ -305,8 +320,8 @@ export default function LandingPage() {
               >
                 {/* Community icon */}
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-surface-raised text-lg shadow-xs">
-                    {emoji}
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-accent-soft shadow-xs">
+                    <Icon size={18} className="text-accent" />
                   </div>
                   <div>
                     <p className="font-body text-sm font-medium text-foreground">{name}</p>
