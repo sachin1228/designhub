@@ -36,8 +36,13 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySession(token) : null;
 
-  // Redirect already-authenticated users away from / and /login
-  if (pathname === "/" || pathname === "/login") {
+  // Landing page — always public, never redirect
+  if (pathname === "/") {
+    return NextResponse.next();
+  }
+
+  // Redirect already-authenticated users away from /login
+  if (pathname === "/login") {
     if (session) {
       const url = request.nextUrl.clone();
       url.pathname = session.role === "admin" ? "/admin" : "/dashboard";
