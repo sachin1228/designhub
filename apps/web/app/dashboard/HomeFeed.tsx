@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Globe, Loader2 } from "lucide-react";
+import { Globe } from "lucide-react";
 
 import { ThreadCard } from "@/components/communities/threads/ThreadCard";
 import { EventCard } from "@/components/communities/events/EventCard";
@@ -114,9 +114,35 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 size={18} className="animate-spin text-foreground-muted" />
-      </div>
+      <ul className="border-t border-border animate-pulse">
+        {[1, 2, 3, 4].map((item) => (
+          <li key={item} className="border-b border-border px-6 py-6">
+            {/* Top row: avatar + name + date + category pill */}
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-surface-raised" />
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-20 rounded bg-surface-raised" />
+                <div className="h-3 w-12 rounded bg-surface-raised" />
+                <div className="h-5 w-16 rounded-full bg-surface-raised" />
+              </div>
+            </div>
+            {/* Title */}
+            <div className="mt-4 h-4 w-3/4 rounded bg-surface-raised" />
+            {/* Body lines */}
+            <div className="mt-2.5 space-y-2">
+              <div className="h-3 w-full rounded bg-surface-raised" />
+              <div className="h-3 w-5/6 rounded bg-surface-raised" />
+              <div className="h-3 w-2/3 rounded bg-surface-raised" />
+            </div>
+            {/* Footer: vote + comments */}
+            <div className="mt-4 flex items-center gap-4">
+              <div className="h-8 w-8 rounded-full bg-surface-raised" />
+              <div className="h-3 w-6 rounded bg-surface-raised" />
+              <div className="h-3 w-20 rounded bg-surface-raised" />
+            </div>
+          </li>
+        ))}
+      </ul>
     );
   }
 
