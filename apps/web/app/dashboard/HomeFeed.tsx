@@ -116,7 +116,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
     return (
       <ul className="border-t border-border animate-pulse">
         {[1, 2, 3].map((item) => (
-          <li key={item} className="border-b border-border px-6 py-6">
+          <li key={item} className="border-b border-border px-8 py-6">
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 shrink-0 rounded-full bg-surface-raised" />
               <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
         if (group.kind === "event") {
           return (
             <li key={`event-${group.item.id}`} className={isLastGroup ? "" : "border-b border-border"}>
-              <div className="py-8 px-8">
+              <div className="px-8 py-6">
                 {group.item.community_name && (
                   <p className="mb-2 font-body text-[11px] text-foreground-subtle">
                     in <span className="text-foreground-muted">{group.item.community_name}</span>
@@ -246,7 +246,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
         const isOdd = resources.length % 2 !== 0;
         return (
           <li key={`resources-${gi}`} className={isLastGroup ? "" : "border-b border-border"}>
-            <div className="grid grid-cols-2 gap-4 p-4">
+            <div className="grid grid-cols-2 gap-4 px-8 py-6">
               {resources.map((res) => (
                 <div key={`resource-${res.id}`} className="overflow-hidden">
                   {res.community_name && (
