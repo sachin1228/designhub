@@ -353,25 +353,6 @@ export default function LandingPage() {
             Post a question, drop an article, share a case study. Every thread lives inside
             a community so feedback comes from designers who actually do that kind of work.
           </p>
-          <ul className="mt-6 flex flex-col gap-3">
-            {[
-              { tone: "blue" as IconTone,  label: "Tag posts as Question, Article, or Resource" },
-              { tone: "purple" as IconTone, label: "Upvote, comment, bookmark — no algorithmic ranking" },
-              { tone: "teal" as IconTone,  label: "Link previews auto-generated from shared URLs" },
-            ].map(({ tone, label }, i) => {
-              const { wrapper, icon } = iconStyle(tone);
-              return (
-                <li key={i} className="flex items-start gap-3">
-                  <span className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded ${wrapper}`}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={icon} />
-                    </svg>
-                  </span>
-                  <span className="font-body text-sm text-foreground-muted">{label}</span>
-                </li>
-              );
-            })}
-          </ul>
           <div className="mt-10 overflow-hidden rounded-2xl border border-border shadow-lg">
             <img
               src="/screenshots/threads.png"
@@ -396,25 +377,6 @@ export default function LandingPage() {
             Each community has a live chat room. Ask questions, share what you're working on,
             or just say hi. Conversations happen in real time, across cities and timezones.
           </p>
-          <ul className="mt-6 flex flex-col gap-3">
-            {[
-              { tone: "blue" as IconTone,   label: "Real-time messaging powered by Supabase Realtime" },
-              { tone: "purple" as IconTone, label: "Member roles, badges, and verified company profiles" },
-              { tone: "teal" as IconTone,   label: "Separate Chat, Threads, Events, and Resources tabs per community" },
-            ].map(({ tone, label }, i) => {
-              const { wrapper, icon } = iconStyle(tone);
-              return (
-                <li key={i} className="flex items-start gap-3">
-                  <span className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded ${wrapper}`}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={icon} />
-                    </svg>
-                  </span>
-                  <span className="font-body text-sm text-foreground-muted">{label}</span>
-                </li>
-              );
-            })}
-          </ul>
           <div className="mt-10 overflow-hidden rounded-2xl border border-border shadow-lg">
             <img
               src="/screenshots/chat.png"
@@ -439,25 +401,6 @@ export default function LandingPage() {
             Each community has its own events calendar. Members can create, RSVP, and share
             design meetups — from Hyderabad UX nights to online Figma critique sessions.
           </p>
-          <ul className="mt-6 flex flex-col gap-3">
-            {[
-              { tone: "blue" as IconTone,   label: "RSVP directly inside the community" },
-              { tone: "purple" as IconTone, label: "See who's going and how many are attending" },
-              { tone: "teal" as IconTone,   label: "Upcoming events surfaced in the community sidebar" },
-            ].map(({ tone, label }, i) => {
-              const { wrapper, icon } = iconStyle(tone);
-              return (
-                <li key={i} className="flex items-start gap-3">
-                  <span className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded ${wrapper}`}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={icon} />
-                    </svg>
-                  </span>
-                  <span className="font-body text-sm text-foreground-muted">{label}</span>
-                </li>
-              );
-            })}
-          </ul>
           <div className="mt-10 overflow-hidden rounded-2xl border border-border shadow-lg">
             <img
               src="/screenshots/events.png"
