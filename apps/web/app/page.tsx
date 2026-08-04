@@ -274,7 +274,7 @@ export default function LandingPage() {
       ══════════════════════════════════════════════════════════ */}
 
       {/* ── Spotlight 1: Threads & discussions ──────────────────── */}
-      <section className="border-t border-border px-6 py-20 md:px-10">
+      <section className="px-6 py-20 md:px-10">
         <div className="mx-auto max-w-3xl text-center">
           <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
             Discussions
@@ -298,7 +298,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Spotlight 2: Real-time chat ──────────────────────────── */}
-      <section className="border-t border-border bg-background-subtle px-6 py-20 md:px-10">
+      <section className="px-6 py-20 md:px-10">
         <div className="mx-auto max-w-3xl text-center">
           <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
             Real-time chat
@@ -322,7 +322,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Spotlight 3: Events ──────────────────────────────────── */}
-      <section className="border-t border-border px-6 py-20 md:px-10">
+      <section className="px-6 py-20 md:px-10">
         <div className="mx-auto max-w-3xl text-center">
           <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
             Events
@@ -346,7 +346,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Community preview ───────────────────────────────────── */}
-      <section className="border-t border-border bg-background-subtle px-6 py-24 md:px-10">
+      <section className="px-6 py-24 md:px-10">
         <div className="mx-auto max-w-4xl">
           <div className="mb-10 flex items-end justify-between">
             <div>
@@ -405,7 +405,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ────────────────────────────────────────── */}
-      <section className="relative border-t border-border px-6 py-24 md:px-10">
+      <section className="relative px-6 py-24 md:px-10">
         <div className="pointer-events-none absolute inset-0 grid-dots opacity-30" aria-hidden="true" />
 
         <div className="relative z-10 mx-auto max-w-4xl">
@@ -443,7 +443,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Testimonial ─────────────────────────────────────────── */}
-      <section className="border-t border-border px-6 py-24 md:px-10">
+      <section className="px-6 py-24 md:px-10">
         <div className="mx-auto max-w-2xl">
           <div
             className="relative rounded-2xl bg-surface p-8 text-center"
@@ -525,7 +525,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer className="border-t border-border px-6 py-8 md:px-10">
+      <footer className="px-6 py-8 md:px-10">
         <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-4 sm:flex-row">
           <Link href="/" className="flex items-center font-display text-sm font-semibold text-foreground-muted">
             {APP_NAME}
