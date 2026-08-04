@@ -114,9 +114,9 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-4 p-4 animate-pulse">
-        {[1, 2, 3, 4].map((item) => (
-          <div key={item} className="rounded-2xl border border-border p-5">
+      <ul className="border-t border-border animate-pulse">
+        {[1, 2, 3].map((item) => (
+          <li key={item} className="border-b border-border px-6 py-6">
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 shrink-0 rounded-full bg-surface-raised" />
               <div className="flex items-center gap-2">
@@ -136,9 +136,25 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
               <div className="h-3 w-6 rounded bg-surface-raised" />
               <div className="h-3 w-20 rounded bg-surface-raised" />
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+        {/* Article grid skeleton row */}
+        <li className="border-b border-border">
+          <div className="grid grid-cols-2 gap-4 p-4">
+            {[1, 2].map((item) => (
+              <div key={item} className="rounded-2xl border border-border p-5">
+                <div className="h-32 w-full rounded-xl bg-surface-raised mb-4" />
+                <div className="h-3 w-20 rounded bg-surface-raised mb-3" />
+                <div className="h-4 w-3/4 rounded bg-surface-raised" />
+                <div className="mt-2 space-y-1.5">
+                  <div className="h-3 w-full rounded bg-surface-raised" />
+                  <div className="h-3 w-4/5 rounded bg-surface-raised" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </li>
+      </ul>
     );
   }
 
@@ -154,78 +170,112 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
     );
   }
 
+  // Group items so consecutive resources are batched together into a
+  // 2-column grid, while threads and events stay full-width.
+  type Group =
+    | { kind: "thread"; item: FeedThread }
+    | { kind: "event";  item: FeedEvent }
+    | { kind: "resources"; items: FeedResource[] };
+
+  const groups: Group[] = [];
+  for (const item of items) {
+    if (item._type === "resource") {
+      const last = groups[groups.length - 1];
+      if (last?.kind === "resources") {
+        last.items.push(item);
+      } else {
+        groups.push({ kind: "resources", items: [item] });
+      }
+    } else if (item._type === "thread") {
+      groups.push({ kind: "thread", item });
+    } else {
+      groups.push({ kind: "event", item });
+    }
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-4 p-4">
-      {items.map((item) => {
-        if (item._type === "thread") {
+    <ul className="border-t border-border">
+      {groups.map((group, gi) => {
+        const isLastGroup = gi === groups.length - 1;
+
+        if (group.kind === "thread") {
           return (
-            <div key={`thread-${item.id}`} className="rounded-2xl border border-border overflow-hidden">
+            <li key={`thread-${group.item.id}`}>
               <ThreadCard
-                thread={item}
+                thread={group.item}
                 currentUserId={currentUserId}
-                communityId={item.community_id}
-                communityName={item.community_name ?? undefined}
-                detailHref={`/dashboard/threads/${item.id}`}
+                communityId={group.item.community_id}
+                communityName={group.item.community_name ?? undefined}
+                detailHref={`/dashboard/threads/${group.item.id}`}
                 onUpdated={handleThreadUpdated}
                 onVoteChanged={handleThreadVoteChanged}
                 onSaveChanged={handleThreadSaveChanged}
                 onDeleted={handleThreadDeleted}
-                isLast
+                isLast={isLastGroup}
               />
-            </div>
+            </li>
           );
         }
 
-        if (item._type === "event") {
+        if (group.kind === "event") {
           return (
-            <div key={`event-${item.id}`} className="rounded-2xl border border-border overflow-hidden p-5">
-              {item.community_name && (
-                <p className="mb-3 font-body text-[11px] text-foreground-subtle">
-                  in <span className="text-foreground-muted">{item.community_name}</span>
-                </p>
-              )}
-              <EventCard
-                event={item}
-                currentUserId={currentUserId}
-                communityId={item.community_id}
-                detailHref={`/dashboard/events/${item.id}`}
-                onUpdated={handleEventUpdated}
-                onDeleted={handleEventDeleted}
-                onRsvpChanged={handleEventRsvpChanged}
-                onSaveChanged={handleEventSaveChanged}
-              />
-            </div>
+            <li key={`event-${group.item.id}`} className={isLastGroup ? "" : "border-b border-border"}>
+              <div className="py-8 px-8">
+                {group.item.community_name && (
+                  <p className="mb-2 font-body text-[11px] text-foreground-subtle">
+                    in <span className="text-foreground-muted">{group.item.community_name}</span>
+                  </p>
+                )}
+                <EventCard
+                  event={group.item}
+                  currentUserId={currentUserId}
+                  communityId={group.item.community_id}
+                  detailHref={`/dashboard/events/${group.item.id}`}
+                  onUpdated={handleEventUpdated}
+                  onDeleted={handleEventDeleted}
+                  onRsvpChanged={handleEventRsvpChanged}
+                  onSaveChanged={handleEventSaveChanged}
+                />
+              </div>
+            </li>
           );
         }
 
-        // resource
+        // ── Resource group — 2-column grid ────────────────────────────────
+        const resources = group.items;
+        const isOdd = resources.length % 2 !== 0;
         return (
-          <div key={`resource-${item.id}`} className="rounded-2xl border border-border overflow-hidden p-5">
-            {item.community_name && (
-              <p className="mb-3 font-body text-[11px] text-foreground-subtle">
-                in <span className="text-foreground-muted">{item.community_name}</span>
-              </p>
-            )}
-            <ResourceCard
-              resource={item}
-              currentUserId={currentUserId}
-              communityId={item.community_id}
-              onUpdated={handleResourceUpdated}
-              onSaveChanged={handleResourceSaveChanged}
-              onBookmarkChanged={handleResourceBookmarkChanged}
-              onDeleted={handleResourceDeleted}
-            />
-          </div>
+          <li key={`resources-${gi}`} className={isLastGroup ? "" : "border-b border-border"}>
+            <div className="grid grid-cols-2 gap-4 p-4">
+              {resources.map((res) => (
+                <div key={`resource-${res.id}`} className="rounded-2xl border border-border overflow-hidden p-5">
+                  {res.community_name && (
+                    <p className="mb-3 font-body text-[11px] text-foreground-subtle">
+                      in <span className="text-foreground-muted">{res.community_name}</span>
+                    </p>
+                  )}
+                  <ResourceCard
+                    resource={res}
+                    currentUserId={currentUserId}
+                    communityId={res.community_id}
+                    onUpdated={handleResourceUpdated}
+                    onSaveChanged={handleResourceSaveChanged}
+                    onBookmarkChanged={handleResourceBookmarkChanged}
+                    onDeleted={handleResourceDeleted}
+                  />
+                </div>
+              ))}
+              {/* Placeholder for the empty second column when count is odd */}
+              {isOdd && (
+                <div className="rounded-2xl border border-dashed border-border flex flex-col items-center justify-center gap-2 p-8 min-h-[200px]">
+                  <p className="font-body text-sm font-medium text-foreground-muted">More articles coming soon</p>
+                  <p className="font-body text-xs text-foreground-subtle">Check back later for new content.</p>
+                </div>
+              )}
+            </div>
+          </li>
         );
       })}
-
-      {/* Odd-item placeholder — keeps the grid even */}
-      {items.length % 2 !== 0 && (
-        <div className="rounded-2xl border border-dashed border-border flex flex-col items-center justify-center gap-2 p-8 min-h-[200px]">
-          <p className="font-body text-sm font-medium text-foreground-muted">More posts coming soon</p>
-          <p className="font-body text-xs text-foreground-subtle">Check back later for new content.</p>
-        </div>
-      )}
-    </div>
+    </ul>
   );
 }
