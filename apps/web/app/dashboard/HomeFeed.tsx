@@ -277,7 +277,7 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
               ))}
               {/* Placeholder for the empty second column when count is odd */}
               {isOdd && (
-                <div className="rounded-2xl border border-dashed border-border flex flex-col items-center justify-center gap-2 p-8 min-h-[200px]">
+                <div className="rounded-2xl flex flex-col items-center justify-center gap-2 p-8 min-h-[200px]">
                   <p className="font-body text-sm font-medium text-foreground-muted">More articles coming soon</p>
                   <p className="font-body text-xs text-foreground-subtle">Check back later for new content.</p>
                 </div>
