@@ -268,33 +268,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stats — deep navy band ───────────────────────────────── */}
-      <section style={{ background: "linear-gradient(90deg, #000b1f 0%, #003c85 50%, #000b1f 100%)" }}>
-        <div className="mx-auto grid max-w-4xl grid-cols-3">
-          {[
-            { value: "150+", label: "Designers" },
-            { value: "20+",  label: "Communities" },
-            { value: "12+",  label: "Cities" },
-          ].map(({ value, label }, i) => (
-            <div
-              key={label}
-              className="flex flex-col items-center py-10"
-              style={{ borderRight: i < 2 ? "1px solid rgba(82,168,255,0.15)" : undefined }}
-            >
-              <span
-                className="font-display text-3xl font-semibold"
-                style={{ color: "#adcfff", letterSpacing: "-0.03em" }}
-              >
-                {value}
-              </span>
-              <span className="mt-1 font-body text-xs" style={{ color: "#52a8ff" }}>
-                {label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
 
       {/* ══════════════════════════════════════════════════════════
           PRODUCT SPOTLIGHTS  (single column: text then screenshot)
@@ -373,7 +346,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Community preview ───────────────────────────────────── */}
-      <section className="bg-background-subtle px-6 py-24 md:px-10">
+      <section className="border-t border-border bg-background-subtle px-6 py-24 md:px-10">
         <div className="mx-auto max-w-4xl">
           <div className="mb-10 flex items-end justify-between">
             <div>
@@ -432,7 +405,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ────────────────────────────────────────── */}
-      <section className="relative px-6 py-24 md:px-10">
+      <section className="relative border-t border-border px-6 py-24 md:px-10">
         <div className="pointer-events-none absolute inset-0 grid-dots opacity-30" aria-hidden="true" />
 
         <div className="relative z-10 mx-auto max-w-4xl">
@@ -470,7 +443,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Testimonial ─────────────────────────────────────────── */}
-      <section className="px-6 pb-24 md:px-10">
+      <section className="border-t border-border px-6 py-24 md:px-10">
         <div className="mx-auto max-w-2xl">
           <div
             className="relative rounded-2xl bg-surface p-8 text-center"
