@@ -114,6 +114,7 @@ export default async function PublicThreadDetailPage({ params }: Props) {
           currentUserId={userId}
           communityId={thread.community_id}
           communityName={communityName}
+          backHref="/dashboard"
         />
       </div>
 
