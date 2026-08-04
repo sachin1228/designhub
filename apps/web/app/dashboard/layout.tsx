@@ -8,8 +8,10 @@ import { NotificationBell } from "@/app/dashboard/NotificationBell";
 
 export default async function DashboardLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode;
+  modal: React.ReactNode;
 }) {
   const session = await getSession();
   if (!session || session.role !== "user") {
@@ -65,6 +67,9 @@ export default async function DashboardLayout({
           {children}
         </main>
       </div>
+
+      {/* Parallel modal slot — renders intercepted event/thread sheets */}
+      {modal}
     </div>
   );
 }
