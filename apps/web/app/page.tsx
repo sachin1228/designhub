@@ -28,17 +28,23 @@ import type { LucideIcon } from "lucide-react";
 // soft  = light blue tint (accent-soft)
 // slate = cool neutral gray
 // navy  = deep navy with light blue icon
-type IconTone = "soft" | "slate" | "navy";
+/* Six-tone icon system — Vercel / Geist accent palette
+   blue   #2563EB  purple  #7C3AED  teal   #0D9488
+   pink   #C026D3  orange  #EA580C  green  #16A34A  */
+type IconTone = "blue" | "purple" | "teal" | "pink" | "orange" | "green";
 
 function iconStyle(tone: IconTone): { wrapper: string; icon: string } {
   switch (tone) {
-    case "soft":  return { wrapper: "bg-[#f0f8ff]",  icon: "text-[#0057b7]" };
-    case "slate": return { wrapper: "bg-[#EAEAEA]",  icon: "text-[#404040]" };
-    case "navy":  return { wrapper: "bg-[#000b1f]",  icon: "text-[#52a8ff]" };
+    case "blue":   return { wrapper: "bg-[#EFF6FF]", icon: "text-[#2563EB]" };
+    case "purple": return { wrapper: "bg-[#F5F3FF]", icon: "text-[#7C3AED]" };
+    case "teal":   return { wrapper: "bg-[#F0FDFA]", icon: "text-[#0D9488]" };
+    case "pink":   return { wrapper: "bg-[#FDF4FF]", icon: "text-[#C026D3]" };
+    case "orange": return { wrapper: "bg-[#FFF7ED]", icon: "text-[#EA580C]" };
+    case "green":  return { wrapper: "bg-[#F0FDF4]", icon: "text-[#16A34A]" };
   }
 }
 
-const ICON_TONES: IconTone[] = ["soft", "slate", "navy"];
+const ICON_TONES: IconTone[] = ["blue", "purple", "teal", "pink", "orange", "green"];
 
 /* ─── Corner brackets ───────────────────────────────────────────── */
 function CornerBrackets({
@@ -117,15 +123,17 @@ const COMMUNITIES: { name: string; Icon: LucideIcon; members: number; city: stri
 
 // Tag tone: alternate between blue-soft and neutral-gray
 const TAG_TONES = [
-  { bg: "bg-[#f0f8ff]", text: "text-[#0057b7]" },
-  { bg: "bg-[#EAEAEA]", text: "text-[#525252]" },
+  { bg: "bg-[#EFF6FF]", text: "text-[#2563EB]" },
+  { bg: "bg-[#F5F3FF]", text: "text-[#7C3AED]" },
+  { bg: "bg-[#F0FDFA]", text: "text-[#0D9488]" },
+  { bg: "bg-[#FDF4FF]", text: "text-[#C026D3]" },
 ];
 
-// Step number palette — each step a different blue-scale depth
+// Step number palette — Geist accent colors
 const STEP_STYLES = [
-  { bg: "bg-[#f0f8ff]",  text: "text-[#0057b7]", border: "border-[#d9ecff]" },  // light blue
-  { bg: "bg-[#003c85]",  text: "text-[#adcfff]", border: "border-[#0057b7]" },  // mid navy
-  { bg: "bg-[#EAEAEA]",  text: "text-[#262626]", border: "border-[#E0E0E0]" },  // neutral
+  { bg: "bg-[#EFF6FF]", text: "text-[#2563EB]", border: "border-[#BFDBFE]" },  // blue
+  { bg: "bg-[#F5F3FF]", text: "text-[#7C3AED]", border: "border-[#DDD6FE]" },  // purple
+  { bg: "bg-[#F0FDFA]", text: "text-[#0D9488]", border: "border-[#99F6E4]" },  // teal
 ];
 
 const STEPS = [
@@ -348,9 +356,9 @@ export default function LandingPage() {
           </p>
           <ul className="mt-6 flex flex-col gap-3">
             {[
-              { tone: "soft" as IconTone,  label: "Tag posts as Question, Article, or Resource" },
-              { tone: "slate" as IconTone, label: "Upvote, comment, bookmark — no algorithmic ranking" },
-              { tone: "soft" as IconTone,  label: "Link previews auto-generated from shared URLs" },
+              { tone: "blue" as IconTone,  label: "Tag posts as Question, Article, or Resource" },
+              { tone: "purple" as IconTone, label: "Upvote, comment, bookmark — no algorithmic ranking" },
+              { tone: "teal" as IconTone,  label: "Link previews auto-generated from shared URLs" },
             ].map(({ tone, label }, i) => {
               const { wrapper, icon } = iconStyle(tone);
               return (
@@ -391,9 +399,9 @@ export default function LandingPage() {
           </p>
           <ul className="mt-6 flex flex-col gap-3">
             {[
-              { tone: "soft" as IconTone,  label: "Real-time messaging powered by Supabase Realtime" },
-              { tone: "slate" as IconTone, label: "Member roles, badges, and verified company profiles" },
-              { tone: "soft" as IconTone,  label: "Separate Chat, Threads, Events, and Resources tabs per community" },
+              { tone: "blue" as IconTone,   label: "Real-time messaging powered by Supabase Realtime" },
+              { tone: "purple" as IconTone, label: "Member roles, badges, and verified company profiles" },
+              { tone: "teal" as IconTone,   label: "Separate Chat, Threads, Events, and Resources tabs per community" },
             ].map(({ tone, label }, i) => {
               const { wrapper, icon } = iconStyle(tone);
               return (
@@ -434,9 +442,9 @@ export default function LandingPage() {
           </p>
           <ul className="mt-6 flex flex-col gap-3">
             {[
-              { tone: "soft" as IconTone,  label: "RSVP directly inside the community" },
-              { tone: "slate" as IconTone, label: "See who's going and how many are attending" },
-              { tone: "soft" as IconTone,  label: "Upcoming events surfaced in the community sidebar" },
+              { tone: "blue" as IconTone,   label: "RSVP directly inside the community" },
+              { tone: "purple" as IconTone, label: "See who's going and how many are attending" },
+              { tone: "teal" as IconTone,   label: "Upcoming events surfaced in the community sidebar" },
             ].map(({ tone, label }, i) => {
               const { wrapper, icon } = iconStyle(tone);
               return (
