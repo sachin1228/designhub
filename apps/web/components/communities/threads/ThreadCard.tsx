@@ -515,7 +515,7 @@ export function ThreadCard({
   return (
     <>
       {isDetail ? (
-        <div className="rounded-2xl bg-surface p-5">
+        <div>
           {innerContent}
         </div>
       ) : (
