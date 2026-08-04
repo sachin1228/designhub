@@ -114,10 +114,9 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
 
   if (loading) {
     return (
-      <ul className="border-t border-border animate-pulse">
+      <div className="grid grid-cols-2 gap-4 p-4 animate-pulse">
         {[1, 2, 3, 4].map((item) => (
-          <li key={item} className="border-b border-border px-6 py-6">
-            {/* Top row: avatar + name + date + category pill */}
+          <div key={item} className="rounded-2xl border border-border p-5">
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 shrink-0 rounded-full bg-surface-raised" />
               <div className="flex items-center gap-2">
@@ -126,23 +125,20 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
                 <div className="h-5 w-16 rounded-full bg-surface-raised" />
               </div>
             </div>
-            {/* Title */}
             <div className="mt-4 h-4 w-3/4 rounded bg-surface-raised" />
-            {/* Body lines */}
             <div className="mt-2.5 space-y-2">
               <div className="h-3 w-full rounded bg-surface-raised" />
               <div className="h-3 w-5/6 rounded bg-surface-raised" />
               <div className="h-3 w-2/3 rounded bg-surface-raised" />
             </div>
-            {/* Footer: vote + comments */}
             <div className="mt-4 flex items-center gap-4">
               <div className="h-8 w-8 rounded-full bg-surface-raised" />
               <div className="h-3 w-6 rounded bg-surface-raised" />
               <div className="h-3 w-20 rounded bg-surface-raised" />
             </div>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     );
   }
 
@@ -159,13 +155,11 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
   }
 
   return (
-    <ul className="border-t border-border">
-      {items.map((item, idx) => {
-        const isLast = idx === items.length - 1;
-
+    <div className="grid grid-cols-2 gap-4 p-4">
+      {items.map((item) => {
         if (item._type === "thread") {
           return (
-            <li key={`thread-${item.id}`}>
+            <div key={`thread-${item.id}`} className="rounded-2xl border border-border overflow-hidden">
               <ThreadCard
                 thread={item}
                 currentUserId={currentUserId}
@@ -176,58 +170,62 @@ export function HomeFeed({ currentUserId }: HomeFeedProps) {
                 onVoteChanged={handleThreadVoteChanged}
                 onSaveChanged={handleThreadSaveChanged}
                 onDeleted={handleThreadDeleted}
-                isLast={isLast}
+                isLast
               />
-            </li>
+            </div>
           );
         }
 
         if (item._type === "event") {
           return (
-            <li key={`event-${item.id}`} className={isLast ? "" : "border-b border-border"}>
-              <div className="py-8 px-8">
-                {item.community_name && (
-                  <p className="mb-2 font-body text-[11px] text-foreground-subtle">
-                    in <span className="text-foreground-muted">{item.community_name}</span>
-                  </p>
-                )}
-                <EventCard
-                  event={item}
-                  currentUserId={currentUserId}
-                  communityId={item.community_id}
-                  detailHref={`/dashboard/events/${item.id}`}
-                  onUpdated={handleEventUpdated}
-                  onDeleted={handleEventDeleted}
-                  onRsvpChanged={handleEventRsvpChanged}
-                  onSaveChanged={handleEventSaveChanged}
-                />
-              </div>
-            </li>
+            <div key={`event-${item.id}`} className="rounded-2xl border border-border overflow-hidden p-5">
+              {item.community_name && (
+                <p className="mb-3 font-body text-[11px] text-foreground-subtle">
+                  in <span className="text-foreground-muted">{item.community_name}</span>
+                </p>
+              )}
+              <EventCard
+                event={item}
+                currentUserId={currentUserId}
+                communityId={item.community_id}
+                detailHref={`/dashboard/events/${item.id}`}
+                onUpdated={handleEventUpdated}
+                onDeleted={handleEventDeleted}
+                onRsvpChanged={handleEventRsvpChanged}
+                onSaveChanged={handleEventSaveChanged}
+              />
+            </div>
           );
         }
 
         // resource
         return (
-          <li key={`resource-${item.id}`} className={isLast ? "" : "border-b border-border"}>
-            <div className="py-8 px-8">
-              {item.community_name && (
-                <p className="mb-2 font-body text-[11px] text-foreground-subtle">
-                  in <span className="text-foreground-muted">{item.community_name}</span>
-                </p>
-              )}
-              <ResourceCard
-                resource={item}
-                currentUserId={currentUserId}
-                communityId={item.community_id}
-                onUpdated={handleResourceUpdated}
-                onSaveChanged={handleResourceSaveChanged}
-                onBookmarkChanged={handleResourceBookmarkChanged}
-                onDeleted={handleResourceDeleted}
-              />
-            </div>
-          </li>
+          <div key={`resource-${item.id}`} className="rounded-2xl border border-border overflow-hidden p-5">
+            {item.community_name && (
+              <p className="mb-3 font-body text-[11px] text-foreground-subtle">
+                in <span className="text-foreground-muted">{item.community_name}</span>
+              </p>
+            )}
+            <ResourceCard
+              resource={item}
+              currentUserId={currentUserId}
+              communityId={item.community_id}
+              onUpdated={handleResourceUpdated}
+              onSaveChanged={handleResourceSaveChanged}
+              onBookmarkChanged={handleResourceBookmarkChanged}
+              onDeleted={handleResourceDeleted}
+            />
+          </div>
         );
       })}
-    </ul>
+
+      {/* Odd-item placeholder — keeps the grid even */}
+      {items.length % 2 !== 0 && (
+        <div className="rounded-2xl border border-dashed border-border flex flex-col items-center justify-center gap-2 p-8 min-h-[200px]">
+          <p className="font-body text-sm font-medium text-foreground-muted">More posts coming soon</p>
+          <p className="font-body text-xs text-foreground-subtle">Check back later for new content.</p>
+        </div>
+      )}
+    </div>
   );
 }

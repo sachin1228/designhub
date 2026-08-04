@@ -8,14 +8,14 @@ export default function DashboardLoading() {
       {/* ── Main feed column ── */}
       <div className="flex-1 min-w-0 border-r border-border">
         {/* Welcome heading */}
-        <div className="p-6 mb-6">
-          <div className="h-8 w-56 rounded bg-surface-raised mb-2" />
+        <div className="p-6">
+          <div className="h-8 w-56 rounded bg-surface-raised" />
         </div>
 
-        {/* Feed skeleton items */}
-        <ul className="border-t border-border">
+        {/* 2-col feed skeleton */}
+        <div className="grid grid-cols-2 gap-4 p-4">
           {[1, 2, 3, 4].map((item) => (
-            <li key={item} className="border-b border-border px-6 py-6">
+            <div key={item} className="rounded-2xl border border-border p-5">
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 shrink-0 rounded-full bg-surface-raised" />
                 <div className="flex items-center gap-2">
@@ -35,9 +35,9 @@ export default function DashboardLoading() {
                 <div className="h-3 w-6 rounded bg-surface-raised" />
                 <div className="h-3 w-20 rounded bg-surface-raised" />
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
 
       {/* ── Discover sidebar ── */}
