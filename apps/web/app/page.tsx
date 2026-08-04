@@ -295,45 +295,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Features grid ───────────────────────────────────────── */}
-      <section className="relative px-6 py-24 md:px-10">
-        <div className="pointer-events-none absolute inset-0 grid-dots opacity-30" aria-hidden="true" />
-
-        <div className="relative z-10 mx-auto max-w-4xl">
-          <div className="mb-12 text-center">
-            <span className="font-mono text-[11px] uppercase tracking-widest text-foreground-subtle">
-              What you get
-            </span>
-            <h2
-              className="mt-3 font-display text-3xl font-semibold text-foreground"
-              style={{ letterSpacing: "-0.025em" }}
-            >
-              Built around how designers{" "}
-              <span className="text-accent">actually work</span>
-            </h2>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ Icon, title, body }, i) => {
-              const tone = ICON_TONES[i % 3];
-              const { wrapper, icon } = iconStyle(tone);
-              return (
-                <div
-                  key={title}
-                  className="relative rounded-xl bg-surface p-6"
-                  style={{ boxShadow: "var(--shadow-card)" }}
-                >
-                  <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${wrapper} shadow-xs`}>
-                    <Icon size={18} className={icon} />
-                  </div>
-                  <h3 className="font-display text-sm font-semibold text-foreground">{title}</h3>
-                  <p className="mt-2 font-body text-sm leading-relaxed text-foreground-muted">{body}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
 
       {/* ══════════════════════════════════════════════════════════
           PRODUCT SPOTLIGHTS  (single column: text then screenshot)
