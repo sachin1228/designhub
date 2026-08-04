@@ -34,12 +34,12 @@ type IconTone = "blue" | "purple" | "teal" | "pink" | "orange" | "green";
 
 function iconStyle(tone: IconTone): { wrapper: string; icon: string } {
   switch (tone) {
-    case "blue":   return { wrapper: "bg-blue-50",    icon: "text-blue-600"    };
-    case "purple": return { wrapper: "bg-violet-50",  icon: "text-violet-600"  };
-    case "teal":   return { wrapper: "bg-teal-50",    icon: "text-teal-600"    };
-    case "pink":   return { wrapper: "bg-fuchsia-50", icon: "text-fuchsia-600" };
-    case "orange": return { wrapper: "bg-orange-50",  icon: "text-orange-600"  };
-    case "green":  return { wrapper: "bg-green-50",   icon: "text-green-600"   };
+    case "blue":   return { wrapper: "bg-blue-500/20",    icon: "text-blue-400"    };
+    case "purple": return { wrapper: "bg-violet-500/20",  icon: "text-violet-400"  };
+    case "teal":   return { wrapper: "bg-teal-500/20",    icon: "text-teal-400"    };
+    case "pink":   return { wrapper: "bg-fuchsia-500/20", icon: "text-fuchsia-400" };
+    case "orange": return { wrapper: "bg-orange-500/20",  icon: "text-orange-400"  };
+    case "green":  return { wrapper: "bg-green-500/20",   icon: "text-green-400"   };
   }
 }
 
@@ -122,17 +122,17 @@ const COMMUNITIES: { name: string; Icon: LucideIcon; members: number; city: stri
 
 // Tag tone: alternate between blue-soft and neutral-gray
 const TAG_TONES = [
-  { bg: "bg-blue-50",    text: "text-blue-600"    },
-  { bg: "bg-violet-50",  text: "text-violet-600"  },
-  { bg: "bg-teal-50",    text: "text-teal-600"    },
-  { bg: "bg-fuchsia-50", text: "text-fuchsia-600" },
+  { bg: "bg-blue-500/20",    text: "text-blue-300"    },
+  { bg: "bg-violet-500/20",  text: "text-violet-300"  },
+  { bg: "bg-teal-500/20",    text: "text-teal-300"    },
+  { bg: "bg-fuchsia-500/20", text: "text-fuchsia-300" },
 ];
 
 // Step number palette — Geist accent colors
 const STEP_STYLES = [
-  { bg: "bg-blue-50",   text: "text-blue-600",   border: "border-blue-200"   },  // blue
-  { bg: "bg-violet-50", text: "text-violet-600", border: "border-violet-200" },  // purple
-  { bg: "bg-teal-50",   text: "text-teal-600",   border: "border-teal-200"   },  // teal
+  { bg: "bg-blue-500/20",   text: "text-blue-400",   border: "border-blue-500/30"   },  // blue
+  { bg: "bg-violet-500/20", text: "text-violet-400", border: "border-violet-500/30" },  // purple
+  { bg: "bg-teal-500/20",   text: "text-teal-400",   border: "border-teal-500/30"   },  // teal
 ];
 
 const STEPS = [
