@@ -28,19 +28,18 @@ import type { LucideIcon } from "lucide-react";
 // soft  = light blue tint (accent-soft)
 // slate = cool neutral gray
 // navy  = deep navy with light blue icon
-/* Six-tone icon system — Vercel / Geist accent palette
-   blue   #2563EB  purple  #7C3AED  teal   #0D9488
-   pink   #C026D3  orange  #EA580C  green  #16A34A  */
+/* Six-tone icon system — Tailwind Geist palette
+   blue / violet / teal / fuchsia / orange / green  */
 type IconTone = "blue" | "purple" | "teal" | "pink" | "orange" | "green";
 
 function iconStyle(tone: IconTone): { wrapper: string; icon: string } {
   switch (tone) {
-    case "blue":   return { wrapper: "bg-[#EFF6FF]", icon: "text-[#2563EB]" };
-    case "purple": return { wrapper: "bg-[#F5F3FF]", icon: "text-[#7C3AED]" };
-    case "teal":   return { wrapper: "bg-[#F0FDFA]", icon: "text-[#0D9488]" };
-    case "pink":   return { wrapper: "bg-[#FDF4FF]", icon: "text-[#C026D3]" };
-    case "orange": return { wrapper: "bg-[#FFF7ED]", icon: "text-[#EA580C]" };
-    case "green":  return { wrapper: "bg-[#F0FDF4]", icon: "text-[#16A34A]" };
+    case "blue":   return { wrapper: "bg-blue-50",    icon: "text-blue-600"    };
+    case "purple": return { wrapper: "bg-violet-50",  icon: "text-violet-600"  };
+    case "teal":   return { wrapper: "bg-teal-50",    icon: "text-teal-600"    };
+    case "pink":   return { wrapper: "bg-fuchsia-50", icon: "text-fuchsia-600" };
+    case "orange": return { wrapper: "bg-orange-50",  icon: "text-orange-600"  };
+    case "green":  return { wrapper: "bg-green-50",   icon: "text-green-600"   };
   }
 }
 
@@ -123,17 +122,17 @@ const COMMUNITIES: { name: string; Icon: LucideIcon; members: number; city: stri
 
 // Tag tone: alternate between blue-soft and neutral-gray
 const TAG_TONES = [
-  { bg: "bg-[#EFF6FF]", text: "text-[#2563EB]" },
-  { bg: "bg-[#F5F3FF]", text: "text-[#7C3AED]" },
-  { bg: "bg-[#F0FDFA]", text: "text-[#0D9488]" },
-  { bg: "bg-[#FDF4FF]", text: "text-[#C026D3]" },
+  { bg: "bg-blue-50",    text: "text-blue-600"    },
+  { bg: "bg-violet-50",  text: "text-violet-600"  },
+  { bg: "bg-teal-50",    text: "text-teal-600"    },
+  { bg: "bg-fuchsia-50", text: "text-fuchsia-600" },
 ];
 
 // Step number palette — Geist accent colors
 const STEP_STYLES = [
-  { bg: "bg-[#EFF6FF]", text: "text-[#2563EB]", border: "border-[#BFDBFE]" },  // blue
-  { bg: "bg-[#F5F3FF]", text: "text-[#7C3AED]", border: "border-[#DDD6FE]" },  // purple
-  { bg: "bg-[#F0FDFA]", text: "text-[#0D9488]", border: "border-[#99F6E4]" },  // teal
+  { bg: "bg-blue-50",   text: "text-blue-600",   border: "border-blue-200"   },  // blue
+  { bg: "bg-violet-50", text: "text-violet-600", border: "border-violet-200" },  // purple
+  { bg: "bg-teal-50",   text: "text-teal-600",   border: "border-teal-200"   },  // teal
 ];
 
 const STEPS = [
